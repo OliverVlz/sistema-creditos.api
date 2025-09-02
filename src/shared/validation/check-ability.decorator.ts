@@ -1,7 +1,5 @@
-// src/guards/ability.decorator.ts
 import { SetMetadata } from '@nestjs/common';
-import { Actions } from '../casl/ability-factory';
-import { Subjects } from '../casl/ability-factory';
+import { Actions, Subjects } from '../casl/ability-factory';
 
 export interface RequiredAbility {
   action: Actions;
