@@ -1,0 +1,42 @@
+services:
+
+  # Base de datos Postgres
+  postgres:
+    image: postgres:16
+    container_name: sistema_creditos_postgres_dev
+    environment:
+      POSTGRES_DB: sistema_creditos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - sistema_creditos_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sistema_creditos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Aplicación NestJS para desarrollo
+  app:
+    build:
+      context: .
+      target: development
+    container_name: sistema_creditos_app_dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      # Para hot reload en desarrollo
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  sistema_creditos_postgres_data:
