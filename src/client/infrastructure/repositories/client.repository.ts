@@ -11,12 +11,6 @@ type CreateClient = {
   address?: string;
 };
 
-type ClientFilters = {
-  terms?: string;
-  cursor?: string;
-  size?: number;
-};
-
 type ClientPaginationFilters = {
   terms?: string;
   limit?: number;
@@ -35,57 +29,6 @@ export class ClientRepository {
   async create(client: CreateClient) {
     const createdClient = this.clientsRepository.create(client);
     return this.clientsRepository.save(createdClient);
-  }
-
-  async searchClients(filters: ClientFilters, select?: ClientSelect) {
-    const queryBuilder = this.clientsRepository.createQueryBuilder('client');
-
-    if (select) {
-      const selectedFields = Object.keys(select)
-        .filter(key => select[key])
-        .map(key => `client.${key}`);
-      queryBuilder.select(selectedFields);
-    }
-
-    if (filters.terms) {
-      const term = filters.terms.toLowerCase().trim();
-
-      queryBuilder
-        .andWhere(`(LOWER(client.fullName) LIKE :term OR LOWER(client.documentNumber) LIKE :term OR LOWER(client.phone) LIKE :term)`,
-          { term: `%${term}%` },
-        )
-        .addSelect(
-          `CASE
-            WHEN LOWER(client.fullName) = :exactTerm OR LOWER(client.documentNumber) = :exactTerm THEN 1
-            WHEN LOWER(client.fullName) LIKE :startsWithTerm OR LOWER(client.documentNumber) LIKE :startsWithTerm THEN 2
-            ELSE 3
-          END`,
-          'relevance',
-        )
-        .orderBy('relevance', 'ASC')
-        .addOrderBy('client.createdAt', 'DESC')
-        .setParameters({
-          exactTerm: term,
-          startsWithTerm: `${term}%`,
-        });
-    } else {
-      queryBuilder.orderBy('client.createdAt', 'DESC');
-    }
-
-    if (filters.cursor) {
-      queryBuilder.andWhere('client.id > :cursor', { cursor: filters.cursor });
-    }
-
-    if (filters.size) {
-      queryBuilder.limit(filters.size);
-    }
-
-    const clients = await queryBuilder.getMany();
-
-    return {
-      clients,
-      cursor: clients.length > 0 ? clients[clients.length - 1].id : undefined,
-    };
   }
 
   async findAll() {

@@ -22,17 +22,6 @@ export interface RepositorySearchResult<T> {
   total: number;
 }
 
-// Legacy cursor-based interfaces (mantener compatibilidad)
-export interface CursorPaginationOptions {
-  cursor?: string;
-  size?: number;
-}
-
-export interface CursorPaginatedResult<T> {
-  data: T[];
-  cursor?: string;
-}
-
 export class PaginationUtils {
   static readonly DEFAULT_LIMIT = 10;
   static readonly MAX_LIMIT = 100;
@@ -70,13 +59,6 @@ export class PaginationUtils {
   }
 
   /**
-   * Método legacy para compatibilidad con código existente
-   */
-  static getSkip(page: number, limit: number): number {
-    return this.getOffset(page, limit);
-  }
-
-  /**
    * Normaliza y valida las opciones de paginación
    */
   static normalizePaginationOptions(
@@ -108,28 +90,5 @@ export class PaginationUtils {
       ...options,
       offset: this.getOffset(options.page, options.limit),
     };
-  }
-
-  /**
-   * Convierte cursor-based a offset-based (para migración gradual)
-   */
-  static convertCursorToOffset(cursor?: string, size?: number): PaginationOptions {
-    // Para cursor-based, podemos simular paginación
-    // Esta es una implementación básica para mantener compatibilidad
-    const limit = size || this.DEFAULT_LIMIT;
-    const page = cursor ? 2 : 1; // Simplificado para el ejemplo
-    
-    return { page, limit };
-  }
-
-  /**
-   * Método legacy para mantener compatibilidad con cursor-based pagination
-   */
-  static createLegacyPaginatedResult<T>(
-    data: T[],
-    total: number,
-    options: PaginationOptions,
-  ): PaginatedResult<T> {
-    return this.createPaginatedResult({ data, total }, options);
   }
 }
