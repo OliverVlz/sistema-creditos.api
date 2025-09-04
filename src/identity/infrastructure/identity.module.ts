@@ -6,7 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { HashService } from 'src/shared/hash';
 import { ClientRouteBuilder } from 'src/shared/utils';
-import { CaslAbilityFactory } from 'src/shared/casl';
 
 import { CreateUserHandler } from '../application/create-user/create-user.handler';
 import { LoginHandler } from '../application/login/login.handler';
@@ -28,7 +27,6 @@ import { UsersController } from './users.controller';
   controllers: [UsersController],
   providers: [
     AuthService,
-    CaslAbilityFactory,
     ClientRouteBuilder,
     CreateUserHandler,
     GetUsersHandler,
@@ -37,6 +35,6 @@ import { UsersController } from './users.controller';
     RecoverPasswordHandler,
     UserRepository,
   ],
-  exports: [UserRepository, CaslAbilityFactory],
+  exports: [UserRepository],
 })
 export class IdentityModule {}

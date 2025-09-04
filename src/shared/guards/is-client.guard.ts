@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { UserRole } from '../enums';
 
 @Injectable()
-export class IsAdvisorGuard implements CanActivate {
+export class IsClientGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -11,6 +11,6 @@ export class IsAdvisorGuard implements CanActivate {
       return false;
     }
 
-    return user.role === UserRole.Advisor;
+    return user.role === UserRole.Client;
   }
 }

@@ -1,6 +1,6 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { Roles, IsAdminGuard, IsCustomerGuard, IsEmployeeGuard } from '../guards';
+import { Roles, IsAdminGuard, IsClientGuard, IsAdvisorGuard } from '../guards';
 import { UserRole } from '../enums';
 
 // Decorador compuesto para admin
@@ -11,23 +11,23 @@ export const AdminOnly = () =>
   );
 
 // Decorador compuesto para cliente
-export const CustomerOnly = () =>
+export const ClientOnly = () =>
   applyDecorators(
-    UseGuards(IsCustomerGuard),
+    UseGuards(IsClientGuard),
     ApiBearerAuth(),
   );
 
-// Decorador compuesto para empleado
-export const EmployeeOnly = () =>
+// Decorador compuesto para asesor
+export const AdvisorOnly = () =>
   applyDecorators(
-    UseGuards(IsEmployeeGuard),
+    UseGuards(IsAdvisorGuard),
     ApiBearerAuth(),
   );
 
-// Decorador compuesto para staff (admin + empleado)
+// Decorador compuesto para staff (admin + asesor)
 export const StaffOnly = () =>
   applyDecorators(
-    Roles(UserRole.Admin, UserRole.Employee),
+    Roles(UserRole.Admin, UserRole.Advisor),
     ApiBearerAuth(),
   );
 
