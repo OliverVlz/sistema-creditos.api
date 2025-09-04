@@ -1,11 +1,10 @@
-export class GetClientsQuery {
+export class GetOrganizationsQuery {
   readonly terms?: string;
   readonly page?: number;
   readonly limit?: number;
-  readonly organizationId?: string;
   readonly isActive?: boolean;
 
-  constructor(params: GetClientsQuery) {
+  constructor(params: GetOrganizationsQuery) {
     Object.assign(this, params);
   }
 }

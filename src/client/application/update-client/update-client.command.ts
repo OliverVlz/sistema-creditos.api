@@ -1,5 +1,5 @@
 export class UpdateClientCommand {
-  readonly id: number;
+  readonly id: string;
   readonly fullName?: string;
   readonly documentNumber?: string;
   readonly phone?: string;

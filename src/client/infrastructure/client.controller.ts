@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -32,8 +33,11 @@ export class ClientsController {
 
   @Post('/')
   @ApiOperation({ summary: 'Create new client' })
-  async create(@Body() body: CreateClientDto) {
-    return this.commandBus.execute(new CreateClientCommand(body));
+  async create(@Body() body: CreateClientDto, @Req() req: any) {
+    return this.commandBus.execute(new CreateClientCommand({
+      ...body,
+      createdBy: req.user.id,
+    }));
   }
 
   @Get('/')
@@ -44,14 +48,14 @@ export class ClientsController {
 
   @Get('/:id')
   @ApiOperation({ summary: 'Get client by ID' })
-  async getClientById(@Param('id') id: number) {
+  async getClientById(@Param('id') id: string) {
     return this.queryBus.execute(new GetClientByIdQuery(id));
   }
 
   @Patch('/:id')
   @ApiOperation({ summary: 'Update client' })
   async update(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() body: UpdateClientDto,
   ) {
     return this.commandBus.execute(
@@ -61,7 +65,7 @@ export class ClientsController {
 
   @Delete('/:id')
   @ApiOperation({ summary: 'Delete client' })
-  async remove(@Param('id') id: number) {
+  async remove(@Param('id') id: string) {
     return this.commandBus.execute(new DeleteClientCommand(id));
   }
 }

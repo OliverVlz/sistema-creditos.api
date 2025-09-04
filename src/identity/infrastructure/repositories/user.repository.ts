@@ -4,6 +4,7 @@ import { Repository, FindOneOptions, FindOptionsSelect } from 'typeorm';
 
 import { User } from '../entity/user.entity';
 import { UserRole } from 'src/shared/enums';
+import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
 /** Can be used to select only the specified fields from a query result */
 type UserSelect = { [key in keyof User]?: boolean };
@@ -90,17 +91,10 @@ export class UserRepository {
   }
 
   /**
-   * Nuevo método con paginación offset-based
+   * Método con paginación offset-based usando PaginationUtils
    */
-  async searchUsersWithPagination(filters: UserPaginationFilters, select?: UserSelect) {
+  async searchUsersWithPagination(filters: { role?: UserRole; terms?: string; page?: number; limit?: number; }) {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
-
-    if (select) {
-      const selectedFields = Object.keys(select)
-        .filter(key => select[key])
-        .map(key => `user.${key}`);
-      queryBuilder.select(selectedFields);
-    }
 
     if (filters.role) {
       queryBuilder.where('user.role = :role', { role: filters.role });
@@ -116,19 +110,20 @@ export class UserRepository {
 
     queryBuilder.orderBy('user.createdAt', 'DESC');
 
-    if (filters.offset) {
-      queryBuilder.offset(filters.offset);
-    }
+    const paginationOptions = PaginationUtils.createRepositoryPaginationOptions(
+      filters.page,
+      filters.limit,
+    );
 
-    if (filters.limit) {
-      queryBuilder.limit(filters.limit);
-    }
+    queryBuilder
+      .skip(paginationOptions.offset)
+      .take(paginationOptions.limit);
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      users,
-      total,
-    };
+    return PaginationUtils.createPaginatedResult(
+      { data: users, total },
+      paginationOptions,
+    );
   }
 }

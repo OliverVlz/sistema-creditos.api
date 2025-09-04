@@ -4,44 +4,40 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import { Language, UserRole } from 'src/shared/enums';
+import { UserRole } from 'src/shared/enums';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true, nullable: true })
-  email?: string;
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
 
   @Column({ nullable: true })
   phone?: string;
 
-  @Column({ nullable: true })
-  password?: string;
-
-  @Column('json')
-  profile: {
-    firstName: string;
-    lastName: string;
-    address?: object;
-    avatarUrl?: string;
-  };
-
-  @Column({
-    type: 'enum',
-    enum: Language,
-    default: Language.Spanish,
-  })
-  language: Language;
-
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.Customer,
   })
   role: UserRole;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ nullable: true })
+  createdBy?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'created_by' })
+  creator?: User;
 
   @CreateDateColumn()
   createdAt: Date;

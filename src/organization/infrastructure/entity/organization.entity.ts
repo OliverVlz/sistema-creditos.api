@@ -8,33 +8,17 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
-import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 
-@Entity('clients')
-export class Client {
+@Entity('organizations')
+export class Organization {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'first_name' })
-  firstName: string;
-
-  @Column({ name: 'last_name' })
-  lastName: string;
-
-  @Column({ name: 'document_number', unique: true })
-  documentNumber: string;
+  @Column()
+  name: string;
 
   @Column({ nullable: true })
-  phone: string;
-
-  @Column({ nullable: true })
-  email: string;
-
-  @Column({ nullable: true })
-  address: string;
-
-  @Column({ name: 'organization_id' })
-  organizationId: string;
+  description?: string;
 
   @Column({ name: 'created_by' })
   createdBy: string;
@@ -52,15 +36,11 @@ export class Client {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Organization)
-  @JoinColumn({ name: 'organization_id' })
-  organization: Organization;
-
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   creator: User;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'updated_by' })
-  updater: User;
+  updater?: User;
 }

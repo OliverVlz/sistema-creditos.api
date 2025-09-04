@@ -3,21 +3,38 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../entity/client.entity';
 import { DomainError } from 'src/shared/domain';
+import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
 type CreateClient = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   documentNumber: string;
   phone?: string;
+  email?: string;
   address?: string;
+  organizationId: string;
+  createdBy: string;
 };
 
-type ClientPaginationFilters = {
+type UpdateClient = {
+  firstName?: string;
+  lastName?: string;
+  documentNumber?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  organizationId?: string;
+  updatedBy: string;
+  isActive?: boolean;
+};
+
+type ClientSearchData = {
   terms?: string;
+  page?: number;
   limit?: number;
-  offset?: number;
+  organizationId?: string;
+  isActive?: boolean;
 };
-
-type ClientSelect = { [key in keyof Client]?: boolean };
 
 @Injectable()
 export class ClientRepository {
@@ -33,25 +50,29 @@ export class ClientRepository {
 
   async findAll() {
     const clients = await this.clientsRepository.find({
+      relations: ['organization', 'creator', 'updater'],
       order: { createdAt: 'DESC' },
     });
     return clients;
   }
 
-  async findOne(id: number) {
-    const client = await this.clientsRepository.findOne({ where: { id } });
+  async findOne(id: string) {
+    const client = await this.clientsRepository.findOne({ 
+      where: { id },
+      relations: ['organization', 'creator', 'updater']
+    });
     if (!client) {
       throw new DomainError('CLIENT_NOT_FOUND', 'Client not found');
     }
     return client;
   }
 
-  async update(id: number, client: Partial<CreateClient>) {
+  async update(id: string, client: UpdateClient) {
     await this.clientsRepository.update(id, client);
     return this.findOne(id);
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const deleteResult = await this.clientsRepository.delete(id);
     if (deleteResult.affected === 0) {
       throw new DomainError('CLIENT_NOT_FOUND', 'Client not found');
@@ -59,61 +80,55 @@ export class ClientRepository {
   }
 
   async findByDocumentNumber(documentNumber: string) {
-    const client = await this.clientsRepository.findOne({ where: { documentNumber } });
+    const client = await this.clientsRepository.findOne({ 
+      where: { documentNumber },
+      relations: ['organization']
+    });
     return client;
   }
 
-  /**
-   * Nuevo método con paginación offset-based
-   */
-  async searchClientsWithPagination(filters: ClientPaginationFilters, select?: ClientSelect) {
-    const queryBuilder = this.clientsRepository.createQueryBuilder('client');
+  async searchClientsWithPagination(searchData: ClientSearchData) {
+    const queryBuilder = this.clientsRepository.createQueryBuilder('client')
+      .leftJoinAndSelect('client.organization', 'organization')
+      .leftJoinAndSelect('client.creator', 'creator')
+      .leftJoinAndSelect('client.updater', 'updater');
 
-    if (select) {
-      const selectedFields = Object.keys(select)
-        .filter(key => select[key])
-        .map(key => `client.${key}`);
-      queryBuilder.select(selectedFields);
+    if (searchData.terms) {
+      const term = searchData.terms.toLowerCase().trim();
+      queryBuilder.andWhere(
+        `(LOWER(client.firstName) LIKE :term OR LOWER(client.lastName) LIKE :term OR LOWER(client.documentNumber) LIKE :term OR LOWER(client.email) LIKE :term)`,
+        { term: `%${term}%` }
+      );
     }
 
-    if (filters.terms) {
-      const term = filters.terms.toLowerCase().trim();
-
-      queryBuilder
-        .andWhere(`(LOWER(client.fullName) LIKE :term OR LOWER(client.documentNumber) LIKE :term OR LOWER(client.phone) LIKE :term)`,
-          { term: `%${term}%` },
-        )
-        .addSelect(
-          `CASE
-            WHEN LOWER(client.fullName) = :exactTerm OR LOWER(client.documentNumber) = :exactTerm THEN 1
-            WHEN LOWER(client.fullName) LIKE :startsWithTerm OR LOWER(client.documentNumber) LIKE :startsWithTerm THEN 2
-            ELSE 3
-          END`,
-          'relevance',
-        )
-        .orderBy('relevance', 'ASC')
-        .addOrderBy('client.createdAt', 'DESC')
-        .setParameters({
-          exactTerm: term,
-          startsWithTerm: `${term}%`,
-        });
-    } else {
-      queryBuilder.orderBy('client.createdAt', 'DESC');
+    if (searchData.organizationId) {
+      queryBuilder.andWhere('client.organizationId = :organizationId', { 
+        organizationId: searchData.organizationId 
+      });
     }
 
-    if (filters.offset) {
-      queryBuilder.offset(filters.offset);
+    if (searchData.isActive !== undefined) {
+      queryBuilder.andWhere('client.isActive = :isActive', { 
+        isActive: searchData.isActive 
+      });
     }
 
-    if (filters.limit) {
-      queryBuilder.limit(filters.limit);
-    }
+    queryBuilder.orderBy('client.createdAt', 'DESC');
 
-    const [clients, total] = await queryBuilder.getManyAndCount();
+    const paginationOptions = PaginationUtils.createRepositoryPaginationOptions(
+      searchData.page,
+      searchData.limit,
+    );
 
-    return {
-      clients,
-      total,
-    };
+    queryBuilder
+      .skip(paginationOptions.offset)
+      .take(paginationOptions.limit);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return PaginationUtils.createPaginatedResult(
+      { data, total },
+      paginationOptions,
+    );
   }
 }
