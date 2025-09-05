@@ -5,28 +5,15 @@ import { Client } from '../entity/client.entity';
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
-type CreateClient = {
+type CreateClientData = Omit<Partial<Client>, 'id' | 'createdAt' | 'updatedAt'> & {
   firstName: string;
   lastName: string;
   documentNumber: string;
-  phone?: string;
-  email?: string;
-  address?: string;
   organizationId: string;
   createdBy: string;
 };
 
-type UpdateClient = {
-  firstName?: string;
-  lastName?: string;
-  documentNumber?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  organizationId?: string;
-  updatedBy: string;
-  isActive?: boolean;
-};
+type UpdateClientData = Omit<Partial<Client>, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>;
 
 type ClientSearchData = {
   terms?: string;
@@ -43,7 +30,7 @@ export class ClientRepository {
     private clientsRepository: Repository<Client>,
   ) {}
 
-  async create(client: CreateClient) {
+  async create(client: CreateClientData) {
     const createdClient = this.clientsRepository.create(client);
     return this.clientsRepository.save(createdClient);
   }
@@ -67,7 +54,7 @@ export class ClientRepository {
     return client;
   }
 
-  async update(id: string, client: UpdateClient) {
+  async update(id: string, client: UpdateClientData) {
     await this.clientsRepository.update(id, client);
     return this.findOne(id);
   }

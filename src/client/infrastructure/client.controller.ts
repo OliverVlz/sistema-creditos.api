@@ -14,7 +14,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
-import { GetClientDto } from './dto/get-client.dto';
+import { GetClientsDto } from './dto/get-clients.dto';
 
 import { CreateClientCommand } from '../application/create-client/create-client.command';
 import { GetClientsQuery } from '../application/get-clients/get-clients.query';
@@ -42,7 +42,7 @@ export class ClientsController {
 
   @Get('/')
   @ApiOperation({ summary: 'Search clients with optional filters and pagination' })
-  async searchClients(@Query() query: GetClientDto) {
+  async searchClients(@Query() query: GetClientsDto) {
     return this.queryBus.execute(new GetClientsQuery(query));
   }
 

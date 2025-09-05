@@ -5,18 +5,15 @@ import { Organization } from '../entity/organization.entity';
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
-type CreateOrganization = {
+type CreateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | 'updatedAt'> & {
   name: string;
-  description?: string;
+  baseInterestRate: number;
+  discountRate: number;
+  taxRate: number;
   createdBy: string;
 };
 
-type UpdateOrganization = {
-  name?: string;
-  description?: string;
-  updatedBy: string;
-  isActive?: boolean;
-};
+type UpdateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>;
 
 type OrganizationSearchData = {
   terms?: string;
@@ -32,7 +29,7 @@ export class OrganizationRepository {
     private organizationRepository: Repository<Organization>,
   ) {}
 
-  async create(organization: CreateOrganization) {
+  async create(organization: CreateOrganizationData) {
     const createdOrganization = this.organizationRepository.create(organization);
     return this.organizationRepository.save(createdOrganization);
   }
@@ -56,7 +53,7 @@ export class OrganizationRepository {
     return organization;
   }
 
-  async update(id: string, organization: UpdateOrganization) {
+  async update(id: string, organization: UpdateOrganizationData) {
     await this.organizationRepository.update(id, organization);
     return this.findOne(id);
   }

@@ -18,6 +18,9 @@ import { ClientRouteBuilder } from './shared/utils';
 import { JwtAuthGuard } from './shared/guards/jwt-auth.guard';
 import { MailModule } from './shared/mail';
 import { IdentityModule } from './identity/infrastructure/identity.module';
+import { ClientsModule } from './client/infrastructure/client.module';
+import { OrganizationModule } from './organization/infrastructure/organization.module';
+import { LoanModule } from './loan/infrastructure/loan.module';
 import { JwtStrategy } from './shared/strategies/jwt.strategy';
 
 @Module({
@@ -38,6 +41,9 @@ import { JwtStrategy } from './shared/strategies/jwt.strategy';
       useFactory: (config: ConfigService) => config.get('recaptcha'),
     }),
     IdentityModule,
+    ClientsModule,
+    OrganizationModule,
+    LoanModule,
     MailModule.forRootAsync({
       imports: [ConfigModule, HttpModule],
       inject: [ConfigService],

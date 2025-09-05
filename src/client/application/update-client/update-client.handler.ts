@@ -21,14 +21,8 @@ export class UpdateClientHandler implements ICommandHandler<UpdateClientCommand>
       }
     }
 
-    const clientData = {
-      fullName: command.fullName,
-      documentNumber: command.documentNumber,
-      phone: command.phone,
-      address: command.address,
-    };
+    const { id, ...updateData } = command;
 
-    const updatedClient = await this.clientRepository.update(command.id, clientData as Client);
-    return updatedClient;
+    return this.clientRepository.update(id, updateData);
   }
 }

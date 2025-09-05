@@ -20,6 +20,15 @@ export class Organization {
   @Column({ nullable: true })
   description?: string;
 
+  @Column({ name: 'base_interest_rate', type: 'decimal', precision: 5, scale: 2 })
+  baseInterestRate: number;
+
+  @Column({ name: 'discount_rate', type: 'decimal', precision: 5, scale: 2 })
+  discountRate: number;
+
+  @Column({ name: 'tax_rate', type: 'decimal', precision: 5, scale: 2 })
+  taxRate: number;
+
   @Column({ name: 'created_by' })
   createdBy: string;
 
