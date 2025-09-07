@@ -11,6 +11,6 @@ export class IsClientGuard implements CanActivate {
       return false;
     }
 
-    return user.role === UserRole.Client;
+    return user.role === UserRole.CLIENT;
   }
 }

@@ -6,6 +6,13 @@ import { UserRole } from 'src/shared/enums';
 type ExtendedUserEntity = UserEntity & {
   createdAt?: Date;
   updatedAt?: Date;
+  profile?: {
+    firstName: string;
+    lastName: string;
+    address?: object;
+    avatarUrl?: string;
+  };
+  language?: Language;
 };
 type ExtendedUserParams = object;
 
@@ -14,6 +21,7 @@ export class User {
   readonly firstName: string;
   readonly lastName: string;
   readonly email?: string;
+  readonly documentNumber?: string;
   readonly phone?: string;
   readonly address?: object;
   readonly language?: Language;
@@ -27,6 +35,7 @@ export class User {
     firstName: string;
     lastName: string;
     email?: string;
+    documentNumber?: string;
     phone?: string;
     address?: object;
     language?: Language;
@@ -39,6 +48,7 @@ export class User {
     this.firstName = params.firstName;
     this.lastName = params.lastName;
     this.email = params.email;
+    this.documentNumber = params.documentNumber;
     this.phone = params.phone;
     this.address = params.address || {};
     this.language = params.language;
@@ -54,13 +64,14 @@ export class User {
   ): User {
     return new User({
       id: entity.id,
-      firstName: entity.profile.firstName,
-      lastName: entity.profile.lastName,
+      firstName: entity.profile?.firstName || '',
+      lastName: entity.profile?.lastName || '',
       email: entity.email,
+      documentNumber: entity.documentNumber,
       phone: entity.phone,
-      address: entity.profile.address,
+      address: entity.profile?.address || {},
       language: entity.language,
-      avatarUrl: entity.profile.avatarUrl,
+      avatarUrl: entity.profile?.avatarUrl,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       role: entity.role,
@@ -72,6 +83,7 @@ export class User {
     return {
       id: this.id,
       email: this.email,
+      documentNumber: this.documentNumber,
       phone: this.phone,
       profile: {
         firstName: this.firstName,

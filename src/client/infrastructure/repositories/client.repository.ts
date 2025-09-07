@@ -6,9 +6,7 @@ import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
 type CreateClientData = Omit<Partial<Client>, 'id' | 'createdAt' | 'updatedAt'> & {
-  firstName: string;
-  lastName: string;
-  documentNumber: string;
+  userId: string;
   organizationId: string;
   createdBy: string;
 };
@@ -37,7 +35,7 @@ export class ClientRepository {
 
   async findAll() {
     const clients = await this.clientsRepository.find({
-      relations: ['organization', 'creator', 'updater'],
+      relations: ['organization', 'creator', 'updater', 'user'],
       order: { createdAt: 'DESC' },
     });
     return clients;
@@ -46,7 +44,7 @@ export class ClientRepository {
   async findOne(id: string) {
     const client = await this.clientsRepository.findOne({ 
       where: { id },
-      relations: ['organization', 'creator', 'updater']
+      relations: ['organization', 'creator', 'updater', 'user', 'user.profile']
     });
     if (!client) {
       throw new DomainError('CLIENT_NOT_FOUND', 'Client not found');
@@ -66,10 +64,12 @@ export class ClientRepository {
     }
   }
 
-  async findByDocumentNumber(documentNumber: string) {
+  async findByUserDocumentNumber(documentNumber: string) {
     const client = await this.clientsRepository.findOne({ 
-      where: { documentNumber },
-      relations: ['organization']
+      where: { 
+        user: { documentNumber } 
+      },
+      relations: ['organization', 'user', 'user.profile']
     });
     return client;
   }
@@ -78,12 +78,14 @@ export class ClientRepository {
     const queryBuilder = this.clientsRepository.createQueryBuilder('client')
       .leftJoinAndSelect('client.organization', 'organization')
       .leftJoinAndSelect('client.creator', 'creator')
-      .leftJoinAndSelect('client.updater', 'updater');
+      .leftJoinAndSelect('client.updater', 'updater')
+      .leftJoinAndSelect('client.user', 'user')
+      .leftJoinAndSelect('user.profile', 'profile');
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        `(LOWER(client.firstName) LIKE :term OR LOWER(client.lastName) LIKE :term OR LOWER(client.documentNumber) LIKE :term OR LOWER(client.email) LIKE :term)`,
+        `(LOWER(profile.firstName) LIKE :term OR LOWER(profile.lastName) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term)`,
         { term: `%${term}%` }
       );
     }

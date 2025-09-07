@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
 import { DomainError } from 'src/shared/domain';
 import { HashService } from 'src/shared/hash';
+import { UserRole } from 'src/shared/enums/user-role.enum';
 
 import { User } from 'src/identity/domain/user.model';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
@@ -13,7 +14,7 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
   constructor(
     private readonly hashService: HashService,
     private readonly userRepository: UserRepository,
-  ) {}
+  ) { }
 
   async execute(command: CreateUserCommand) {
     const formattedUser = await this.formatUser(command);
@@ -22,7 +23,7 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
       const user = await this.userRepository.create(formattedUser);
       return User.fromModel(user);
     } catch (e) {
-      if (e.code === 11000) {
+      if (e.code === '23505' || e.code === 'ER_DUP_ENTRY') {
         throw new DomainError(
           'USER_ALREADY_REGISTERED',
           'User already exists.',
@@ -37,6 +38,10 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
     return {
       email: data.email,
       password: await this.hashService.hash(data.password),
+      documentNumber: data.documentNumber,
+      phone: data.phone,
+      role: UserRole.CLIENT, // Siempre CLIENT para registro público
+      language: data.language,
       profile: {
         firstName: data.firstName,
         lastName: data.lastName,

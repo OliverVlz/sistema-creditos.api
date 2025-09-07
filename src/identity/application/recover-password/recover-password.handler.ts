@@ -11,13 +11,12 @@ import { RecoverPasswordEmail } from './recover-password.email';
 
 @CommandHandler(RecoverPasswordCommand)
 export class RecoverPasswordHandler
-  implements ICommandHandler<RecoverPasswordCommand>
-{
+  implements ICommandHandler<RecoverPasswordCommand> {
   constructor(
     private readonly clientRoute: ClientRouteBuilder,
     private readonly mailService: MailService,
     private readonly userRepository: UserRepository,
-  ) {}
+  ) { }
 
   async execute(command: RecoverPasswordCommand) {
     /* This is not a final implementation, only an example use case for sending an email */
@@ -31,8 +30,8 @@ export class RecoverPasswordHandler
       email: user.email,
       data: {
         talentName: concatStrings(
-          user.profile.firstName,
-          user.profile.lastName,
+          user.profile?.firstName || '',
+          user.profile?.lastName || '',
         ),
         link: this.clientRoute.build('/reset-password'),
         headerUrl: this.clientRoute.build(

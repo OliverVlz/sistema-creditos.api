@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UpdateClientCommand } from './update-client.command';
 import { ClientRepository } from '../../infrastructure/repositories/client.repository';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Client } from '../../infrastructure/entity/client.entity';
 
 @CommandHandler(UpdateClientCommand)
@@ -12,13 +12,6 @@ export class UpdateClientHandler implements ICommandHandler<UpdateClientCommand>
     const existingClient = await this.clientRepository.findOne(command.id);
     if (!existingClient) {
       throw new NotFoundException('Cliente no encontrado');
-    }
-
-    if (command.documentNumber && command.documentNumber !== existingClient.documentNumber) {
-      const clientWithSameDocument = await this.clientRepository.findByDocumentNumber(command.documentNumber);
-      if (clientWithSameDocument) {
-        throw new ConflictException('Ya existe un cliente con ese número de documento');
-      }
     }
 
     const { id, ...updateData } = command;

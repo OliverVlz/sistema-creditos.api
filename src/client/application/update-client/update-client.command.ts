@@ -1,9 +1,8 @@
 export class UpdateClientCommand {
   readonly id: string;
-  readonly fullName?: string;
-  readonly documentNumber?: string;
-  readonly phone?: string;
-  readonly address?: string;
+  readonly creditScore?: number;
+  readonly maxCreditLimit?: number;
+  readonly riskLevel?: string;
 
   constructor(params: UpdateClientCommand) {
     Object.assign(this, params);

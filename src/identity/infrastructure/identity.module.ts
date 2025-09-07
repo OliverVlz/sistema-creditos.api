@@ -35,6 +35,6 @@ import { UsersController } from './users.controller';
     RecoverPasswordHandler,
     UserRepository,
   ],
-  exports: [UserRepository],
+  exports: [UserRepository, HashService],
 })
 export class IdentityModule {}

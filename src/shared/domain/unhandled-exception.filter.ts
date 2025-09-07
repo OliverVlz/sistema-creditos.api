@@ -101,8 +101,8 @@ export class UnhandledExceptionFilter implements ExceptionFilter {
     const { url, body, query } = request;
     return {
       url,
-      ...(Object.keys(body).length !== 0 && { body }),
-      ...(Object.keys(query).length !== 0 && { query }),
+      ...(body && Object.keys(body).length !== 0 && { body }),
+      ...(query && Object.keys(query).length !== 0 && { query }),
     };
   }
 

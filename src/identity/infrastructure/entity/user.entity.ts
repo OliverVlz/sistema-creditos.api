@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { UserRole } from 'src/shared/enums';
+import { UserRole, Language } from 'src/shared/enums';
 
 @Entity('users')
 export class User {
@@ -20,8 +20,29 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ name: 'document_number', unique: true, nullable: true })
+  documentNumber?: string;
+
   @Column({ nullable: true })
   phone?: string;
+
+  @Column({
+    type: 'json',
+    nullable: true,
+  })
+  profile?: {
+    firstName: string;
+    lastName: string;
+    address?: object;
+    avatarUrl?: string;
+  };
+
+  @Column({
+    type: 'enum',
+    enum: Language,
+    nullable: true,
+  })
+  language?: Language;
 
   @Column({
     type: 'enum',

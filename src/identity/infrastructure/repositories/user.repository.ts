@@ -21,7 +21,7 @@ export class UserRepository {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(data: Partial<User>) {
     const user = this.userRepository.create(data);
@@ -30,7 +30,7 @@ export class UserRepository {
 
   async findUsers(role?: UserRole, terms?: string) {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
-    
+
     if (role) {
       queryBuilder.where({ role });
     }
@@ -38,13 +38,13 @@ export class UserRepository {
     if (terms) {
       const searchTerm = terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        '(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
+        '(LOWER(JSON_EXTRACT(user.profile, "$.firstName")) LIKE :searchTerm OR LOWER(JSON_EXTRACT(user.profile, "$.lastName")) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
       );
     }
 
     queryBuilder.orderBy('user.createdAt', 'DESC');
-    
+
     return queryBuilder.getMany();
   }
 
@@ -103,7 +103,7 @@ export class UserRepository {
     if (filters.terms) {
       const searchTerm = filters.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        '(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
+        '(LOWER(JSON_EXTRACT(user.profile, "$.firstName")) LIKE :searchTerm OR LOWER(JSON_EXTRACT(user.profile, "$.lastName")) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
         { searchTerm: `%${searchTerm}%` },
       );
     }

@@ -1,24 +1,20 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsNumber, IsString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateClientDto {
-  @ApiProperty({ example: 'Juan Pérez García', required: false })
+  @ApiProperty({ example: 750, required: false, description: 'Credit score (300-850)' })
   @IsOptional()
-  @IsString()
-  fullName?: string;
+  @IsNumber()
+  creditScore?: number;
 
-  @ApiProperty({ example: '12345678', required: false })
+  @ApiProperty({ example: 50000.00, required: false, description: 'Maximum credit limit' })
   @IsOptional()
-  @IsString()
-  documentNumber?: string;
+  @IsNumber()
+  maxCreditLimit?: number;
 
-  @ApiProperty({ example: '3001234567', required: false })
+  @ApiProperty({ example: 'LOW', required: false, description: 'Risk level: LOW, MEDIUM, HIGH' })
   @IsOptional()
   @IsString()
-  phone?: string;
-
-  @ApiProperty({ example: 'Calle 123 #45-67', required: false })
-  @IsOptional()
-  @IsString()
-  address?: string;
+  @IsEnum(['LOW', 'MEDIUM', 'HIGH'])
+  riskLevel?: string;
 }

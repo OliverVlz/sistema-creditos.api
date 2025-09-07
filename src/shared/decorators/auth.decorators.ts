@@ -27,7 +27,7 @@ export const AdvisorOnly = () =>
 // Decorador compuesto para staff (admin + asesor)
 export const StaffOnly = () =>
   applyDecorators(
-    Roles(UserRole.Admin, UserRole.Advisor),
+    Roles(UserRole.ADMIN, UserRole.ADVISOR),
     ApiBearerAuth(),
   );
 

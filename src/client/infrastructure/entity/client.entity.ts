@@ -15,26 +15,21 @@ export class Client {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'first_name' })
-  firstName: string;
-
-  @Column({ name: 'last_name' })
-  lastName: string;
-
-  @Column({ name: 'document_number', unique: true })
-  documentNumber: string;
-
-  @Column({ nullable: true })
-  phone: string;
-
-  @Column({ nullable: true })
-  email: string;
-
-  @Column({ nullable: true })
-  address: string;
+  @Column({ name: 'user_id', unique: true })
+  userId: string;
 
   @Column({ name: 'organization_id' })
   organizationId: string;
+
+  // Campos específicos del dominio de créditos
+  @Column({ name: 'credit_score', nullable: true })
+  creditScore: number;
+
+  @Column({ name: 'max_credit_limit', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  maxCreditLimit: number;
+
+  @Column({ name: 'risk_level', nullable: true })
+  riskLevel: string;
 
   @Column({ name: 'created_by' })
   createdBy: string;
@@ -52,6 +47,10 @@ export class Client {
   updatedAt: Date;
 
   // Relations
+  @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
   @ManyToOne(() => Organization)
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;

@@ -21,7 +21,7 @@ export class CaslAbilityFactory {
       createMongoAbility,
     );
 
-    if (user.role !== UserRole.Admin) {
+    if (user.role !== UserRole.ADMIN) {
       const forbiddenFields = ['role', 'createdAt', 'updatedAt'];
 
       can(Actions.Update, 'User', { id: user.id });

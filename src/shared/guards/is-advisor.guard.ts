@@ -11,6 +11,6 @@ export class IsAdvisorGuard implements CanActivate {
       return false;
     }
 
-    return user.role === UserRole.Advisor;
+    return user.role === UserRole.ADVISOR;
   }
 }

@@ -5,7 +5,7 @@ import { HashService } from 'src/shared/hash/hash.service';
 import { UserRole } from 'src/shared/enums';
 
 export class UserSeeder {
-  constructor(private readonly hashService: HashService) {}
+  constructor(private readonly hashService: HashService) { }
 
   async seed(userRepository: Repository<User>) {
     const existingAdmin = await userRepository.findOne({ where: { email: 'admin@dev.com' } });
@@ -23,7 +23,7 @@ export class UserSeeder {
             address: { street: faker.location.streetAddress() },
             avatarUrl: faker.image.avatar(),
           },
-          role: UserRole.Admin,
+          role: UserRole.ADMIN,
           language: faker.helpers.arrayElement(['es', 'en']),
         } as Partial<User>
       );

@@ -11,6 +11,6 @@ export class IsAdminGuard implements CanActivate {
       return false;
     }
 
-    return user.role === UserRole.Admin;
+    return user.role === UserRole.ADMIN;
   }
 }

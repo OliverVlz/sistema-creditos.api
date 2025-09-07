@@ -1,40 +1,38 @@
-import { IsNotEmpty, IsString, IsOptional, IsEmail, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 
 export class CreateClientDto {
-  @ApiProperty({ description: 'First name of the client' })
+  @ApiProperty({ description: 'ID del usuario existente' })
   @IsNotEmpty()
   @IsString()
-  firstName: string;
-
-  @ApiProperty({ description: 'Last name of the client' })
-  @IsNotEmpty()
-  @IsString()
-  lastName: string;
-
-  @ApiProperty({ description: 'Document number (unique identifier)' })
-  @IsNotEmpty()
-  @IsString()
-  documentNumber: string;
-
-  @ApiPropertyOptional({ description: 'Phone number' })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @ApiPropertyOptional({ description: 'Email address' })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @ApiPropertyOptional({ description: 'Physical address' })
-  @IsOptional()
-  @IsString()
-  address?: string;
+  userId: string;
 
   @ApiProperty({ description: 'Organization ID' })
   @IsNotEmpty()
   @IsString()
   organizationId: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Puntaje crediticio',
+    example: 750 
+  })
+  @IsOptional()
+  @IsNumber()
+  creditScore?: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Límite máximo de crédito',
+    example: 50000 
+  })
+  @IsOptional()
+  @IsNumber()
+  maxCreditLimit?: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Nivel de riesgo',
+    example: 'LOW' 
+  })
+  @IsOptional()
+  @IsString()
+  riskLevel?: string;
 }
