@@ -1,14 +1,14 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
 import { User } from 'src/identity/domain/user.model';
-import { GetClientInfoByIdQuery } from './get-client-info-by-id.query';
+import { GetUsersClientInfoByIdQuery } from './get-users-client-info-by-id.query';
 import { UserRole } from 'src/shared/enums';
 
-@QueryHandler(GetClientInfoByIdQuery)
-export class GetClientInfoByIdHandler implements IQueryHandler<GetClientInfoByIdQuery> {
+@QueryHandler(GetUsersClientInfoByIdQuery)
+export class GetUsersClientInfoByIdHandler implements IQueryHandler<GetUsersClientInfoByIdQuery> {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(query: GetClientInfoByIdQuery) {
+  async execute(query: GetUsersClientInfoByIdQuery) {
     const result = await this.userRepository.searchUsersWithClientInfo({
       userId: query.userId,
       role: UserRole.CLIENT,

@@ -1,14 +1,14 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
 import { User } from 'src/identity/domain/user.model';
-import { GetUsersWithClientInfoQuery } from './get-users-with-client-info.query';
+import { GetUsersClientInfoQuery } from './get-users-client-info.query';
 import { UserRole } from 'src/shared/enums';
 
-@QueryHandler(GetUsersWithClientInfoQuery)
-export class GetUsersWithClientInfoHandler implements IQueryHandler<GetUsersWithClientInfoQuery> {
+@QueryHandler(GetUsersClientInfoQuery)
+export class GetUsersClientInfoHandler implements IQueryHandler<GetUsersClientInfoQuery> {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(query: GetUsersWithClientInfoQuery) {
+  async execute(query: GetUsersClientInfoQuery) {
     // ✅ Usar el método que garantiza rol CLIENT
     const secureQuery = {
       ...query,

@@ -10,8 +10,8 @@ import { AdminOrAdvisorGuard, AdminGuard, AdvisorGuard } from 'src/shared/guards
 import { CreateUserCommand } from '../application/create-user/create-user.command';
 import { LoginQuery } from '../application/login/login.query';
 import { GetUsersQuery } from '../application/get-users/get-users.query';
-import { GetUsersWithClientInfoQuery } from '../application/get-users-with-client-info/get-users-with-client-info.query';
-import { GetClientInfoByIdQuery } from '../application/get-client-info-by-id/get-client-info-by-id.query';
+import { GetUsersClientInfoQuery } from '../application/get-users-client-info/get-users-client-info.query';
+import { GetUsersClientInfoByIdQuery } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.query';
 
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -83,6 +83,16 @@ export class UsersController {
     return req.user.getUserInfo();
   }
 
+  @Get('/me/profile')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Obtener perfil completo del cliente actual',
+    description: 'Devuelve la información del usuario autenticado y su perfil de cliente (crédito, etc.). Solo accesible por el propio cliente.'
+  })
+  async getMyClientProfile(@Req() req: any) {
+    return this.queryBus.execute(new GetUsersClientInfoByIdQuery(req.user.id));
+  }
+
   @Get('/')
   @ApiBearerAuth()
   @UseGuards(AdminOrAdvisorGuard)
@@ -102,7 +112,7 @@ export class UsersController {
     description: 'Devuelve usuarios con rol CLIENT y su perfil crediticio asociado'
   })
   async getUsersWithClientInfo(@Query() query: GetUsersDto) {
-    return this.queryBus.execute(new GetUsersWithClientInfoQuery(query));
+    return this.queryBus.execute(new GetUsersClientInfoQuery(query));
   }
 
   @Get('/clients/:id')
@@ -111,7 +121,7 @@ export class UsersController {
     summary: 'Obtener información de cliente por id',
     description: 'Devuelve información de cliente (perfil crediticio, préstamos, etc) para el id indicado. Solo accesible por ADMIN, ADVISOR o el propio cliente.'
   })
-  async getClientInfoById(@Query('id') id: string, @Req() req: { user: User }) {
+  async getClientInfoById(@Query('id') id: string, @Req() req: any) {
     const currentUser = req.user;
     // Permitir solo si es admin, advisor o el propio cliente
     if (
@@ -122,6 +132,6 @@ export class UsersController {
       throw new ForbiddenException('Permisos insuficientes');
     }
     // Aquí puedes usar un query similar a GetMyClientInfoQuery pero por id
-  return this.queryBus.execute(new GetClientInfoByIdQuery(id));
+  return this.queryBus.execute(new GetUsersClientInfoByIdQuery(id));
   }
 }
