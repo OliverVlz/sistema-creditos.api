@@ -40,7 +40,7 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
       password: await this.hashService.hash(data.password),
       documentNumber: data.documentNumber,
       phone: data.phone,
-      role: UserRole.CLIENT, // Siempre CLIENT para registro público
+      role: data.role || UserRole.CLIENT, 
       language: data.language,
       profile: {
         firstName: data.firstName,

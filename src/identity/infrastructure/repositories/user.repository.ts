@@ -126,4 +126,64 @@ export class UserRepository {
       paginationOptions,
     );
   }
+
+  /**
+   * Método para obtener usuarios con información de cliente (JOIN con tabla clients)
+   */
+  async searchUsersWithClientInfo(filters: { role?: UserRole; terms?: string; page?: number; limit?: number; userId?: string; }) {
+    const queryBuilder = this.userRepository.createQueryBuilder('user')
+      .leftJoinAndSelect('clients', 'client', 'client.user_id = user.id');
+
+    if (filters.role) {
+      queryBuilder.where('user.role = :role', { role: filters.role });
+    }
+
+    if (filters.userId) {
+      queryBuilder.andWhere('user.id = :userId', { userId: filters.userId });
+    }
+
+    if (filters.terms) {
+      const searchTerm = filters.terms.toLowerCase().trim();
+      queryBuilder.andWhere(
+        '(LOWER(JSON_EXTRACT(user.profile, "$.firstName")) LIKE :searchTerm OR LOWER(JSON_EXTRACT(user.profile, "$.lastName")) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
+        { searchTerm: `%${searchTerm}%` },
+      );
+    }
+
+    queryBuilder.orderBy('user.createdAt', 'DESC');
+
+    const paginationOptions = PaginationUtils.createRepositoryPaginationOptions(
+      filters.page,
+      filters.limit,
+    );
+
+    queryBuilder
+      .skip(paginationOptions.offset)
+      .take(paginationOptions.limit);
+
+    const result = await queryBuilder.getRawAndEntities();
+    const total = await queryBuilder.getCount();
+
+    // Mapear el resultado para incluir la información del cliente
+    const usersWithClient = result.entities.map((user, index) => {
+      const raw = result.raw[index];
+      return {
+        ...user,
+        client: raw.client_id ? {
+          id: raw.client_id,
+          creditScore: raw.client_credit_score,
+          maxCreditLimit: raw.client_max_credit_limit,
+          riskLevel: raw.client_risk_level,
+          isActive: raw.client_is_active,
+          createdAt: raw.client_created_at,
+          updatedAt: raw.client_updated_at,
+        } : null
+      };
+    });
+
+    return PaginationUtils.createPaginatedResult(
+      { data: usersWithClient, total },
+      paginationOptions,
+    );
+  }
 }
