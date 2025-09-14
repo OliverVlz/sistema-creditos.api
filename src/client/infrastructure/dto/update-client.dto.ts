@@ -1,20 +1,22 @@
-import { IsOptional, IsNumber, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsNumber, IsString, IsEnum, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { EmploymentStatus } from 'src/shared/enums';
 
 export class UpdateClientDto {
-  @ApiProperty({ example: 750, required: false, description: 'Credit score (300-850)' })
-  @IsOptional()
-  @IsNumber()
-  creditScore?: number;
-
-  @ApiProperty({ example: 50000.00, required: false, description: 'Maximum credit limit' })
-  @IsOptional()
-  @IsNumber()
-  maxCreditLimit?: number;
-
-  @ApiProperty({ example: 'LOW', required: false, description: 'Risk level: LOW, MEDIUM, HIGH' })
+  @ApiProperty({ description: 'Organization ID', required: false })
   @IsOptional()
   @IsString()
-  @IsEnum(['LOW', 'MEDIUM', 'HIGH'])
-  riskLevel?: string;
+  organizationId?: string;
+
+  @ApiProperty({ description: 'Status of the client (true for active, false for inactive)', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  isActive?: boolean;
+
+  @ApiProperty({ description: 'Employment status', required: false })
+  @IsOptional()
+  @IsEnum(EmploymentStatus)
+  employmentStatus?: EmploymentStatus;
 }

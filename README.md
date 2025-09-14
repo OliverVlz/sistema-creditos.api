@@ -121,3 +121,29 @@ pnpm mail:dev            # 📧 Servidor de desarrollo para templates
 - **API Local**: http://localhost:3000
 - **Swagger**: http://localhost:3000/api
 - **Cliente Frontend**: http://localhost:5173
+
+## 📚 Documentación
+
+La documentación completa del sistema está disponible en la carpeta [`docs/`](./docs/):
+
+### **📖 Documentación Principal**
+- [**Sistema Completo**](./docs/SISTEMA_CREDITOS_DOCUMENTACION.md) - Arquitectura, entidades y flujos del sistema
+- [**Diagramas**](./docs/SISTEMA_CREDITOS_DIAGRAMA.md) - Diagramas ER, flujos y arquitectura visual
+
+### **🔄 Flujos de Usuario**
+- [**Flujo de Solicitud de Crédito**](./docs/FLUJO_SOLICITUD_CREDITO.md) - Proceso completo para solicitar créditos
+- [**Configuración Admin**](./docs/ADMIN_CONFIGURACION_DOCUMENTOS.md) - Panel de administración para configurar documentos
+
+### **🎯 Guía Rápida**
+
+**Para Desarrolladores:**
+1. Lee este README para configuración
+2. Revisa [Sistema Completo](./docs/SISTEMA_CREDITOS_DOCUMENTACION.md) para entender la arquitectura
+3. Consulta [Diagramas](./docs/SISTEMA_CREDITOS_DIAGRAMA.md) para visualizar relaciones
+
+**Para Administradores:**
+1. Lee [Configuración Admin](./docs/ADMIN_CONFIGURACION_DOCUMENTOS.md) para configurar documentos
+2. Revisa [Flujo de Solicitud](./docs/FLUJO_SOLICITUD_CREDITO.md) para entender el proceso
+
+**Para Usuarios Finales:**
+1. Consulta [Flujo de Solicitud](./docs/FLUJO_SOLICITUD_CREDITO.md) para entender cómo solicitar créditos

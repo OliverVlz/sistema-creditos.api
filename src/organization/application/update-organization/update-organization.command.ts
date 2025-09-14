@@ -1,14 +1,41 @@
-export class UpdateOrganizationCommand {
-  readonly id: string;
-  readonly name?: string;
-  readonly description?: string;
-  readonly baseInterestRate?: number;
-  readonly discountRate?: number;
-  readonly taxRate?: number;
-  readonly isActive?: boolean;
-  readonly updatedBy: string;
+import { IsUUID, IsString, IsOptional, IsNumber, Min, Max, IsBoolean } from 'class-validator';
 
-  constructor(params: UpdateOrganizationCommand) {
+export class UpdateOrganizationCommand {
+  @IsUUID()
+  readonly id: string;
+
+  @IsOptional()
+  @IsString()
+  readonly name?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  readonly baseInterestRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  readonly discountRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  readonly taxRate?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  readonly isActive?: boolean;
+
+  @IsUUID()
+  @IsOptional()
+  readonly updatedBy?: string;
+
+  constructor(id: string, params: Partial<UpdateOrganizationCommand>) {
+    this.id = id;
     Object.assign(this, params);
   }
 }

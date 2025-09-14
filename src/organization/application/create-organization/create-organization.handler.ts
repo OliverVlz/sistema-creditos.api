@@ -1,22 +1,21 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { CreateOrganizationCommand } from './create-organization.command';
 import { OrganizationRepository } from '../../infrastructure/repositories/organization.repository';
-import { Organization } from '../../infrastructure/entity/organization.entity';
+import { CreateOrganizationCommand } from './create-organization.command';
 
 @CommandHandler(CreateOrganizationCommand)
 export class CreateOrganizationHandler implements ICommandHandler<CreateOrganizationCommand> {
   constructor(private readonly organizationRepository: OrganizationRepository) {}
 
-  async execute(command: CreateOrganizationCommand): Promise<Organization> {
-    const organizationData = {
-      name: command.name,
-      description: command.description,
-      baseInterestRate: command.baseInterestRate,
-      discountRate: command.discountRate,
-      taxRate: command.taxRate,
-      createdBy: command.createdBy,
-    };
+  async execute(command: CreateOrganizationCommand) {
+    const { name, baseInterestRate, discountRate, taxRate, createdBy } = command;
 
-    return this.organizationRepository.create(organizationData);
+    // Asegúrate de que solo se pasen los campos relevantes a la creación de la organización
+    return await this.organizationRepository.create({
+      name,
+      baseInterestRate,
+      discountRate,
+      taxRate,
+      createdBy,
+    });
   }
 }

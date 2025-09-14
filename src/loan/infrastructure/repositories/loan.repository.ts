@@ -4,31 +4,51 @@ import { Repository } from 'typeorm';
 import { Loan, LoanStatus } from '../entity/loan.entity';
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
+import { NotFoundException } from '@nestjs/common';
 
-type CreateLoanData = Omit<Partial<Loan>, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'> & {
+type CreateLoanData = {
   loanNumber: string;
   clientId: string;
+  loanTypeId: string;
   organizationId: string;
-  amount: number;
+  amountRequested: number;
   interestRate: number;
   termMonths: number;
   monthlyPayment: number;
+  status: LoanStatus;
   createdBy: string;
+  notes?: string;
 };
 
-type UpdateLoanData = Omit<Partial<Loan>, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdBy'>;
+type UpdateLoanData = Partial<Pick<Loan, 
+  'clientId' |
+  'loanTypeId' |
+  'organizationId' |
+  'amountRequested' |
+  'interestRate' |
+  'termMonths' |
+  'monthlyPayment' |
+  'totalAmount' |
+  'processingFee' |
+  'status' |
+  'rejectionReason' |
+  'approvedBy' |
+  'approvedAt' |
+  'signedAt' |
+  'disbursedAt' |
+  'updatedBy'
+>>;
 
 type LoanSearchData = {
   terms?: string;
   page?: number;
   limit?: number;
   clientId?: string;
+  loanTypeId?: string;
   organizationId?: string;
+  loanNumber?: string;
   status?: LoanStatus;
-  startDateFrom?: string;
-  startDateTo?: string;
-  createdDateFrom?: string;
-  createdDateTo?: string;
+  isActive?: boolean;
 };
 
 @Injectable()
@@ -38,62 +58,47 @@ export class LoanRepository {
     private loansRepository: Repository<Loan>,
   ) {}
 
-  async create(loan: CreateLoanData) {
-    const createdLoan = this.loansRepository.create(loan);
-    return this.loansRepository.save(createdLoan);
-  }
-
-  async findAll() {
-    const loans = await this.loansRepository.find({
-      relations: ['client', 'organization', 'creator', 'updater', 'approver'],
+  async generateLoanNumber(): Promise<string> {
+    const lastLoan = await this.loansRepository.findOne({ 
       order: { createdAt: 'DESC' },
+      select: ['loanNumber']
     });
-    return loans;
-  }
-
-  async findOne(id: string) {
-    const loan = await this.loansRepository.findOne({ 
-      where: { id },
-      relations: ['client', 'organization', 'creator', 'updater', 'approver']
-    });
-    if (!loan) {
-      throw new DomainError('LOAN_NOT_FOUND', 'Loan not found');
+    if (lastLoan) {
+      const lastNumber = parseInt(lastLoan.loanNumber.split('-')[1]);
+      return `LOAN-${(lastNumber + 1).toString().padStart(6, '0')}`;
     }
-    return loan;
+    return 'LOAN-000001';
   }
 
-  async update(id: string, loan: UpdateLoanData) {
-    await this.loansRepository.update(id, loan);
+  async createLoan(loanData: CreateLoanData): Promise<Loan> {
+    const newLoan = this.loansRepository.create(loanData);
+    return this.loansRepository.save(newLoan);
+  }
+
+  async updateLoan(id: string, updateData: UpdateLoanData): Promise<Loan> {
+    await this.loansRepository.update(id, updateData);
     return this.findOne(id);
   }
 
-  async softDelete(id: string, deletedBy: string) {
-    // First check if loan exists
-    const loan = await this.findOne(id);
-    
-    // Update the loan with soft delete information
-    await this.loansRepository.update(id, {
-      updatedBy: deletedBy,
-    });
-    
-    // Perform soft delete
-    const deleteResult = await this.loansRepository.softDelete(id);
-    if (deleteResult.affected === 0) {
-      throw new DomainError('LOAN_NOT_FOUND', 'Loan not found');
-    }
+  async softDelete(id: string, deletedBy: string): Promise<void> {
+    await this.loansRepository.softRemove({ id } as Loan);
   }
 
-  async findByLoanNumber(loanNumber: string) {
+  async findOne(id: string): Promise<Loan> {
     const loan = await this.loansRepository.findOne({ 
-      where: { loanNumber },
-      relations: ['client', 'organization']
+      where: { id },
+      relations: ['client', 'loanType', 'organization', 'creator', 'updater', 'approver']
     });
+    if (!loan) {
+      throw new NotFoundException('Loan not found');
+    }
     return loan;
   }
 
   async searchLoansWithPagination(searchData: LoanSearchData) {
     const queryBuilder = this.loansRepository.createQueryBuilder('loan')
       .leftJoinAndSelect('loan.client', 'client')
+      .leftJoinAndSelect('loan.loanType', 'loanType') // Nueva relación
       .leftJoinAndSelect('loan.organization', 'organization')
       .leftJoinAndSelect('loan.creator', 'creator')
       .leftJoinAndSelect('loan.updater', 'updater')
@@ -102,51 +107,33 @@ export class LoanRepository {
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        `(LOWER(loan.loanNumber) LIKE :term OR LOWER(client.firstName) LIKE :term OR LOWER(client.lastName) LIKE :term OR LOWER(client.documentNumber) LIKE :term)`,
+        `(LOWER(loan.loanNumber) LIKE :term OR LOWER(loan.notes) LIKE :term)`,
         { term: `%${term}%` }
       );
     }
 
     if (searchData.clientId) {
-      queryBuilder.andWhere('loan.clientId = :clientId', { 
-        clientId: searchData.clientId 
-      });
+      queryBuilder.andWhere('loan.clientId = :clientId', { clientId: searchData.clientId });
+    }
+
+    if (searchData.loanTypeId) {
+      queryBuilder.andWhere('loan.loanTypeId = :loanTypeId', { loanTypeId: searchData.loanTypeId });
     }
 
     if (searchData.organizationId) {
-      queryBuilder.andWhere('loan.organizationId = :organizationId', { 
-        organizationId: searchData.organizationId 
-      });
+      queryBuilder.andWhere('loan.organizationId = :organizationId', { organizationId: searchData.organizationId });
+    }
+
+    if (searchData.loanNumber) {
+      queryBuilder.andWhere('LOWER(loan.loanNumber) LIKE :loanNumber', { loanNumber: `%${searchData.loanNumber.toLowerCase()}%` });
     }
 
     if (searchData.status) {
-      queryBuilder.andWhere('loan.status = :status', { 
-        status: searchData.status 
-      });
+      queryBuilder.andWhere('loan.status = :status', { status: searchData.status });
     }
 
-    if (searchData.startDateFrom) {
-      queryBuilder.andWhere('loan.startDate >= :startDateFrom', { 
-        startDateFrom: searchData.startDateFrom 
-      });
-    }
-
-    if (searchData.startDateTo) {
-      queryBuilder.andWhere('loan.startDate <= :startDateTo', { 
-        startDateTo: searchData.startDateTo 
-      });
-    }
-
-    if (searchData.createdDateFrom) {
-      queryBuilder.andWhere('loan.createdAt >= :createdDateFrom', { 
-        createdDateFrom: searchData.createdDateFrom 
-      });
-    }
-
-    if (searchData.createdDateTo) {
-      queryBuilder.andWhere('loan.createdAt <= :createdDateTo', { 
-        createdDateTo: searchData.createdDateTo 
-      });
+    if (searchData.isActive !== undefined) {
+      queryBuilder.andWhere('loan.isActive = :isActive', { isActive: searchData.isActive });
     }
 
     queryBuilder.orderBy('loan.createdAt', 'DESC');
@@ -166,25 +153,5 @@ export class LoanRepository {
       { data, total },
       paginationOptions,
     );
-  }
-
-  async generateLoanNumber(): Promise<string> {
-    const currentYear = new Date().getFullYear();
-    const prefix = `LOAN-${currentYear}-`;
-    
-    // Find the last loan number for this year
-    const lastLoan = await this.loansRepository
-      .createQueryBuilder('loan')
-      .where('loan.loanNumber LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('loan.loanNumber', 'DESC')
-      .getOne();
-
-    let nextNumber = 1;
-    if (lastLoan) {
-      const lastNumber = lastLoan.loanNumber.split('-').pop();
-      nextNumber = parseInt(lastNumber || '0') + 1;
-    }
-
-    return `${prefix}${nextNumber.toString().padStart(6, '0')}`;
   }
 }

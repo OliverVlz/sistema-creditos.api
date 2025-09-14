@@ -1,12 +1,13 @@
 export class CreateLoanCommand {
   readonly clientId: string;
+  readonly loanTypeId: string;
   readonly organizationId: string;
-  readonly amount: number;
+  readonly amountRequested: number; 
   readonly interestRate: number;
   readonly termMonths: number;
-  readonly startDate?: string;
-  readonly notes?: string;
+  readonly monthlyPayment: number;
   readonly createdBy: string;
+  readonly notes?: string; 
 
   constructor(params: CreateLoanCommand) {
     Object.assign(this, params);

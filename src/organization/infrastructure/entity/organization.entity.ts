@@ -17,9 +17,6 @@ export class Organization {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
-  description?: string;
-
   @Column({ name: 'base_interest_rate', type: 'decimal', precision: 5, scale: 2 })
   baseInterestRate: number;
 

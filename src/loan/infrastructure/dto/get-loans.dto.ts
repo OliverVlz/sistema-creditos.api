@@ -1,47 +1,43 @@
-import { IsOptional, IsString, IsEnum, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsNumberString, IsUUID, IsEnum, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { PaginationDto } from 'src/shared/dto';
+import { Transform } from 'class-transformer';
 import { LoanStatus } from '../entity/loan.entity';
 
 export class GetLoansDto extends PaginationDto {
-  @ApiPropertyOptional({ description: 'Search term for loan number or client name' })
+  @ApiPropertyOptional({ description: 'ID del cliente para filtrar' })
   @IsOptional()
-  @IsString()
-  terms?: string;
-
-  @ApiPropertyOptional({ description: 'Filter by client ID' })
-  @IsOptional()
-  @IsString()
+  @IsUUID()
   clientId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by organization ID' })
+  @ApiPropertyOptional({ description: 'ID del tipo de préstamo para filtrar' })
   @IsOptional()
-  @IsString()
+  @IsUUID()
+  loanTypeId?: string;
+
+  @ApiPropertyOptional({ description: 'ID de la organización para filtrar' })
+  @IsOptional()
+  @IsUUID()
   organizationId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by loan status', enum: LoanStatus })
+  @ApiPropertyOptional({ description: 'Número de préstamo para filtrar' })
+  @IsOptional()
+  @IsString()
+  loanNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Estado del préstamo para filtrar', enum: LoanStatus })
   @IsOptional()
   @IsEnum(LoanStatus)
   status?: LoanStatus;
 
-  @ApiPropertyOptional({ description: 'Filter by start date from' })
+  @ApiPropertyOptional({ description: 'Términos de búsqueda (número de préstamo, notas, etc.)' })
   @IsOptional()
-  @IsDateString()
-  startDateFrom?: string;
+  @IsString()
+  terms?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by start date to' })
+  @ApiPropertyOptional({ description: 'Filtrar por si está activo' })
   @IsOptional()
-  @IsDateString()
-  startDateTo?: string;
-
-  @ApiPropertyOptional({ description: 'Filter by created date from' })
-  @IsOptional()
-  @IsDateString()
-  createdDateFrom?: string;
-
-  @ApiPropertyOptional({ description: 'Filter by created date to' })
-  @IsOptional()
-  @IsDateString()
-  createdDateTo?: string;
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  isActive?: boolean;
 }

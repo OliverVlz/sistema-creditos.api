@@ -8,7 +8,7 @@ import { Client } from '../../infrastructure/entity/client.entity';
 export class UpdateClientHandler implements ICommandHandler<UpdateClientCommand> {
   constructor(private readonly clientRepository: ClientRepository) {}
 
-  async execute(command: UpdateClientCommand): Promise<Client> {
+  async execute(command: UpdateClientCommand) {
     const existingClient = await this.clientRepository.findOne(command.id);
     if (!existingClient) {
       throw new NotFoundException('Cliente no encontrado');

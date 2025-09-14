@@ -10,8 +10,8 @@ import { ClientRouteBuilder } from 'src/shared/utils';
 import { CreateUserHandler } from '../application/create-user/create-user.handler';
 import { LoginHandler } from '../application/login/login.handler';
 import { GetUsersHandler } from '../application/get-users/get-users.handler';
-import { GetUsersWithClientInfoHandler } from '../application/get-users-with-client-info/get-users-with-client-info.handler';
-import { GetClientInfoByIdHandler } from '../application/get-client-info-by-id/get-client-info-by-id.handler';
+import { GetUsersClientInfoHandler } from '../application/get-users-client-info/get-users-client-info.handler';
+import { GetUsersClientInfoByIdHandler } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.handler';
 import { RecoverPasswordHandler } from '../application/recover-password/recover-password.handler';
 
 import { User } from './entity/user.entity';
@@ -32,8 +32,8 @@ import { UsersController } from './users.controller';
     ClientRouteBuilder,
     CreateUserHandler,
     GetUsersHandler,
-    GetUsersWithClientInfoHandler,
-  GetClientInfoByIdHandler,
+    GetUsersClientInfoHandler,
+    GetUsersClientInfoByIdHandler,
     HashService,
     LoginHandler,
     RecoverPasswordHandler,

@@ -41,14 +41,8 @@ export class CreateClientHandler implements ICommandHandler<CreateClientCommand>
       }
 
       // Crear el registro de cliente
-      return await this.clientRepository.create({
-        userId: command.userId,
-        organizationId: command.organizationId,
-        creditScore: command.creditScore,
-        maxCreditLimit: command.maxCreditLimit,
-        riskLevel: command.riskLevel,
-        createdBy: command.createdBy,
-      });
+      return await this.clientRepository.create(command);
+      
     } catch (error) {
       if (error instanceof QueryFailedError) {
         // Código de error de clave duplicada para PostgreSQL es '23505'

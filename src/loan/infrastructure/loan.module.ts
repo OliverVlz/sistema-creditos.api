@@ -12,6 +12,10 @@ import { GetLoanByIdHandler } from '../application/get-loan-by-id/get-loan-by-id
 import { UpdateLoanHandler } from '../application/update-loan/update-loan.handler';
 import { SoftDeleteLoanHandler } from '../application/soft-delete-loan/soft-delete-loan.handler';
 
+import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
+import { OrganizationRepository } from 'src/organization/infrastructure/repositories/organization.repository';
+import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
+
 const CommandHandlers = [
   CreateLoanHandler,
   UpdateLoanHandler,
@@ -23,6 +27,13 @@ const QueryHandlers = [
   GetLoanByIdHandler,
 ];
 
+const Repositories = [
+  LoanRepository,
+  ClientRepository,
+  OrganizationRepository,
+  UserRepository,
+];
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Loan]),
@@ -30,10 +41,13 @@ const QueryHandlers = [
   ],
   controllers: [LoansController],
   providers: [
-    LoanRepository,
+    ...Repositories,
     ...CommandHandlers,
     ...QueryHandlers,
   ],
-  exports: [LoanRepository],
+  exports: [
+    ...Repositories,
+    TypeOrmModule.forFeature([Loan]),
+  ],
 })
 export class LoanModule {}

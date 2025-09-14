@@ -5,7 +5,7 @@ import { Organization } from '../entity/organization.entity';
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
-type CreateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | 'updatedAt'> & {
+type CreateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | 'updatedAt' | 'updater'> & {
   name: string;
   baseInterestRate: number;
   discountRate: number;
@@ -13,7 +13,7 @@ type CreateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | '
   createdBy: string;
 };
 
-type UpdateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>;
+type UpdateOrganizationData = Partial<Pick<Organization, 'name' | 'baseInterestRate' | 'discountRate' | 'taxRate' | 'isActive' | 'updatedBy'>>;
 
 type OrganizationSearchData = {
   terms?: string;

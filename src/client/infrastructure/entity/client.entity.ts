@@ -9,36 +9,22 @@ import {
 } from 'typeorm';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
+import { EmploymentStatus } from 'src/shared/enums';
 
 @Entity('clients')
 export class Client {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', unique: true })
-  userId: string;
-
-  @Column({ name: 'organization_id' })
-  organizationId: string;
-
-  // Campos específicos del dominio de créditos
-  @Column({ name: 'credit_score', nullable: true })
-  creditScore: number;
-
-  @Column({ name: 'max_credit_limit', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  maxCreditLimit: number;
-
-  @Column({ name: 'risk_level', nullable: true })
-  riskLevel: string;
-
-  @Column({ name: 'created_by' })
-  createdBy: string;
-
-  @Column({ name: 'updated_by', nullable: true })
-  updatedBy?: string;
-
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
+
+  @Column({
+    name: 'employment_status',
+    type: 'enum',
+    enum: EmploymentStatus
+  })
+  employmentStatus: EmploymentStatus;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

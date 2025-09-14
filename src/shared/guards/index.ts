@@ -5,6 +5,7 @@ export { IsClientGuard } from './is-client.guard';
 export { IsAdvisorGuard } from './is-advisor.guard';
 export { AdminOrAdvisorGuard } from './admin-or-advisor.guard';
 export { AdminGuard } from './admin.guard';
+export { ClientGuard } from './client.guard';
 export { AdvisorGuard } from './advisor.guard';
 export { JwtAuthGuard } from './jwt-auth.guard';
 export { LocalAuthGuard } from './local-auth.guard';

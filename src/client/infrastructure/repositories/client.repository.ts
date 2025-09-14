@@ -4,22 +4,32 @@ import { Repository } from 'typeorm';
 import { Client } from '../entity/client.entity';
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
+import { EmploymentStatus } from 'src/shared/enums';
 
-type CreateClientData = Omit<Partial<Client>, 'id' | 'createdAt' | 'updatedAt'> & {
-  userId: string;
-  organizationId: string;
-  createdBy: string;
+type CreateClientData = {
+  user: { id: string };
+  organization: { id: string };
+  creator: { id: string };
 };
 
-type UpdateClientData = Omit<Partial<Client>, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>;
+type UpdateClientData = Partial<{
+  isActive?: boolean;
+  employmentStatus?: EmploymentStatus;
+  organization?: { id: string };
+  updater?: { id: string };
+}>;
+
 
 type ClientSearchData = {
   terms?: string;
   page?: number;
   limit?: number;
+  employmentStatus?: EmploymentStatus;
   organizationId?: string;
   isActive?: boolean;
 };
+
+type ClientSelect = { [key in keyof Client]?: boolean };
 
 @Injectable()
 export class ClientRepository {
@@ -29,8 +39,7 @@ export class ClientRepository {
   ) {}
 
   async create(client: CreateClientData) {
-    const createdClient = this.clientsRepository.create(client);
-    return this.clientsRepository.save(createdClient);
+    return this.clientsRepository.save(this.clientsRepository.create(client));
   }
 
   async findAll() {

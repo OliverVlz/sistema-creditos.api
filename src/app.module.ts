@@ -21,6 +21,9 @@ import { IdentityModule } from './identity/infrastructure/identity.module';
 import { ClientsModule } from './client/infrastructure/client.module';
 import { OrganizationModule } from './organization/infrastructure/organization.module';
 import { LoanModule } from './loan/infrastructure/loan.module';
+import { LoanTypeModule } from './loan-type/infrastructure/loan-type.module';
+import { DocumentTypeModule } from './document-type/infrastructure/document-type.module';
+import { ClientDocumentsModule } from './client-documents/infrastructure/client-documents.module';
 import { JwtStrategy } from './shared/strategies/jwt.strategy';
 
 @Module({
@@ -44,6 +47,9 @@ import { JwtStrategy } from './shared/strategies/jwt.strategy';
     ClientsModule,
     OrganizationModule,
     LoanModule,
+    LoanTypeModule,
+    DocumentTypeModule,
+    ClientDocumentsModule,
     MailModule.forRootAsync({
       imports: [ConfigModule, HttpModule],
       inject: [ConfigService],

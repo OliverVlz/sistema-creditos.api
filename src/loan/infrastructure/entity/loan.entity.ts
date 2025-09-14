@@ -11,6 +11,7 @@ import {
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
+import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity'; // Nueva importación
 
 export enum LoanStatus {
   PENDING = 'pending',
@@ -32,20 +33,29 @@ export class Loan {
   @Column({ name: 'client_id' })
   clientId: string;
 
+  @Column({ name: 'loan_type_id' })
+  loanTypeId: string; // Nuevo atributo
+
   @Column({ name: 'organization_id' })
   organizationId: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
-
-  @Column({ name: 'interest_rate', type: 'decimal', precision: 5, scale: 2 })
-  interestRate: number;
+  @Column({ name: 'amount_requested', type: 'decimal', precision: 10, scale: 2 })
+  amountRequested: number; // Renombrado de 'amount'
 
   @Column({ name: 'term_months' })
   termMonths: number;
 
   @Column({ name: 'monthly_payment', type: 'decimal', precision: 10, scale: 2 })
   monthlyPayment: number;
+
+  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
+  totalAmount: number; // Nuevo atributo
+
+  @Column({ name: 'interest_rate', type: 'decimal', precision: 5, scale: 2 })
+  interestRate: number;
+
+  @Column({ name: 'processing_fee', type: 'decimal', precision: 10, scale: 2 })
+  processingFee: number; // Nuevo atributo
 
   @Column({
     type: 'enum',
@@ -54,11 +64,8 @@ export class Loan {
   })
   status: LoanStatus;
 
-  @Column({ name: 'start_date', type: 'date', nullable: true })
-  startDate?: Date;
-
-  @Column({ name: 'end_date', type: 'date', nullable: true })
-  endDate?: Date;
+  @Column({ name: 'rejection_reason', nullable: true })
+  rejectionReason?: string; // Nuevo atributo
 
   @Column({ name: 'created_by' })
   createdBy: string;
@@ -67,13 +74,16 @@ export class Loan {
   updatedBy?: string;
 
   @Column({ name: 'approved_by', nullable: true })
-  approvedBy?: string;
+  approvedBy?: string; // Nuevo atributo
 
   @Column({ name: 'approved_at', nullable: true })
-  approvedAt?: Date;
+  approvedAt?: Date; // Nuevo atributo
 
-  @Column({ nullable: true })
-  notes?: string;
+  @Column({ name: 'signed_at', type: 'date', nullable: true })
+  signedAt?: Date; // Nuevo atributo
+
+  @Column({ name: 'disbursed_at', type: 'date', nullable: true })
+  disbursedAt?: Date; // Nuevo atributo
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -89,6 +99,10 @@ export class Loan {
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
+  @ManyToOne(() => LoanType) // Nueva relación
+  @JoinColumn({ name: 'loan_type_id' })
+  loanType: LoanType;
+
   @ManyToOne(() => Organization)
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;
@@ -101,7 +115,7 @@ export class Loan {
   @JoinColumn({ name: 'updated_by' })
   updater: User;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User) // Relación para approvedBy
   @JoinColumn({ name: 'approved_by' })
   approver: User;
 }
