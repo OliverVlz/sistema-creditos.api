@@ -6,8 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany, // Añadido OneToMany
 } from 'typeorm';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
+import { Client } from 'src/client/infrastructure/entity/client.entity'; // Importar Client
+import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity'; // Importar LoanType
+import { Loan } from 'src/loan/infrastructure/entity/loan.entity'; // Importar Loan
+import { LoanTypeDocumentRequirement } from 'src/document-type/infrastructure/entity/loan-type-document-requirement.entity'; // Corregida la ruta
 
 @Entity('organizations')
 export class Organization {
@@ -49,4 +54,16 @@ export class Organization {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'updated_by' })
   updater?: User;
+
+  @OneToMany(() => Client, client => client.organization)
+  clients: Client[];
+
+  @OneToMany(() => LoanType, loanType => loanType.organization)
+  loanTypes: LoanType[];
+
+  @OneToMany(() => Loan, loan => loan.organization)
+  loans: Loan[];
+
+  @OneToMany(() => LoanTypeDocumentRequirement, loanTypeDocumentRequirement => loanTypeDocumentRequirement.organization)
+  loanTypeDocumentRequirements: LoanTypeDocumentRequirement[];
 }

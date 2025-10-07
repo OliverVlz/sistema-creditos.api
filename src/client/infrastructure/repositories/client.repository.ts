@@ -10,6 +10,11 @@ type CreateClientData = {
   user: { id: string };
   organization: { id: string };
   creator: { id: string };
+  documentNumber: string;
+  phoneNumber?: string;
+  address: string;
+  birthDate: Date;
+  employmentStatus: EmploymentStatus;
 };
 
 type UpdateClientData = Partial<{
@@ -17,6 +22,10 @@ type UpdateClientData = Partial<{
   employmentStatus?: EmploymentStatus;
   organization?: { id: string };
   updater?: { id: string };
+  documentNumber?: string;
+  phoneNumber?: string;
+  address?: string;
+  birthDate?: Date;
 }>;
 
 
@@ -53,7 +62,7 @@ export class ClientRepository {
   async findOne(id: string) {
     const client = await this.clientsRepository.findOne({ 
       where: { id },
-      relations: ['organization', 'creator', 'updater', 'user', 'user.profile']
+      relations: ['organization', 'creator', 'updater', 'user']
     });
     if (!client) {
       throw new DomainError('CLIENT_NOT_FOUND', 'Client not found');
@@ -66,6 +75,22 @@ export class ClientRepository {
     return this.findOne(id);
   }
 
+  async findOneByUserIdWithLoans(userId: string) {
+    const client = await this.clientsRepository.findOne({
+      where: { user: { id: userId } },
+      relations: [
+        'user',
+        'organization',
+        'creator',
+        'updater',
+        'loans',
+        'loans.loanType',
+        'loans.organization',
+      ],
+    });
+    return client;
+  }
+
   async remove(id: string) {
     const deleteResult = await this.clientsRepository.delete(id);
     if (deleteResult.affected === 0) {
@@ -76,9 +101,9 @@ export class ClientRepository {
   async findByUserDocumentNumber(documentNumber: string) {
     const client = await this.clientsRepository.findOne({ 
       where: { 
-        user: { documentNumber } 
+        documentNumber // Apuntar directamente a la propiedad de Client
       },
-      relations: ['organization', 'user', 'user.profile']
+      relations: ['organization', 'user']
     });
     return client;
   }
@@ -88,13 +113,13 @@ export class ClientRepository {
       .leftJoinAndSelect('client.organization', 'organization')
       .leftJoinAndSelect('client.creator', 'creator')
       .leftJoinAndSelect('client.updater', 'updater')
-      .leftJoinAndSelect('client.user', 'user')
-      .leftJoinAndSelect('user.profile', 'profile');
+      .leftJoinAndSelect('client.user', 'user'); // No unimos con profile aquí
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        `(LOWER(profile.firstName) LIKE :term OR LOWER(profile.lastName) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term)`,
+        // Buscar por firstName, lastName de User y documentNumber de Client
+        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(client.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term)`,
         { term: `%${term}%` }
       );
     }

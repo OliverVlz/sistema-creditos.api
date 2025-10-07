@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from 'src/identity/domain/user-role.enum';
+import { UserRole } from 'src/shared/enums/user-role.enum';
 
 @Injectable()
 export class ClientGuard implements CanActivate {

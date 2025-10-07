@@ -5,39 +5,25 @@ import { Loan, LoanStatus } from '../entity/loan.entity';
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 import { NotFoundException } from '@nestjs/common';
+import { DeepPartial } from 'src/shared/types/utility.types';
 
 type CreateLoanData = {
   loanNumber: string;
-  clientId: string;
-  loanTypeId: string;
-  organizationId: string;
+  client: { id: string }; // Corregido a objeto de relación
+  loanType: { id: string }; // Corregido a objeto de relación
+  organization: { id: string }; // Corregido a objeto de relación
   amountRequested: number;
   interestRate: number;
   termMonths: number;
   monthlyPayment: number;
+  totalAmount: number;
+  processingFee: number;
   status: LoanStatus;
   createdBy: string;
   notes?: string;
 };
 
-type UpdateLoanData = Partial<Pick<Loan, 
-  'clientId' |
-  'loanTypeId' |
-  'organizationId' |
-  'amountRequested' |
-  'interestRate' |
-  'termMonths' |
-  'monthlyPayment' |
-  'totalAmount' |
-  'processingFee' |
-  'status' |
-  'rejectionReason' |
-  'approvedBy' |
-  'approvedAt' |
-  'signedAt' |
-  'disbursedAt' |
-  'updatedBy'
->>;
+type UpdateLoanData = DeepPartial<Loan>; // Cambiado a DeepPartial<Loan>
 
 type LoanSearchData = {
   terms?: string;
@@ -59,12 +45,13 @@ export class LoanRepository {
   ) {}
 
   async generateLoanNumber(): Promise<string> {
-    const lastLoan = await this.loansRepository.findOne({ 
+    const lastLoan = await this.loansRepository.find({
       order: { createdAt: 'DESC' },
-      select: ['loanNumber']
+      take: 1,
+      select: ['loanNumber'],
     });
-    if (lastLoan) {
-      const lastNumber = parseInt(lastLoan.loanNumber.split('-')[1]);
+    if (lastLoan.length > 0) {
+      const lastNumber = parseInt(lastLoan[0].loanNumber.split('-')[1]);
       return `LOAN-${(lastNumber + 1).toString().padStart(6, '0')}`;
     }
     return 'LOAN-000001';
@@ -113,15 +100,15 @@ export class LoanRepository {
     }
 
     if (searchData.clientId) {
-      queryBuilder.andWhere('loan.clientId = :clientId', { clientId: searchData.clientId });
+      queryBuilder.andWhere('loan.client.id = :clientId', { clientId: searchData.clientId });
     }
 
     if (searchData.loanTypeId) {
-      queryBuilder.andWhere('loan.loanTypeId = :loanTypeId', { loanTypeId: searchData.loanTypeId });
+      queryBuilder.andWhere('loan.loanType.id = :loanTypeId', { loanTypeId: searchData.loanTypeId });
     }
 
     if (searchData.organizationId) {
-      queryBuilder.andWhere('loan.organizationId = :organizationId', { organizationId: searchData.organizationId });
+      queryBuilder.andWhere('loan.organization.id = :organizationId', { organizationId: searchData.organizationId });
     }
 
     if (searchData.loanNumber) {

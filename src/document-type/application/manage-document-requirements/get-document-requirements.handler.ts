@@ -17,7 +17,6 @@ interface DocumentRequirementResult {
   organization?: {
     id: string;
     name: string;
-    code: string;
   };
   employmentStatus?: string;
   isMandatory: boolean;
@@ -56,7 +55,6 @@ export class GetDocumentRequirementsHandler implements IQueryHandler<GetDocument
       organization: req.organization ? {
         id: req.organization.id,
         name: req.organization.name,
-        code: req.organization.code,
       } : undefined,
       employmentStatus: req.employmentStatus,
       isMandatory: req.isMandatory,

@@ -12,9 +12,11 @@ import { GetLoanByIdHandler } from '../application/get-loan-by-id/get-loan-by-id
 import { UpdateLoanHandler } from '../application/update-loan/update-loan.handler';
 import { SoftDeleteLoanHandler } from '../application/soft-delete-loan/soft-delete-loan.handler';
 
-import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
-import { OrganizationRepository } from 'src/organization/infrastructure/repositories/organization.repository';
-import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
+// Importar módulos de otras entidades
+import { ClientsModule } from 'src/client/infrastructure/client.module';
+import { OrganizationModule } from 'src/organization/infrastructure/organization.module';
+import { IdentityModule } from 'src/identity/infrastructure/identity.module';
+import { LoanTypeModule } from 'src/loan-type/infrastructure/loan-type.module';
 
 const CommandHandlers = [
   CreateLoanHandler,
@@ -29,15 +31,16 @@ const QueryHandlers = [
 
 const Repositories = [
   LoanRepository,
-  ClientRepository,
-  OrganizationRepository,
-  UserRepository,
 ];
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Loan]),
     CqrsModule,
+    ClientsModule,
+    OrganizationModule,
+    IdentityModule,
+    LoanTypeModule,
   ],
   controllers: [LoansController],
   providers: [

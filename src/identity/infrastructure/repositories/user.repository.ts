@@ -38,7 +38,8 @@ export class UserRepository {
     if (terms) {
       const searchTerm = terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        '(LOWER(JSON_EXTRACT(user.profile, "$.firstName")) LIKE :searchTerm OR LOWER(JSON_EXTRACT(user.profile, "$.lastName")) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
+        // Buscar por firstName, lastName y email del usuario
+        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm)`,
         { searchTerm: `%${searchTerm}%` },
       );
     }
@@ -73,13 +74,7 @@ export class UserRepository {
     return user;
   }
 
-  async findByPhone(phone: string, failIfNotFound = false) {
-    const user = await this.userRepository.findOne({ where: { phone } });
-    if (!user && failIfNotFound) {
-      throw new NotFoundException(`User '${phone}' not found`);
-    }
-    return user;
-  }
+  // Método findByPhone eliminado ya que phone ahora está en Client
 
   async update(userId: string, data: Partial<User>) {
     await this.userRepository.update(userId, data);
@@ -103,7 +98,8 @@ export class UserRepository {
     if (filters.terms) {
       const searchTerm = filters.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        '(LOWER(JSON_EXTRACT(user.profile, "$.firstName")) LIKE :searchTerm OR LOWER(JSON_EXTRACT(user.profile, "$.lastName")) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
+        // Buscar por firstName, lastName y email del usuario
+        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm)`,
         { searchTerm: `%${searchTerm}%` },
       );
     }
@@ -132,7 +128,7 @@ export class UserRepository {
    */
   async searchUsersWithClientInfo(filters: { role?: UserRole; terms?: string; page?: number; limit?: number; userId?: string; }) {
     const queryBuilder = this.userRepository.createQueryBuilder('user')
-      .leftJoinAndSelect('clients', 'client', 'client.user_id = user.id');
+      .leftJoinAndSelect('user.client', 'client'); // Usar la relación definida
 
     if (filters.role) {
       queryBuilder.where('user.role = :role', { role: filters.role });
@@ -145,7 +141,8 @@ export class UserRepository {
     if (filters.terms) {
       const searchTerm = filters.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        '(LOWER(JSON_EXTRACT(user.profile, "$.firstName")) LIKE :searchTerm OR LOWER(JSON_EXTRACT(user.profile, "$.lastName")) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.phone) LIKE :searchTerm)',
+        // Buscar por firstName, lastName de User y documentNumber, phoneNumber, email de Client/User
+        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(client.documentNumber) LIKE :searchTerm OR LOWER(client.phoneNumber) LIKE :searchTerm)`,
         { searchTerm: `%${searchTerm}%` },
       );
     }
@@ -161,25 +158,24 @@ export class UserRepository {
       .skip(paginationOptions.offset)
       .take(paginationOptions.limit);
 
-    const result = await queryBuilder.getRawAndEntities();
-    const total = await queryBuilder.getCount();
+    const [users, total] = await queryBuilder.getManyAndCount();
 
-    // Mapear el resultado para incluir la información del cliente
-    const usersWithClient = result.entities.map((user, index) => {
-      const raw = result.raw[index];
-      return {
-        ...user,
-        client: raw.client_id ? {
-          id: raw.client_id,
-          creditScore: raw.client_credit_score,
-          maxCreditLimit: raw.client_max_credit_limit,
-          riskLevel: raw.client_risk_level,
-          isActive: raw.client_is_active,
-          createdAt: raw.client_created_at,
-          updatedAt: raw.client_updated_at,
-        } : null
-      };
-    });
+    // El mapeo ahora es más sencillo ya que client está directamente relacionado
+    const usersWithClient = users.map(user => ({
+      ...user,
+      client: user.client ? {
+        id: user.client.id,
+        documentNumber: user.client.documentNumber,
+        phoneNumber: user.client.phoneNumber,
+        address: user.client.address,
+        birthDate: user.client.birthDate,
+        employmentStatus: user.client.employmentStatus,
+        isActive: user.client.isActive,
+        createdAt: user.client.createdAt,
+        updatedAt: user.client.updatedAt,
+        // Otros campos del cliente que desees incluir
+      } : null
+    }));
 
     return PaginationUtils.createPaginatedResult(
       { data: usersWithClient, total },

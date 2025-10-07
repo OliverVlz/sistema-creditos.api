@@ -30,8 +30,8 @@ export class RecoverPasswordHandler
       email: user.email,
       data: {
         talentName: concatStrings(
-          user.profile?.firstName || '',
-          user.profile?.lastName || '',
+          user.firstName || '',
+          user.lastName || '',
         ),
         link: this.clientRoute.build('/reset-password'),
         headerUrl: this.clientRoute.build(

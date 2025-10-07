@@ -38,14 +38,12 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
     return {
       email: data.email,
       password: await this.hashService.hash(data.password),
+      firstName: data.firstName,
+      lastName: data.lastName,
       documentNumber: data.documentNumber,
       phone: data.phone,
-      role: data.role || UserRole.CLIENT, 
+      role: data.role || UserRole.CLIENT,
       language: data.language,
-      profile: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-      },
     };
   }
 }

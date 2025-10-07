@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne, // Añadido ManyToOne
+  JoinColumn, // Añadido JoinColumn
+  OneToMany, // Añadido OneToMany
 } from 'typeorm';
+import { Organization } from 'src/organization/infrastructure/entity/organization.entity'; // Importar Organization
+import { Loan } from 'src/loan/infrastructure/entity/loan.entity'; // Importar Loan
 
 @Entity('loan_types')
 export class LoanType {
@@ -40,6 +45,14 @@ export class LoanType {
 
   @Column({ type: 'jsonb', nullable: true, name: 'required_document_types' })
   requiredDocumentTypes: string[]; // Ahora almacenará IDs de DocumentDefinition
+
+  // Relations
+  @ManyToOne(() => Organization, organization => organization.loanTypes, { eager: true })
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
+
+  @OneToMany(() => Loan, loan => loan.loanType)
+  loans: Loan[];
 }
 
 

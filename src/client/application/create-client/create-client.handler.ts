@@ -41,7 +41,18 @@ export class CreateClientHandler implements ICommandHandler<CreateClientCommand>
       }
 
       // Crear el registro de cliente
-      return await this.clientRepository.create(command);
+      const clientDataToCreate = {
+        user: { id: command.userId },
+        organization: { id: command.organizationId },
+        creator: { id: command.createdBy },
+        documentNumber: command.documentNumber,
+        phoneNumber: command.phoneNumber,
+        address: command.address,
+        birthDate: command.birthDate,
+        employmentStatus: command.employmentStatus,
+      };
+
+      return await this.clientRepository.create(clientDataToCreate);
       
     } catch (error) {
       if (error instanceof QueryFailedError) {

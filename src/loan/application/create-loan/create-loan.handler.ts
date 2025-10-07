@@ -3,7 +3,7 @@ import { CreateLoanCommand } from './create-loan.command';
 import { LoanRepository } from '../../infrastructure/repositories/loan.repository';
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
 import { OrganizationRepository } from 'src/organization/infrastructure/repositories/organization.repository';
-import { LoanTypeRepository } from 'src/loan/infrastructure/repositories/loan-type.repository'; // Nueva importación
+import { LoanTypeRepository } from 'src/loan-type/infrastructure/repositories/loan-type.repository'; // Corregida la ruta
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 
@@ -48,16 +48,22 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
     // 4. Generar número de préstamo único
     const loanNumber = await this.loanRepository.generateLoanNumber();
 
+    // Calcular processingFee y totalAmount
+    const processingFee = amountRequested * loanType.baseProcessingFee;
+    const totalAmount = amountRequested + processingFee;
+
     // 5. Crear el préstamo
     const newLoan = await this.loanRepository.createLoan({
       loanNumber,
-      clientId,
-      loanTypeId,
-      organizationId,
+      client: { id: clientId }, // Usar objeto de relación
+      loanType: { id: loanTypeId }, // Usar objeto de relación
+      organization: { id: organizationId }, // Usar objeto de relación
       amountRequested,
       interestRate,
-      termMonths,
       monthlyPayment,
+      termMonths,
+      processingFee,
+      totalAmount,
       createdBy,
       notes,
       status: LoanStatus.PENDING, // Estado inicial

@@ -18,27 +18,31 @@ export class OrganizationSeeder {
 
     const organizationsData = [
       {
-        name: 'Organización Principal',
-        description: 'Organización principal del sistema',
+        name: 'Policía Nacional',
         baseInterestRate: 12.0,
         discountRate: 2.0,
         taxRate: 8.0,
         createdBy: defaultUser.id,
       },
       {
-        name: 'Cooperativa de Crédito',
-        description: 'Cooperativa de ahorro y crédito',
+        name: 'Armada Nacional',
         baseInterestRate: 10.5,
         discountRate: 1.5,
         taxRate: 7.5,
         createdBy: defaultUser.id,
       },
       {
-        name: 'Microfinanciera del Norte',
-        description: 'Institución microfinanciera especializada',
+        name: 'Ejército Nacional',
         baseInterestRate: 15.0,
         discountRate: 3.0,
         taxRate: 10.0,
+        createdBy: defaultUser.id,
+      },
+      {
+        name: 'Fuerza Aeroespacial',
+        baseInterestRate: 11.0,
+        discountRate: 2.5,
+        taxRate: 9.0,
         createdBy: defaultUser.id,
       }
     ];

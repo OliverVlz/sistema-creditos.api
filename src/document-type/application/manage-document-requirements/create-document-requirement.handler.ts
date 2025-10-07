@@ -28,7 +28,7 @@ export class CreateDocumentRequirementHandler implements ICommandHandler<CreateD
         loanTypeId,
         documentTypeId,
         organizationId: organizationId || null,
-        employmentStatus: employmentStatus || null,
+        employmentStatus: employmentStatus,
       }
     });
 

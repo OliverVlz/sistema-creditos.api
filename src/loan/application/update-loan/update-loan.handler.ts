@@ -7,6 +7,7 @@ import { LoanTypeRepository } from 'src/loan-type/infrastructure/repositories/lo
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
 import { OrganizationRepository } from 'src/organization/infrastructure/repositories/organization.repository';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
+import { DeepPartial } from 'src/shared/types/utility.types'; // Importar DeepPartial
 
 @CommandHandler(UpdateLoanCommand)
 export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
@@ -62,21 +63,21 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
     }
 
     // Preparar datos para actualización
-    const updateData: Partial<Loan> = {
-      clientId,
-      loanTypeId,
-      organizationId,
+    const updateData: DeepPartial<Loan> = { // Cambiado a DeepPartial<Loan>
+      ...(clientId && { client: { id: clientId } }), // Usar relación
+      ...(loanTypeId && { loanType: { id: loanTypeId } }), // Usar relación
+      ...(organizationId && { organization: { id: organizationId } }), // Usar relación
       amountRequested,
       interestRate,
       termMonths,
       monthlyPayment,
       status,
       rejectionReason,
-      approvedBy,
+      ...(approvedBy && { approver: { id: approvedBy } }), // Usar relación para approver
       approvedAt,
       signedAt,
       disbursedAt,
-      updatedBy,
+      ...(updatedBy && { updater: { id: updatedBy } }), // Usar relación para updater
       updatedAt: new Date(),
     };
 
@@ -84,7 +85,7 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
     // Por simplicidad, se podría hacer una lógica de negocio aquí o en un servicio dedicado.
     // Aquí un ejemplo básico si amountRequested cambia y se necesita recalcular el total
     if (amountRequested && loanTypeId) {
-        const loanType = await this.loanTypeRepository.findOne(loanTypeId || existingLoan.loanTypeId);
+        const loanType = await this.loanTypeRepository.findOne(loanTypeId || existingLoan.loanType?.id); // Corregido
         if (loanType) {
             updateData.processingFee = amountRequested * loanType.baseProcessingFee; // Ejemplo simple
             updateData.totalAmount = amountRequested + updateData.processingFee; // Ejemplo simple

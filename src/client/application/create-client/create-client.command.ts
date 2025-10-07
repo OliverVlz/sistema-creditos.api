@@ -4,6 +4,10 @@ export class CreateClientCommand {
   readonly userId: string;
   readonly organizationId: string;
   readonly createdBy: string; 
+  readonly documentNumber: string;
+  readonly phoneNumber?: string;
+  readonly address: string;
+  readonly birthDate: Date;
   readonly employmentStatus: EmploymentStatus;
 
   constructor(params: CreateClientCommand) {

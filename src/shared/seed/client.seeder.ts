@@ -5,6 +5,7 @@ import { Organization } from '../../organization/infrastructure/entity/organizat
 import { UserRole } from '../../shared/enums/user-role.enum';
 import { HashService } from '../hash/hash.service';
 import { faker } from '@faker-js/faker';
+import { EmploymentStatus } from '../../shared/enums/employment-status.enum';
 
 export class ClientSeeder {
   constructor(private readonly hashService: HashService) {}
@@ -31,52 +32,48 @@ export class ClientSeeder {
     }
 
     const clientsData = Array.from({ length: 10 }).map(() => ({
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
       documentNumber: faker.string.numeric(8),
       phone: faker.phone.number(),
       email: faker.internet.email().toLowerCase(),
       address: faker.location.streetAddress(),
-      creditScore: faker.number.int({ min: 300, max: 850 }),
-      maxCreditLimit: faker.number.float({ min: 1000, max: 50000, fractionDigits: 2 }),
-      riskLevel: faker.helpers.arrayElement(['LOW', 'MEDIUM', 'HIGH']),
+      birthDate: faker.date.past({ years: 30, refDate: new Date() }), // Añadido birthDate
+      employmentStatus: faker.helpers.arrayElement(Object.values(EmploymentStatus)), // Añadido employmentStatus
     }));
 
     const clients = [];
 
     for (const data of clientsData) {
-      // Verificar si ya existe un usuario con este documento
-      let existingUser = await userRepository.findOne({
-        where: { documentNumber: data.documentNumber }
-      });
+      // No es necesario verificar el usuario por documentNumber aquí ya que documentNumber ahora está en Client
+      // La unicidad del documentNumber se manejará al crear el cliente.
 
       let clientUser: User;
+
+      // Verificar si ya existe un usuario con este email
+      let existingUser = await userRepository.findOne({
+        where: { email: data.email }
+      });
 
       if (existingUser) {
         clientUser = existingUser;
       } else {
         // Crear el usuario con rol CLIENT
         const hashedPassword = await this.hashService.hash('123456'); // Contraseña por defecto
+        const userFirstName = faker.person.firstName(); // Generar firstName aquí
+        const userLastName = faker.person.lastName();   // Generar lastName aquí
         
         clientUser = await userRepository.save(userRepository.create({
           email: data.email,
           password: hashedPassword,
           role: UserRole.CLIENT,
-          documentNumber: data.documentNumber, // Ahora está en User
-          profile: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            address: { street: data.address },
-            avatarUrl: faker.image.avatar(),
-          },
-          phone: data.phone,
+          firstName: userFirstName, // Usar el generado
+          lastName: userLastName,   // Usar el generado
           isActive: true,
         }));
       }
 
       // Verificar si ya existe un cliente para este usuario
       let existingClient = await clientRepository.findOne({
-        where: { userId: clientUser.id }
+        where: { user: { id: clientUser.id } } // Usar la relación de usuario
       });
 
       if (existingClient) {
@@ -86,12 +83,15 @@ export class ClientSeeder {
 
       // Crear el registro de cliente asociado al usuario (solo info de crédito)
       const client = await clientRepository.save(clientRepository.create({
-        userId: clientUser.id,
-        organizationId: defaultOrganization.id,
-        createdBy: adminUser.id,
-        creditScore: data.creditScore,
-        maxCreditLimit: data.maxCreditLimit,
-        riskLevel: data.riskLevel,
+        user: clientUser, // Asociar el usuario
+        organization: defaultOrganization, // Asociar la organización
+        creator: adminUser, // El administrador es el creador
+        documentNumber: data.documentNumber,
+        phoneNumber: data.phone,
+        address: data.address,
+        birthDate: data.birthDate,
+        employmentStatus: data.employmentStatus,
+        isActive: true,
       }));
 
       clients.push(client);

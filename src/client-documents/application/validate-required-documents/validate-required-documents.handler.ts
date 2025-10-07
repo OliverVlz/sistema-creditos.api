@@ -58,7 +58,7 @@ export class ValidateRequiredDocumentsHandler implements IQueryHandler<ValidateR
       .andWhere('dt.isActive = true')
       .andWhere(
         '(req.organizationId = :organizationId OR req.organizationId IS NULL)',
-        { organizationId: client.organizationId }
+        { organizationId: client.organization.id }
       )
       .andWhere(
         '(req.employmentStatus = :employmentStatus OR req.employmentStatus = :all OR req.employmentStatus IS NULL)',

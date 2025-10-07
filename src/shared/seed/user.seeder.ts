@@ -17,14 +17,9 @@ export class UserSeeder {
         {
           email: 'admin@dev.com',
           password: hashedPassword,
-          profile: {
-            firstName: 'Admin',
-            lastName: faker.person.lastName(),
-            address: { street: faker.location.streetAddress() },
-            avatarUrl: faker.image.avatar(),
-          },
+          firstName: 'Admin',
+          lastName: faker.person.lastName(),
           role: UserRole.ADMIN,
-          language: faker.helpers.arrayElement(['es', 'en']),
         } as Partial<User>
       );
       await userRepository.save(adminUser);

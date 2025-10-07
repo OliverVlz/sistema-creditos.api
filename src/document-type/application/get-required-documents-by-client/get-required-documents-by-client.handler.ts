@@ -53,7 +53,7 @@ export class GetRequiredDocumentsByClientHandler implements IQueryHandler<GetReq
       .andWhere('dt.is_active = true')
       .andWhere(
         '(req.organization_id = :organizationId OR req.organization_id IS NULL)',
-        { organizationId: client.organizationId }
+        { organizationId: client.organization.id }
       )
       .andWhere(
         '(req.employment_status = :employmentStatus OR req.employment_status = :all OR req.employment_status IS NULL)',

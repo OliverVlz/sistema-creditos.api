@@ -1,18 +1,9 @@
-import { Language } from 'src/shared/enums';
-
 import { User as UserEntity } from '../infrastructure/entity/user.entity';
 import { UserRole } from 'src/shared/enums';
 
 type ExtendedUserEntity = UserEntity & {
   createdAt?: Date;
   updatedAt?: Date;
-  profile?: {
-    firstName: string;
-    lastName: string;
-    address?: object;
-    avatarUrl?: string;
-  };
-  language?: Language;
 };
 type ExtendedUserParams = object;
 
@@ -21,11 +12,6 @@ export class User {
   readonly firstName: string;
   readonly lastName: string;
   readonly email?: string;
-  readonly documentNumber?: string;
-  readonly phone?: string;
-  readonly address?: object;
-  readonly language?: Language;
-  readonly avatarUrl?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   readonly role: UserRole;
@@ -35,11 +21,6 @@ export class User {
     firstName: string;
     lastName: string;
     email?: string;
-    documentNumber?: string;
-    phone?: string;
-    address?: object;
-    language?: Language;
-    avatarUrl?: string;
     createdAt: Date;
     updatedAt: Date;
     role: UserRole;
@@ -48,11 +29,6 @@ export class User {
     this.firstName = params.firstName;
     this.lastName = params.lastName;
     this.email = params.email;
-    this.documentNumber = params.documentNumber;
-    this.phone = params.phone;
-    this.address = params.address || {};
-    this.language = params.language;
-    this.avatarUrl = params.avatarUrl;
     this.createdAt = params.createdAt;
     this.updatedAt = params.updatedAt;
     this.role = params.role;
@@ -64,14 +40,9 @@ export class User {
   ): User {
     return new User({
       id: entity.id,
-      firstName: entity.profile?.firstName || '',
-      lastName: entity.profile?.lastName || '',
+      firstName: entity.firstName || '',
+      lastName: entity.lastName || '',
       email: entity.email,
-      documentNumber: entity.documentNumber,
-      phone: entity.phone,
-      address: entity.profile?.address || {},
-      language: entity.language,
-      avatarUrl: entity.profile?.avatarUrl,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       role: entity.role,
@@ -83,15 +54,8 @@ export class User {
     return {
       id: this.id,
       email: this.email,
-      documentNumber: this.documentNumber,
-      phone: this.phone,
-      profile: {
-        firstName: this.firstName,
-        lastName: this.lastName,
-        address: this.address,
-        avatarUrl: this.avatarUrl,
-      },
-      language: this.language,
+      firstName: this.firstName,
+      lastName: this.lastName,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       role: this.role,

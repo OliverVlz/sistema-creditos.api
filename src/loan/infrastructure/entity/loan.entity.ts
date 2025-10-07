@@ -30,15 +30,6 @@ export class Loan {
   @Column({ name: 'loan_number', unique: true })
   loanNumber: string;
 
-  @Column({ name: 'client_id' })
-  clientId: string;
-
-  @Column({ name: 'loan_type_id' })
-  loanTypeId: string; // Nuevo atributo
-
-  @Column({ name: 'organization_id' })
-  organizationId: string;
-
   @Column({ name: 'amount_requested', type: 'decimal', precision: 10, scale: 2 })
   amountRequested: number; // Renombrado de 'amount'
 

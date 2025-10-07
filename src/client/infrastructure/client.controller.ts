@@ -8,19 +8,22 @@ import {
   Delete,
   Query,
   Req,
+  UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
-import { GetClientsDto } from './dto/get-clients.dto';
 
 import { CreateClientCommand } from '../application/create-client/create-client.command';
-import { GetClientsQuery } from '../application/get-clients/get-clients.query';
 import { UpdateClientCommand } from '../application/update-client/update-client.command';
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
 import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
+import { GetUsersClientInfoByIdQuery } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.query';
+import { GetUsersClientInfoQuery } from '../application/get-users-client-info/get-users-client-info.query';
+import { AdminOrAdvisorGuard } from 'src/shared/guards';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -43,13 +46,33 @@ export class ClientsController {
     }));
   }
 
-  @Get('/')
-  @ApiOperation({ 
-    summary: 'Search clients with optional filters and pagination',
-    description: 'Get clients with their credit information and user details'
+  @Get('/all')
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({
+    summary: 'Obtener clientes con información crediticia - Solo ADMIN/ADVISOR',
+    description: 'Devuelve usuarios con rol CLIENT y su perfil crediticio asociado'
   })
-  async searchClients(@Query() query: GetClientsDto) {
-    return this.queryBus.execute(new GetClientsQuery(query));
+  async getUsersWithClientInfo(@Query() query: GetUsersClientInfoQuery) {
+    return this.queryBus.execute(new GetUsersClientInfoQuery(query));
+  }
+
+  @Get('/me/profile')
+  @ApiOperation({
+    summary: 'Obtener perfil de cliente del usuario autenticado - Solo CLIENT',
+    description: 'Devuelve el perfil crediticio (información de cliente y préstamos) del usuario autenticado. Solo accesible por usuarios con rol CLIENT.'
+  })
+  async getMyClientProfile(@Req() req: any) {
+    return this.queryBus.execute(new GetUsersClientInfoByIdQuery(req.user.id));
+  }
+
+  @Get('/:userId/profile')
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({
+    summary: 'Obtener información de cliente por id - Solo ADMIN/ADVISOR',
+    description: 'Devuelve información de cliente (perfil crediticio, préstamos, etc) para el ID de usuario indicado. Solo accesible por ADMIN o ADVISOR.'
+  })
+  async getClientInfoById(@Param('userId') userId: string, @Req() req: any) {
+    return this.queryBus.execute(new GetUsersClientInfoByIdQuery(userId));
   }
 
   @Get('/:id')

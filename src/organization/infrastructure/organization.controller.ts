@@ -60,8 +60,7 @@ export class OrganizationsController {
     @Req() req: any,
   ) {
     return this.commandBus.execute(
-      new UpdateOrganizationCommand({ 
-        id, 
+      new UpdateOrganizationCommand(id, { 
         ...body, 
         updatedBy: req.user.id 
       }),
