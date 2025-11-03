@@ -57,7 +57,6 @@ pnpm seed                 # 🌱 Poblar datos de prueba
 pnpm docker:up
 ```
 
-
 > 🎯 **Seeders Inteligentes**: Los seeders se ejecutan automáticamente solo si la base de datos está vacía. En reinicios, se omiten para evitar duplicados.
 
 **Comandos principales:**
@@ -97,7 +96,6 @@ pnpm docker:seed:force   # 🔥 Forzar ejecución de seeders
 - Inicia la aplicación
 
 ## 🛠️ Scripts Adicionales
-
 
 ### Base de Datos Local
 
@@ -189,4 +187,3 @@ pnpm start
 ## 📚 Documentación
 
 La documentación completa del sistema está disponible en la carpeta [`docs/`](./docs/):
-
