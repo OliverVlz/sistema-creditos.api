@@ -1,11 +1,24 @@
-import { Body, Controller, Post, Get, Req, Query, ForbiddenException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Req,
+  Query,
+  ForbiddenException,
+  UseGuards,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Recaptcha } from '@nestlab/google-recaptcha';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { Public } from 'src/shared/validation';
 import { UserRole } from 'src/shared/enums/user-role.enum';
-import { AdminOrAdvisorGuard, AdminGuard, AdvisorGuard } from 'src/shared/guards';
+import {
+  AdminOrAdvisorGuard,
+  AdminGuard,
+  AdvisorGuard,
+} from 'src/shared/guards';
 
 import { CreateUserCommand } from '../application/create-user/create-user.command'; // Re-importado
 import { LoginQuery } from '../application/login/login.query';
@@ -31,27 +44,33 @@ export class UsersController {
   @Public()
   @ApiOperation({
     summary: 'Registro público de cliente (User + Client Info)',
-    description: 'Permite que cualquier persona se registre como CLIENT, creando su cuenta de usuario y su perfil de cliente en un solo flujo. No requiere autenticación.'
+    description:
+      'Permite que cualquier persona se registre como CLIENT, creando su cuenta de usuario y su perfil de cliente en un solo flujo. No requiere autenticación.',
   })
   async signUpClient(@Body() body: CreateClientUserDto) {
-    return this.commandBus.execute(new CreateUserClientCommand({
-      ...body,
-      role: UserRole.CLIENT,
-    }));
+    return this.commandBus.execute(
+      new CreateUserClientCommand({
+        ...body,
+        role: UserRole.CLIENT,
+      }),
+    );
   }
 
-  @Post('/admin/users')
+  @Post('/admin/staff')
   @ApiBearerAuth()
   @UseGuards(AdminGuard)
-  @ApiOperation({ 
-    summary: 'Crear cualquier tipo de usuario - Solo ADMIN',
-    description: 'Permite a ADMIN crear usuarios con cualquier rol: CLIENT, ADVISOR, ADMIN'
+  @ApiOperation({
+    summary: 'Crear usuario staff (Advisor/Admin) - Solo ADMIN',
+    description:
+      'Permite a ADMIN crear usuarios con rol ADVISOR o ADMIN (personal interno). Para crear clientes usar POST /clients/register',
   })
-  async createUserAsAdmin(@Body() body: CreateStaffUserDto, @Req() req: any) { // Usar CreateStaffUserDto
-    return this.commandBus.execute(new CreateUserCommand({
-      ...body,
-      role: body.role,
-    }));
+  async createStaffUser(@Body() body: CreateStaffUserDto, @Req() req: any) {
+    return this.commandBus.execute(
+      new CreateUserCommand({
+        ...body,
+        role: body.role,
+      }),
+    );
   }
 
   @Post('/login')
@@ -71,9 +90,9 @@ export class UsersController {
   @Get('/')
   @ApiBearerAuth()
   @UseGuards(AdminOrAdvisorGuard)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Listar usuarios - Solo ADMIN/ADVISOR',
-    description: 'Obtener lista de usuarios con filtros y paginación'
+    description: 'Obtener lista de usuarios con filtros y paginación',
   })
   async getUsers(@Query() query: GetUsersDto) {
     return this.queryBus.execute(new GetUsersQuery(query));

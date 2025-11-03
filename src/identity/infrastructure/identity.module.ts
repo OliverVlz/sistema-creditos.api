@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
@@ -15,18 +15,18 @@ import { CreateUserClientHandler } from '../application/create-user-client/creat
 import { CreateUserClientCommand } from '../application/create-user-client/create-user-client.command';
 
 import { User } from './entity/user.entity';
-import { Client } from 'src/client/infrastructure/entity/client.entity';
-import { Organization } from 'src/organization/infrastructure/entity/organization.entity';  
 import { UserRepository } from './repositories/user.repository';
 import { AuthService } from './auth.service';
 import { UsersController } from './users.controller';
+import { ClientsModule } from 'src/client/infrastructure/client.module';
 
 @Module({
   imports: [
     ConfigModule,
     CqrsModule,
     JwtModule,
-    TypeOrmModule.forFeature([User, Client, Organization]),
+    TypeOrmModule.forFeature([User]),
+    forwardRef(() => ClientsModule),
   ],
   controllers: [UsersController],
   providers: [

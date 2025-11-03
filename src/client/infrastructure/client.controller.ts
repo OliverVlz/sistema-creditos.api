@@ -14,16 +14,16 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
-import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { CreateClientUserDto } from 'src/identity/infrastructure/dto/create-client-user.dto';
 
-import { CreateClientCommand } from '../application/create-client/create-client.command';
 import { UpdateClientCommand } from '../application/update-client/update-client.command';
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
-import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
 import { GetUsersClientInfoByIdQuery } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.query';
 import { GetUsersClientInfoQuery } from '../application/get-users-client-info/get-users-client-info.query';
+import { CreateUserClientCommand } from 'src/identity/application/create-user-client/create-user-client.command';
 import { AdminOrAdvisorGuard } from 'src/shared/guards';
+import { UserRole } from 'src/shared/enums';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -34,23 +34,29 @@ export class ClientsController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post('/')
-  @ApiOperation({ 
-    summary: 'Create client credit profile for existing user',
-    description: 'Admin/Advisor only: Creates credit information for an existing user with CLIENT role'
+  @Post('/register')
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({
+    summary: 'Registrar nuevo cliente - Solo ADMIN/ADVISOR',
+    description:
+      'Permite a Admin o Advisor crear un nuevo cliente (User + Client) con trazabilidad de quién lo creó',
   })
-  async create(@Body() body: CreateClientDto, @Req() req: any) {
-    return this.commandBus.execute(new CreateClientCommand({
-      ...body,
-      createdBy: req.user.id,
-    }));
+  async registerClient(@Body() body: CreateClientUserDto, @Req() req: any) {
+    return this.commandBus.execute(
+      new CreateUserClientCommand({
+        ...body,
+        role: UserRole.CLIENT,
+        createdBy: req.user.id,
+      }),
+    );
   }
 
   @Get('/all')
   @UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Obtener clientes con información crediticia - Solo ADMIN/ADVISOR',
-    description: 'Devuelve usuarios con rol CLIENT y su perfil crediticio asociado'
+    description:
+      'Devuelve usuarios con rol CLIENT y su perfil crediticio asociado',
   })
   async getUsersWithClientInfo(@Query() query: GetUsersClientInfoQuery) {
     return this.queryBus.execute(new GetUsersClientInfoQuery(query));
@@ -58,8 +64,9 @@ export class ClientsController {
 
   @Get('/me/profile')
   @ApiOperation({
-    summary: 'Obtener perfil de cliente del usuario autenticado - Solo CLIENT',
-    description: 'Devuelve el perfil crediticio (información de cliente y préstamos) del usuario autenticado. Solo accesible por usuarios con rol CLIENT.'
+    summary: 'Obtener perfil de cliente del usuario autenticado',
+    description:
+      'Devuelve el perfil crediticio (información de cliente y préstamos) del usuario autenticado. Solo accesible por usuarios con rol CLIENT.',
   })
   async getMyClientProfile(@Req() req: any) {
     return this.queryBus.execute(new GetUsersClientInfoByIdQuery(req.user.id));
@@ -69,39 +76,30 @@ export class ClientsController {
   @UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Obtener información de cliente por id - Solo ADMIN/ADVISOR',
-    description: 'Devuelve información de cliente (perfil crediticio, préstamos, etc) para el ID de usuario indicado. Solo accesible por ADMIN o ADVISOR.'
+    description:
+      'Devuelve información de cliente (perfil crediticio, préstamos, etc) para el ID de usuario indicado. Solo accesible por ADMIN o ADVISOR.',
   })
   async getClientInfoById(@Param('userId') userId: string, @Req() req: any) {
     return this.queryBus.execute(new GetUsersClientInfoByIdQuery(userId));
   }
 
-  @Get('/:id')
-  @ApiOperation({ 
-    summary: 'Get client by ID',
-    description: 'Get client credit profile and user information'
-  })
-  async getClientById(@Param('id') id: string) {
-    return this.queryBus.execute(new GetClientByIdQuery(id));
-  }
-
   @Patch('/:id')
-  @ApiOperation({ 
-    summary: 'Update client credit information',
-    description: 'Update only credit-related fields. Use PATCH /users/:id for personal information'
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({
+    summary:
+      'Actualizar información crediticia del cliente - Solo ADMIN/ADVISOR',
+    description:
+      'Actualiza campos relacionados con el perfil crediticio del cliente',
   })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateClientDto,
-  ) {
-    return this.commandBus.execute(
-      new UpdateClientCommand({ id, ...body }),
-    );
+  async update(@Param('id') id: string, @Body() body: UpdateClientDto) {
+    return this.commandBus.execute(new UpdateClientCommand({ id, ...body }));
   }
 
   @Delete('/:id')
-  @ApiOperation({ 
-    summary: 'Delete client credit profile',
-    description: 'Removes credit profile but keeps the user record'
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({
+    summary: 'Eliminar perfil crediticio - Solo ADMIN/ADVISOR',
+    description: 'Elimina el perfil crediticio del cliente',
   })
   async remove(@Param('id') id: string) {
     return this.commandBus.execute(new DeleteClientCommand(id));
