@@ -1,7 +1,6 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUsersClientInfoQuery } from './get-users-client-info.query';
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
-import { User } from 'src/identity/domain/user.model';
 
 @QueryHandler(GetUsersClientInfoQuery)
 export class GetUsersClientInfoHandler
@@ -10,70 +9,22 @@ export class GetUsersClientInfoHandler
   constructor(private readonly clientRepository: ClientRepository) {}
 
   async execute(query: GetUsersClientInfoQuery) {
-    const result =
-      await this.clientRepository.searchClientsWithPagination(query);
+    const result = await this.clientRepository.searchClientsForListView(query);
 
     const transformedData = result.data.map(client => ({
-      ...User.fromModel(client.user).getUserInfo(),
-      clientInfo: {
-        id: client.id,
-        isActive: client.isActive,
-        employmentStatus: client.employmentStatus,
-        address: client.address,
-        birthDate: client.birthDate,
-        phoneNumber: client.phoneNumber,
-        documentNumber: client.documentNumber,
-        createdAt: client.createdAt,
-        updatedAt: client.updatedAt,
-        user: client.user ? User.fromModel(client.user).getUserInfo() : null,
-        organization: client.organization
-          ? {
-              id: client.organization.id,
-              name: client.organization.name,
-              baseInterestRate: client.organization.baseInterestRate,
-              discountRate: client.organization.discountRate,
-              taxRate: client.organization.taxRate,
-              isActive: client.organization.isActive,
-              createdAt: client.organization.createdAt,
-              updatedAt: client.organization.updatedAt,
-            }
-          : null,
-        creator: client.creator
-          ? User.fromModel(client.creator).getUserInfo()
-          : null,
-        updater: client.updater
-          ? User.fromModel(client.updater).getUserInfo()
-          : null,
-        loans: client.loans?.map(loan => ({
-          id: loan.id,
-          loanNumber: loan.loanNumber,
-          amountRequested: loan.amountRequested,
-          termMonths: loan.termMonths,
-          monthlyPayment: loan.monthlyPayment,
-          totalAmount: loan.totalAmount,
-          interestRate: loan.interestRate,
-          processingFee: loan.processingFee,
-          status: loan.status,
-          rejectionReason: loan.rejectionReason,
-          approvedAt: loan.approvedAt,
-          signedAt: loan.signedAt,
-          disbursedAt: loan.disbursedAt,
-          createdAt: loan.createdAt,
-          updatedAt: loan.updatedAt,
-          loanType: loan.loanType
-            ? {
-                id: loan.loanType.id,
-                name: loan.loanType.name,
-              }
-            : undefined,
-          organization: loan.organization
-            ? {
-                id: loan.organization.id,
-                name: loan.organization.name,
-              }
-            : undefined,
-        })),
+      isActive: client.isActive,
+      fullName: `${client.user.firstName} ${client.user.lastName}`.trim(),
+      documentNumber: client.user.documentNumber,
+      email: client.user.email,
+      phoneNumber: client.user.phoneNumber,
+      organization: {
+        name: client.organization?.name || 'Sin organización',
       },
+      employmentStatus: client.employmentStatus,
+      createdAt: client.createdAt,
+      createdBy: client.creator
+        ? `${client.creator.firstName} ${client.creator.lastName}`.trim()
+        : null,
     }));
 
     return { ...result, data: transformedData };

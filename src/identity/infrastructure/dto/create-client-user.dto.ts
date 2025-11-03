@@ -44,7 +44,7 @@ export class CreateClientUserDto {
   @ApiProperty({ description: 'Número de teléfono del cliente (opcional)', example: '+573001234567', required: false })
   @IsString()
   @IsOptional()
-  phone?: string;
+  phoneNumber?: string;
 
   @ApiProperty({ description: 'Estado de empleo del cliente', enum: EmploymentStatus, example: EmploymentStatus.EMPLOYED })
   @IsEnum(EmploymentStatus)

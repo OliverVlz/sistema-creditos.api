@@ -14,7 +14,7 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
   constructor(
     private readonly hashService: HashService,
     private readonly userRepository: UserRepository,
-  ) { }
+  ) {}
 
   async execute(command: CreateUserCommand) {
     const formattedUser = await this.formatUser(command);
@@ -41,7 +41,7 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
       firstName: data.firstName,
       lastName: data.lastName,
       documentNumber: data.documentNumber,
-      phone: data.phone,
+      phoneNumber: data.phoneNumber,
       role: data.role || UserRole.CLIENT,
       language: data.language,
     };

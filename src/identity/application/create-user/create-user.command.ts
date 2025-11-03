@@ -5,8 +5,8 @@ export class CreateUserCommand {
   readonly lastName: string;
   readonly email: string;
   readonly password: string;
-  readonly documentNumber?: string;
-  readonly phone?: string;
+  readonly documentNumber: string;
+  readonly phoneNumber?: string;
   readonly role?: UserRole;
   readonly language?: Language;
 

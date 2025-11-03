@@ -8,7 +8,7 @@ export class CreateUserClientCommand {
   readonly address: string;
   readonly birthDate: string;
   readonly documentNumber: string;
-  readonly phone?: string;
+  readonly phoneNumber?: string;
   readonly employmentStatus: EmploymentStatus;
   readonly organizationId: string;
   readonly role: UserRole;

@@ -9,11 +9,12 @@ type CreateUserClientResult = {
   role: string;
   firstName: string;
   lastName: string;
+  documentNumber: string;
+  phoneNumber: string | null;
   client: {
     id: string;
     address: string | null;
     birthDate: string | null;
-    phoneNumber: string | null;
     employmentStatus: string | null;
     isActive: boolean;
     organization: { id: string; name: string };
@@ -41,7 +42,7 @@ export class CreateUserClientHandler
       lastName: command.lastName,
       role: command.role,
       documentNumber: command.documentNumber,
-      phoneNumber: command.phone,
+      phoneNumber: command.phoneNumber,
       address: command.address,
       birthDate: command.birthDate,
       employmentStatus: command.employmentStatus,

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEmail, MinLength, Matches, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, MinLength, Matches, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from 'src/shared/enums';
 
@@ -25,6 +25,16 @@ export class CreateStaffUserDto {
     message: 'La contraseña debe incluir mayúsculas, minúsculas y números',
   })
   password: string;
+
+  @ApiProperty({ description: 'Número de documento (Cédula, DNI, etc.)', example: '123456789' })
+  @IsString()
+  @IsNotEmpty()
+  documentNumber: string;
+
+  @ApiProperty({ description: 'Número de teléfono (opcional)', example: '+573001234567', required: false })
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 
   @ApiProperty({ 
     description: 'Role del usuario staff',

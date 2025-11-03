@@ -154,8 +154,7 @@ export class UserRepository {
     if (filters.terms) {
       const searchTerm = filters.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        // Buscar por firstName, lastName de User y documentNumber, phoneNumber, email de Client/User
-        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(client.documentNumber) LIKE :searchTerm OR LOWER(client.phoneNumber) LIKE :searchTerm)`,
+        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.documentNumber) LIKE :searchTerm OR LOWER(user.phoneNumber) LIKE :searchTerm)`,
         { searchTerm: `%${searchTerm}%` },
       );
     }
@@ -173,20 +172,16 @@ export class UserRepository {
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
-    // El mapeo ahora es más sencillo ya que client está directamente relacionado
     const usersWithClient = users.map(user => ({
       ...user,
       client: user.client ? {
         id: user.client.id,
-        documentNumber: user.client.documentNumber,
-        phoneNumber: user.client.phoneNumber,
         address: user.client.address,
         birthDate: user.client.birthDate,
         employmentStatus: user.client.employmentStatus,
         isActive: user.client.isActive,
         createdAt: user.client.createdAt,
         updatedAt: user.client.updatedAt,
-        // Otros campos del cliente que desees incluir
       } : null
     }));
 

@@ -24,8 +24,6 @@ export class GetUsersClientInfoByIdHandler
         employmentStatus: client.employmentStatus,
         address: client.address,
         birthDate: client.birthDate,
-        phoneNumber: client.phoneNumber,
-        documentNumber: client.documentNumber,
         createdAt: client.createdAt,
         updatedAt: client.updatedAt,
         user: client.user ? User.fromModel(client.user).getUserInfo() : null,

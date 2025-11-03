@@ -25,7 +25,7 @@ export class Client {
   @Column({
     name: 'employment_status',
     type: 'enum',
-    enum: EmploymentStatus
+    enum: EmploymentStatus,
   })
   employmentStatus: EmploymentStatus;
 
@@ -34,12 +34,6 @@ export class Client {
 
   @Column({ name: 'birth_date', type: 'date' })
   birthDate: Date;
-
-  @Column({ name: 'phone_number', nullable: true })
-  phoneNumber?: string;
-
-  @Column({ unique: true, name: 'document_number' })
-  documentNumber: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -28,6 +28,12 @@ export class User {
   @Column({ select: false })
   password: string;
 
+  @Column({ name: 'document_number', unique: true })
+  documentNumber: string;
+
+  @Column({ name: 'phone_number', nullable: true })
+  phoneNumber?: string;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.CLIENT })
   role: UserRole;
 

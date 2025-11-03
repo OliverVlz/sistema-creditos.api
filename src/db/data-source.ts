@@ -11,8 +11,9 @@ const dataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: ['dist/db/migrations/*.js'],
-  synchronize: true, // Disabled to use migrations
+  migrations: [__dirname + '/migrations/*.{ts,js}'],
+  synchronize: process.env.NODE_ENV === 'development',
+  migrationsRun: process.env.NODE_ENV === 'production',
   logging: process.env.NODE_ENV === 'development',
   ssl:
     process.env.NODE_ENV === 'production'

@@ -11,7 +11,11 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -54,9 +58,9 @@ export class ClientsController {
   @Get('/all')
   @UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
-    summary: 'Obtener clientes con información crediticia - Solo ADMIN/ADVISOR',
+    summary: 'Listar clientes para dashboard - Solo ADMIN/ADVISOR',
     description:
-      'Devuelve usuarios con rol CLIENT y su perfil crediticio asociado',
+      'Devuelve lista optimizada de clientes con información esencial para tabla de dashboard',
   })
   async getUsersWithClientInfo(@Query() query: GetUsersClientInfoQuery) {
     return this.queryBus.execute(new GetUsersClientInfoQuery(query));
