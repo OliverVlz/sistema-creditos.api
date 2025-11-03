@@ -66,8 +66,21 @@ export class UserRepository {
     return user;
   }
 
-  async findByEmail(email: string, failIfNotFound = false) {
-    const user = await this.userRepository.findOne({ where: { email } });
+  async findByEmail(
+    email: string,
+    failIfNotFound = false,
+    includePassword = false,
+  ) {
+    const query = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email });
+
+    if (includePassword) {
+      query.addSelect('user.password');
+    }
+
+    const user = await query.getOne();
+
     if (!user && failIfNotFound) {
       throw new NotFoundException(`User '${email}' not found`);
     }

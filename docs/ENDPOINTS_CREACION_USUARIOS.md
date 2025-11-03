@@ -3,6 +3,7 @@
 ## 🎯 FLUJOS DE NEGOCIO
 
 ### 1️⃣ AUTOREGISTRO (Cliente se registra solo)
+
 **Endpoint:** `POST /users/sign-up`  
 **Autenticación:** Pública (sin token)  
 **Descripción:** Un cliente se registra desde la web pública  
@@ -47,6 +48,7 @@ POST /users/sign-up
 ```
 
 **Resultado:**
+
 - ✅ Crea registro en tabla `users`
 - ✅ Crea registro en tabla `clients`
 - ✅ Ambos vinculados (relación 1:1)
@@ -55,6 +57,7 @@ POST /users/sign-up
 ---
 
 ### 2️⃣ REGISTRO ASISTIDO (Admin/Advisor crea cliente)
+
 **Endpoint:** `POST /clients/register`  
 **Autenticación:** Requiere token (Admin o Advisor)  
 **Descripción:** Un Admin o Advisor registra a un cliente manualmente (teléfono, presencial)  
@@ -100,6 +103,7 @@ Authorization: Bearer <token-admin-o-advisor>
 ```
 
 **Resultado:**
+
 - ✅ Crea registro en tabla `users`
 - ✅ Crea registro en tabla `clients`
 - ✅ Ambos vinculados (relación 1:1)
@@ -108,6 +112,7 @@ Authorization: Bearer <token-admin-o-advisor>
 ---
 
 ### 3️⃣ CREAR STAFF (Admin crea Advisor u otro Admin)
+
 **Endpoint:** `POST /users/admin/staff`  
 **Autenticación:** Requiere token (Solo Admin)  
 **Descripción:** Admin crea usuarios de personal interno (Advisor, Admin)  
@@ -136,20 +141,20 @@ Authorization: Bearer <token-admin>
 ```
 
 **Resultado:**
+
 - ✅ Crea registro en tabla `users` únicamente
 - ❌ NO crea registro en tabla `clients` (porque es staff)
 - ✅ Puede tener roles: ADVISOR, ADMIN
 
 ---
 
-
 ## 📊 RESUMEN DE ENDPOINTS
 
-| Endpoint | Autenticación | Quién lo usa | Qué crea | Trazabilidad |
-|----------|--------------|--------------|----------|--------------|
-| `POST /users/sign-up` | Público | Cliente | User + Client | createdBy = mismo usuario |
-| `POST /clients/register` | Admin/Advisor | Admin/Advisor | User + Client | createdBy = Admin/Advisor |
-| `POST /users/admin/staff` | Admin | Admin | Solo User | createdBy = Admin |
+| Endpoint                  | Autenticación | Quién lo usa  | Qué crea      | Trazabilidad              |
+| ------------------------- | ------------- | ------------- | ------------- | ------------------------- |
+| `POST /users/sign-up`     | Público       | Cliente       | User + Client | createdBy = mismo usuario |
+| `POST /clients/register`  | Admin/Advisor | Admin/Advisor | User + Client | createdBy = Admin/Advisor |
+| `POST /users/admin/staff` | Admin         | Admin         | Solo User     | createdBy = Admin         |
 
 ---
 
@@ -175,11 +180,11 @@ POST /users/admin/staff      → @UseGuards(AdminGuard)
 
 ```typescript
 enum EmploymentStatus {
-  EMPLOYED = 'EMPLOYED',              // Empleado
-  SELF_EMPLOYED = 'SELF_EMPLOYED',    // Independiente
-  UNEMPLOYED = 'UNEMPLOYED',          // Desempleado
-  RETIRED = 'RETIRED',                // Pensionado
-  STUDENT = 'STUDENT'                 // Estudiante
+  EMPLOYED = 'EMPLOYED', // Empleado
+  SELF_EMPLOYED = 'SELF_EMPLOYED', // Independiente
+  UNEMPLOYED = 'UNEMPLOYED', // Desempleado
+  RETIRED = 'RETIRED', // Pensionado
+  STUDENT = 'STUDENT', // Estudiante
 }
 ```
 
@@ -188,6 +193,7 @@ enum EmploymentStatus {
 ## 🗄️ ESTRUCTURA DE BASE DE DATOS
 
 ### Tabla `users`
+
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY,
@@ -204,6 +210,7 @@ CREATE TABLE users (
 ```
 
 ### Tabla `clients`
+
 ```sql
 CREATE TABLE clients (
   id UUID PRIMARY KEY,
@@ -227,21 +234,25 @@ CREATE TABLE clients (
 ## 🎯 VENTAJAS DE ESTA ARQUITECTURA
 
 ### ✅ Trazabilidad Completa
+
 - Sabes quién creó cada cliente
 - Diferencias entre autoregistro y registro asistido
 - Auditoría completa de operaciones
 
 ### ✅ Separación de Responsabilidades
+
 - Endpoint público solo para autoregistro
 - Endpoints protegidos para Admin/Advisor
 - Roles bien definidos
 
 ### ✅ Flexibilidad
+
 - Puedes agregar Client a User existente (casos edge)
 - Staff no necesita perfil de cliente
 - Fácil de extender con nuevos roles
 
 ### ✅ Seguridad
+
 - Endpoints críticos protegidos con Guards
 - Validación de permisos a nivel de controlador
 - Token JWT requerido para operaciones sensibles
@@ -251,6 +262,7 @@ CREATE TABLE clients (
 ## 🧪 EJEMPLOS DE USO
 
 ### Cliente se registra desde web pública:
+
 ```bash
 curl -X POST http://localhost:3000/users/sign-up \
   -H "Content-Type: application/json" \
@@ -268,6 +280,7 @@ curl -X POST http://localhost:3000/users/sign-up \
 ```
 
 ### Admin crea cliente manualmente:
+
 ```bash
 curl -X POST http://localhost:3000/clients/register \
   -H "Content-Type: application/json" \
@@ -286,6 +299,7 @@ curl -X POST http://localhost:3000/clients/register \
 ```
 
 ### Admin crea Advisor:
+
 ```bash
 curl -X POST http://localhost:3000/users/admin/staff \
   -H "Content-Type: application/json" \
@@ -298,4 +312,3 @@ curl -X POST http://localhost:3000/users/admin/staff \
     "role": "ADVISOR"
   }'
 ```
-

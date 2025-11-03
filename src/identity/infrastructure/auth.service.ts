@@ -36,7 +36,7 @@ export class AuthService {
   ) {
     let user: UserEntity;
     if (email) {
-      user = await this.userRepository.findByEmail(email);
+      user = await this.userRepository.findByEmail(email, false, true);
     } else {
       return this.denySignIn();
     }
