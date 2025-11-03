@@ -28,6 +28,7 @@ import { GetUsersClientInfoQuery } from '../application/get-users-client-info/ge
 import { CreateUserClientCommand } from 'src/identity/application/create-user-client/create-user-client.command';
 import { AdminOrAdvisorGuard } from 'src/shared/guards';
 import { UserRole } from 'src/shared/enums';
+import { Public } from 'src/shared/validation';
 
 @ApiTags('Clients')
 @Controller('clients')
@@ -39,7 +40,8 @@ export class ClientsController {
   ) {}
 
   @Post('/register')
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary: 'Registrar nuevo cliente - Solo ADMIN/ADVISOR',
     description:
@@ -56,7 +58,8 @@ export class ClientsController {
   }
 
   @Get('/all')
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary: 'Listar clientes para dashboard - Solo ADMIN/ADVISOR',
     description:
@@ -77,7 +80,8 @@ export class ClientsController {
   }
 
   @Get('/:userId/profile')
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary: 'Obtener información de cliente por id - Solo ADMIN/ADVISOR',
     description:
@@ -88,7 +92,8 @@ export class ClientsController {
   }
 
   @Patch('/:id')
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary:
       'Actualizar información crediticia del cliente - Solo ADMIN/ADVISOR',
@@ -100,7 +105,8 @@ export class ClientsController {
   }
 
   @Delete('/:id')
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary: 'Eliminar perfil crediticio - Solo ADMIN/ADVISOR',
     description: 'Elimina el perfil crediticio del cliente',

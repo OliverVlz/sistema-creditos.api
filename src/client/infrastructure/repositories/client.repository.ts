@@ -30,6 +30,7 @@ type CreateUserWithClientData = {
   address: string;
   birthDate: string;
   employmentStatus: EmploymentStatus;
+  employmentStatusOther?: string;
   organizationId: string;
   createdBy?: string;
 };
@@ -156,6 +157,7 @@ export class ClientRepository {
           address: data.address ?? null,
           birthDate: data.birthDate ? new Date(data.birthDate) : null,
           employmentStatus: data.employmentStatus ?? null,
+          employmentStatusOther: data.employmentStatusOther ?? null,
           isActive: true,
           creator: creatorUser || user,
         }),

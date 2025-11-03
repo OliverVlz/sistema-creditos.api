@@ -58,7 +58,8 @@ export class UsersController {
 
   @Post('/admin/staff')
   @ApiBearerAuth()
-  @UseGuards(AdminGuard)
+  //@UseGuards(AdminGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary: 'Crear usuario staff (Advisor/Admin) - Solo ADMIN',
     description:

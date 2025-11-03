@@ -20,7 +20,9 @@ interface RequiredDocumentResult {
 }
 
 @QueryHandler(GetRequiredDocumentsByClientQuery)
-export class GetRequiredDocumentsByClientHandler implements IQueryHandler<GetRequiredDocumentsByClientQuery> {
+export class GetRequiredDocumentsByClientHandler
+  implements IQueryHandler<GetRequiredDocumentsByClientQuery>
+{
   constructor(
     @InjectRepository(DocumentType)
     private documentTypeRepository: Repository<DocumentType>,
@@ -30,12 +32,14 @@ export class GetRequiredDocumentsByClientHandler implements IQueryHandler<GetReq
     private clientRepository: Repository<Client>,
   ) {}
 
-  async execute(query: GetRequiredDocumentsByClientQuery): Promise<RequiredDocumentResult[]> {
+  async execute(
+    query: GetRequiredDocumentsByClientQuery,
+  ): Promise<RequiredDocumentResult[]> {
     const { loanTypeId, clientId } = query;
 
     const client = await this.clientRepository.findOne({
       where: { id: clientId },
-      relations: ['organization']
+      relations: ['organization'],
     });
 
     if (!client) {
@@ -47,20 +51,19 @@ export class GetRequiredDocumentsByClientHandler implements IQueryHandler<GetReq
       .innerJoin(
         'loan_type_document_requirements',
         'req',
-        'dt.id = req.document_type_id'
+        'dt.id = req.document_type_id',
       )
       .where('req.loan_type_id = :loanTypeId', { loanTypeId })
       .andWhere('dt.is_active = true')
       .andWhere(
         '(req.organization_id = :organizationId OR req.organization_id IS NULL)',
-        { organizationId: client.organization.id }
+        { organizationId: client.organization.id },
       )
       .andWhere(
-        '(req.employment_status = :employmentStatus OR req.employment_status = :all OR req.employment_status IS NULL)',
-        { 
+        '(req.employment_status = :employmentStatus OR req.employment_status IS NULL)',
+        {
           employmentStatus: client.employmentStatus,
-          all: EmploymentStatus.ALL 
-        }
+        },
       )
       .select([
         'dt.id as documentTypeId',
@@ -70,7 +73,7 @@ export class GetRequiredDocumentsByClientHandler implements IQueryHandler<GetReq
         'dt.mime_types as mimeTypes',
         'dt.max_file_size as maxFileSize',
         'req.is_mandatory as isMandatory',
-        'req.display_order as displayOrder'
+        'req.display_order as displayOrder',
       ])
       .orderBy('req.display_order', 'ASC')
       .addOrderBy('dt.name', 'ASC');
@@ -85,7 +88,7 @@ export class GetRequiredDocumentsByClientHandler implements IQueryHandler<GetReq
       mimeTypes: JSON.parse(result.mimeTypes || '["application/pdf"]'),
       maxFileSize: result.maxFileSize,
       isMandatory: result.isMandatory,
-      displayOrder: result.displayOrder || 0
+      displayOrder: result.displayOrder || 0,
     }));
   }
 }

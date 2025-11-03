@@ -46,6 +46,7 @@ export class CreateUserClientHandler
       address: command.address,
       birthDate: command.birthDate,
       employmentStatus: command.employmentStatus,
+      employmentStatusOther: command.employmentStatusOther,
       organizationId: command.organizationId,
       createdBy: command.createdBy,
     });

@@ -1,15 +1,31 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, IsEnum, IsDateString, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsEnum,
+  IsDateString,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EmploymentStatus } from 'src/shared/enums';
 
 export class CreateClientUserDto {
   // Propiedades del User
-  @ApiProperty({ description: 'Email del usuario', example: 'john.doe@example.com' })
+  @ApiProperty({
+    description: 'Email del usuario',
+    example: 'john.doe@example.com',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ description: 'Contraseña del usuario', example: 'password123' })
+  @ApiProperty({
+    description: 'Contraseña del usuario',
+    example: 'password123',
+  })
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
@@ -26,32 +42,63 @@ export class CreateClientUserDto {
   lastName: string;
 
   // Propiedades del Client
-  @ApiProperty({ description: 'Dirección del cliente', example: 'Calle Falsa 123' })
+  @ApiProperty({
+    description: 'Dirección del cliente',
+    example: 'Calle Falsa 123',
+  })
   @IsString()
   @IsNotEmpty()
   address: string;
 
-  @ApiProperty({ description: 'Fecha de nacimiento del cliente (YYYY-MM-DD)', example: '1990-01-01' })
+  @ApiProperty({
+    description: 'Fecha de nacimiento del cliente (YYYY-MM-DD)',
+    example: '1990-01-01',
+  })
   @IsDateString()
   @IsNotEmpty()
   birthDate: string;
 
-  @ApiProperty({ description: 'Número de documento del cliente (Cédula, DNI, etc.)', example: '123456789', uniqueItems: true })
+  @ApiProperty({
+    description: 'Número de documento del cliente (Cédula, DNI, etc.)',
+    example: '123456789',
+    uniqueItems: true,
+  })
   @IsString()
   @IsNotEmpty()
   documentNumber: string;
 
-  @ApiProperty({ description: 'Número de teléfono del cliente (opcional)', example: '+573001234567', required: false })
+  @ApiProperty({
+    description: 'Número de teléfono del cliente (opcional)',
+    example: '+573001234567',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   phoneNumber?: string;
 
-  @ApiProperty({ description: 'Estado de empleo del cliente', enum: EmploymentStatus, example: EmploymentStatus.EMPLOYED })
+  @ApiProperty({
+    description: 'Estado de empleo del cliente',
+    enum: EmploymentStatus,
+    example: EmploymentStatus.ACTIVE,
+  })
   @IsEnum(EmploymentStatus)
   @IsNotEmpty()
   employmentStatus: EmploymentStatus;
 
-  @ApiProperty({ description: 'ID de la organización a la que pertenece el cliente', example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' })
+  @ApiProperty({
+    description:
+      'Descripción del estado de empleo (solo si employmentStatus es OTHER)',
+    example: 'Contratista',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  employmentStatusOther?: string;
+
+  @ApiProperty({
+    description: 'ID de la organización a la que pertenece el cliente',
+    example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+  })
   @IsUUID()
   @IsNotEmpty()
   organizationId: string;
