@@ -2,6 +2,14 @@
 
 API backend para el sistema de gestión de créditos desarrollada con NestJS.
 
+## ✨ Características Destacadas
+
+- 🎯 **Seeders Inteligentes**: Los seeders se ejecutan automáticamente solo cuando la BD está vacía, evitando duplicados
+- 🐳 **Docker Optimizado**: Diferencia entre construcción y ejecución del contenedor
+- 🔄 **Hot Reload**: Desarrollo ágil con recarga automática de cambios
+- 📦 **Multi-stage Build**: Imágenes optimizadas para desarrollo y producción
+- 🛡️ **TypeScript + NestJS**: Código tipado y arquitectura escalable
+
 ## 🚀 Inicio Rápido
 
 ### 🏠 Desarrollo Local
@@ -42,39 +50,54 @@ pnpm seed                 # 🌱 Poblar datos de prueba
 **Configuración inicial:**
 
 ```bash
-# 1. Configurar entorno Docker
-pnpm env:docker
+# 1. Asegúrate de tener un .env con tus variables
+# (Las variables de BD se configuran automáticamente en docker-compose.yml)
 
-# 2. Iniciar con Docker
+# 2. Iniciar con Docker (primera vez)
 pnpm docker:up
 ```
 
-**Comandos de Docker:**
+
+> 🎯 **Seeders Inteligentes**: Los seeders se ejecutan automáticamente solo si la base de datos está vacía. En reinicios, se omiten para evitar duplicados.
+
+**Comandos principales:**
 
 ```bash
-pnpm docker:up           # 🟢 Iniciar containers (con build)
-pnpm docker:start        # ▶️  Iniciar containers existentes
+pnpm docker:up           # 🟢 Iniciar con build (seeders automáticos si BD vacía)
+pnpm docker:start        # ▶️  Iniciar sin build
+pnpm docker:restart      # 🔄 Reiniciar solo la app (rápido)
+pnpm docker:rebuild      # 🔨 Rebuild completo (limpia BD + seeders)
 pnpm docker:down         # 🛑 Detener containers
 pnpm docker:logs         # 📄 Ver logs en tiempo real
-pnpm docker:seed         # 🌱 Poblar datos dentro del container
+pnpm docker:shell        # 💻 Acceder al shell del container
 pnpm docker:clean        # 🧹 Limpiar todo (containers, volumes, images)
 ```
 
-### ** Docker Compose directo (Ultra simple)**
+**Comandos de seeders:**
 
 ```bash
-docker-compose up --build              # Levantar proyecto
-docker-compose exec app pnpm seed      # Ejecutar seed
+pnpm docker:seed         # 🌱 Ejecutar seeders manualmente
+pnpm docker:seed:force   # 🔥 Forzar ejecución de seeders
 ```
+
+### 📘 Diferencia entre BUILD y RUN
+
+**BUILD** (`docker build`):
+
+- Solo prepara la imagen con código y dependencias
+- NO ejecuta base de datos ni seeders
+- Resultado: imagen reutilizable
+
+**RUN** (`docker-compose up`):
+
+- Espera a que PostgreSQL esté listo
+- Construye la aplicación
+- Verifica si la BD está vacía
+- Ejecuta seeders automáticamente (solo si es necesario)
+- Inicia la aplicación
 
 ## 🛠️ Scripts Adicionales
 
-### Configuración de Entorno
-
-```bash
-pnpm env:local           # 🏠 Configurar para desarrollo local
-pnpm env:docker          # 🐳 Configurar para Docker
-```
 
 ### Base de Datos Local
 
@@ -111,10 +134,18 @@ pnpm mail:dev            # 📧 Servidor de desarrollo para templates
 - **Framework**: NestJS
 - **Base de Datos**: PostgreSQL
 - **ORM**: TypeORM
-- **Autenticación**: JWT
+- **Autenticación**: JWT + Passport
 - **Validación**: class-validator
-- **Documentación**: Swagger
+- **Documentación**: Swagger/OpenAPI
 - **Package Manager**: pnpm
+- **Containerización**: Docker + Docker Compose
+
+## ⚙️ Requisitos
+
+- **Node.js**: >= 20.7.0
+- **PostgreSQL**: >= 16 (o Docker)
+- **pnpm**: >= 8.0 (recomendado) o Yarn
+- **Docker**: >= 24.0 (opcional, para desarrollo con contenedores)
 
 ## 📍 URLs de Desarrollo
 
@@ -122,28 +153,40 @@ pnpm mail:dev            # 📧 Servidor de desarrollo para templates
 - **Swagger**: http://localhost:3000/api
 - **Cliente Frontend**: http://localhost:5173
 
+## 🔄 Flujos de Trabajo Comunes
+
+### Desarrollo Diario con Docker
+
+```bash
+# Primer día
+pnpm docker:up          # Crea BD, ejecuta seeders y levanta la app
+
+# Días siguientes
+pnpm docker:start       # Solo levanta los containers (mantiene datos)
+```
+
+### Cambios en Esquema de Base de Datos
+
+```bash
+# Cuando modificas entidades o quieres empezar de cero
+pnpm docker:rebuild     # Limpia BD, reconstruye y ejecuta seeders
+```
+
+### Desarrollo sin Docker
+
+```bash
+# Primera vez
+pnpm env:local
+pnpm db:setup
+pnpm install
+pnpm start
+pnpm seed
+
+# Días siguientes
+pnpm start
+```
+
 ## 📚 Documentación
 
 La documentación completa del sistema está disponible en la carpeta [`docs/`](./docs/):
 
-### **📖 Documentación Principal**
-- [**Sistema Completo**](./docs/SISTEMA_CREDITOS_DOCUMENTACION.md) - Arquitectura, entidades y flujos del sistema
-- [**Diagramas**](./docs/SISTEMA_CREDITOS_DIAGRAMA.md) - Diagramas ER, flujos y arquitectura visual
-
-### **🔄 Flujos de Usuario**
-- [**Flujo de Solicitud de Crédito**](./docs/FLUJO_SOLICITUD_CREDITO.md) - Proceso completo para solicitar créditos
-- [**Configuración Admin**](./docs/ADMIN_CONFIGURACION_DOCUMENTOS.md) - Panel de administración para configurar documentos
-
-### **🎯 Guía Rápida**
-
-**Para Desarrolladores:**
-1. Lee este README para configuración
-2. Revisa [Sistema Completo](./docs/SISTEMA_CREDITOS_DOCUMENTACION.md) para entender la arquitectura
-3. Consulta [Diagramas](./docs/SISTEMA_CREDITOS_DIAGRAMA.md) para visualizar relaciones
-
-**Para Administradores:**
-1. Lee [Configuración Admin](./docs/ADMIN_CONFIGURACION_DOCUMENTOS.md) para configurar documentos
-2. Revisa [Flujo de Solicitud](./docs/FLUJO_SOLICITUD_CREDITO.md) para entender el proceso
-
-**Para Usuarios Finales:**
-1. Consulta [Flujo de Solicitud](./docs/FLUJO_SOLICITUD_CREDITO.md) para entender cómo solicitar créditos
