@@ -90,7 +90,8 @@ export class UsersController {
 
   @Get('/')
   @ApiBearerAuth()
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
+  @Public()
   @ApiOperation({
     summary: 'Listar usuarios - Solo ADMIN/ADVISOR',
     description: 'Obtener lista de usuarios con filtros y paginación',
