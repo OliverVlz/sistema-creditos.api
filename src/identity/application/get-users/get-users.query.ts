@@ -5,8 +5,9 @@ export class GetUsersQuery {
   readonly page?: number;
   readonly limit?: number;
   readonly terms?: string;
+  readonly isActive?: boolean;
 
   constructor(params?: GetUsersQuery) {
     Object.assign(this, params);
   }
-} 
+}

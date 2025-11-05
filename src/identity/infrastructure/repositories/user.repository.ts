@@ -14,6 +14,7 @@ type UserPaginationFilters = {
   terms?: string;
   limit?: number;
   offset?: number;
+  isActive?: boolean;
 };
 
 @Injectable()
@@ -21,7 +22,7 @@ export class UserRepository {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) { }
+  ) {}
 
   async create(data: Partial<User>) {
     const user = this.userRepository.create(data);
@@ -101,11 +102,23 @@ export class UserRepository {
   /**
    * Método con paginación offset-based usando PaginationUtils
    */
-  async searchUsersWithPagination(filters: { role?: UserRole; terms?: string; page?: number; limit?: number; }) {
+  async searchUsersWithPagination(filters: {
+    role?: UserRole;
+    terms?: string;
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+  }) {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
 
     if (filters.role) {
       queryBuilder.where('user.role = :role', { role: filters.role });
+    }
+
+    if (filters.isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', {
+        isActive: filters.isActive,
+      });
     }
 
     if (filters.terms) {
@@ -124,9 +137,7 @@ export class UserRepository {
       filters.limit,
     );
 
-    queryBuilder
-      .skip(paginationOptions.offset)
-      .take(paginationOptions.limit);
+    queryBuilder.skip(paginationOptions.offset).take(paginationOptions.limit);
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
@@ -139,8 +150,15 @@ export class UserRepository {
   /**
    * Método para obtener usuarios con información de cliente (JOIN con tabla clients)
    */
-  async searchUsersWithClientInfo(filters: { role?: UserRole; terms?: string; page?: number; limit?: number; userId?: string; }) {
-    const queryBuilder = this.userRepository.createQueryBuilder('user')
+  async searchUsersWithClientInfo(filters: {
+    role?: UserRole;
+    terms?: string;
+    page?: number;
+    limit?: number;
+    userId?: string;
+  }) {
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
       .leftJoinAndSelect('user.client', 'client'); // Usar la relación definida
 
     if (filters.role) {
@@ -166,23 +184,23 @@ export class UserRepository {
       filters.limit,
     );
 
-    queryBuilder
-      .skip(paginationOptions.offset)
-      .take(paginationOptions.limit);
+    queryBuilder.skip(paginationOptions.offset).take(paginationOptions.limit);
 
     const [users, total] = await queryBuilder.getManyAndCount();
 
     const usersWithClient = users.map(user => ({
       ...user,
-      client: user.client ? {
-        id: user.client.id,
-        address: user.client.address,
-        birthDate: user.client.birthDate,
-        employmentStatus: user.client.employmentStatus,
-        isActive: user.client.isActive,
-        createdAt: user.client.createdAt,
-        updatedAt: user.client.updatedAt,
-      } : null
+      client: user.client
+        ? {
+            id: user.client.id,
+            address: user.client.address,
+            birthDate: user.client.birthDate,
+            employmentStatus: user.client.employmentStatus,
+            isActive: user.client.isActive,
+            createdAt: user.client.createdAt,
+            updatedAt: user.client.updatedAt,
+          }
+        : null,
     }));
 
     return PaginationUtils.createPaginatedResult(
