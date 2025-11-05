@@ -11,7 +11,7 @@ export class AdminOrAdvisorGuard implements CanActivate {
       throw new ForbiddenException('Acceso denegado');
     }
 
-    const allowedRoles = [UserRole.ADMIN, UserRole.ADVISOR];
+    const allowedRoles = [UserRole.ADMIN, UserRole.ASESOR];
     
     if (!allowedRoles.includes(user.role)) {
       throw new ForbiddenException('Permisos insuficientes');

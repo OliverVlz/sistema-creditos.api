@@ -79,7 +79,7 @@ export class CreateClientUserDto {
   @ApiProperty({
     description: 'Estado de empleo del cliente',
     enum: EmploymentStatus,
-    example: EmploymentStatus.ACTIVE,
+    example: EmploymentStatus.ACTIVO,
   })
   @IsEnum(EmploymentStatus)
   @IsNotEmpty()

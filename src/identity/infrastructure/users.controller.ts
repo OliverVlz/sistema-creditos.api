@@ -51,7 +51,7 @@ export class UsersController {
     return this.commandBus.execute(
       new CreateUserClientCommand({
         ...body,
-        role: UserRole.CLIENT,
+        role: UserRole.CLIENTE,
       }),
     );
   }

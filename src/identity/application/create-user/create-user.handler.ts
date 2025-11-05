@@ -42,7 +42,7 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
       lastName: data.lastName,
       documentNumber: data.documentNumber,
       phoneNumber: data.phoneNumber,
-      role: data.role || UserRole.CLIENT,
+      role: data.role || UserRole.CLIENTE,
       language: data.language,
     };
   }

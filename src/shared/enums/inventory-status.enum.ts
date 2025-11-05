@@ -1,5 +1,5 @@
 export enum InventoryStatus {
-  Active = 'active',
-  Inactive = 'inactive',
-  Discontinued = 'discontinued',
+  Activo = 'activo',
+  Inactivo = 'inactivo',
+  Descontinuado = 'descontinuado',
 }

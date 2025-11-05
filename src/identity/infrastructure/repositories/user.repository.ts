@@ -29,27 +29,6 @@ export class UserRepository {
     return this.userRepository.save(user);
   }
 
-  async findUsers(role?: UserRole, terms?: string) {
-    const queryBuilder = this.userRepository.createQueryBuilder('user');
-
-    if (role) {
-      queryBuilder.where({ role });
-    }
-
-    if (terms) {
-      const searchTerm = terms.toLowerCase().trim();
-      queryBuilder.andWhere(
-        // Buscar por firstName, lastName y email del usuario
-        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm)`,
-        { searchTerm: `%${searchTerm}%` },
-      );
-    }
-
-    queryBuilder.orderBy('user.createdAt', 'DESC');
-
-    return queryBuilder.getMany();
-  }
-
   async findById(userId: string, failIfNotFound = false, select?: UserSelect) {
     const findOptions: FindOneOptions<User> = {
       where: { id: userId },
@@ -125,7 +104,7 @@ export class UserRepository {
       const searchTerm = filters.terms.toLowerCase().trim();
       queryBuilder.andWhere(
         // Buscar por firstName, lastName y email del usuario
-        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm)`,
+        `(LOWER(user.firstName) LIKE :searchTerm OR LOWER(user.lastName) LIKE :searchTerm OR LOWER(user.email) LIKE :searchTerm OR LOWER(user.documentNumber) LIKE :searchTerm OR LOWER(user.phoneNumber) LIKE :searchTerm)`,
         { searchTerm: `%${searchTerm}%` },
       );
     }

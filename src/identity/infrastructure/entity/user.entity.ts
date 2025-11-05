@@ -34,7 +34,7 @@ export class User {
   @Column({ name: 'phone_number', nullable: true })
   phoneNumber?: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.CLIENT })
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.CLIENTE })
   role: UserRole;
 
   @OneToOne(() => Client, client => client.user)

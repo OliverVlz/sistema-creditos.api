@@ -1,5 +1,5 @@
 export enum EmploymentStatus {
-  ACTIVE = 'ACTIVE',
-  RETIRED = 'RETIRED',
-  OTHER = 'OTHER',
+  ACTIVO = 'ACTIVO',
+  JUBILADO = 'JUBILADO',
+  OTRO = 'OTRO',
 }

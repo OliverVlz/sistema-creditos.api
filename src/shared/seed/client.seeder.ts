@@ -69,7 +69,7 @@ export class ClientSeeder {
           userRepository.create({
             email: data.email,
             password: hashedPassword,
-            role: UserRole.CLIENT,
+            role: UserRole.CLIENTE,
             firstName: userFirstName,
             lastName: userLastName,
             documentNumber: data.documentNumber,

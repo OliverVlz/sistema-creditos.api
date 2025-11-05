@@ -14,7 +14,7 @@ export class ClientGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    if (user.role !== UserRole.CLIENT) {
+    if (user.role !== UserRole.CLIENTE) {
       throw new ForbiddenException('Access denied. Client role required');
     }
 

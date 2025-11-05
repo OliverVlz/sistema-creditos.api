@@ -24,7 +24,7 @@ export class CreateLoanTypeDocumentRequirementDto {
   @ApiProperty({ 
     description: 'Estado de empleo al que aplica este requisito',
     enum: EmploymentStatus,
-    example: EmploymentStatus.ACTIVE,
+    example: EmploymentStatus.ACTIVO,
     required: false
   })
   @IsOptional()

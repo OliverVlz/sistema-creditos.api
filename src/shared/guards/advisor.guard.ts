@@ -11,7 +11,7 @@ export class AdvisorGuard implements CanActivate {
       throw new ForbiddenException('Acceso denegado');
     }
 
-    if (user.role !== UserRole.ADVISOR) {
+    if (user.role !== UserRole.ASESOR) {
       throw new ForbiddenException('Permisos insuficientes');
     }
 

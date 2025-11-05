@@ -51,7 +51,7 @@ export class ClientsController {
     return this.commandBus.execute(
       new CreateUserClientCommand({
         ...body,
-        role: UserRole.CLIENT,
+        role: UserRole.CLIENTE,
         createdBy: req.user.id,
       }),
     );

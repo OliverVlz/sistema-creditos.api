@@ -1,4 +1,4 @@
 export enum LoginMethod {
-  Email = 'email',
-  Phone = 'phone',
+  Correo = 'email',
+  Telefono = 'phone',
 }
