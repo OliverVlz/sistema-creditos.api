@@ -16,15 +16,15 @@ export class CreateClientUserDto {
   // Propiedades del User
   @ApiProperty({
     description: 'Email del usuario',
-    example: 'john.doe@example.com',
+    example: 'cliente@dev.com',
   })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @ApiProperty({
-    description: 'Contraseña del usuario',
-    example: 'password123',
+    description: 'Contraseña del usuario (mínimo 8 caracteres)',
+    example: 'Pass123!',
   })
   @IsString()
   @IsNotEmpty()

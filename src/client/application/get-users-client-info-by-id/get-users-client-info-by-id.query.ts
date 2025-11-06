@@ -1,7 +1,9 @@
 export class GetUsersClientInfoByIdQuery {
-  readonly userId: string;
+  readonly id: string;
+  readonly isClientId: boolean;
 
-  constructor(userId: string) {
-    this.userId = userId;
+  constructor(id: string, isClientId: boolean = false) {
+    this.id = id;
+    this.isClientId = isClientId;
   }
 }

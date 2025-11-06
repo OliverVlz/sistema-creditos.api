@@ -228,6 +228,22 @@ export class ClientRepository {
     return client;
   }
 
+  async findOneByClientIdWithLoans(clientId: string) {
+    const client = await this.clientsRepository.findOne({
+      where: { id: clientId },
+      relations: [
+        'user',
+        'organization',
+        'creator',
+        'updater',
+        'loans',
+        'loans.loanType',
+        'loans.organization',
+      ],
+    });
+    return client;
+  }
+
   async remove(id: string) {
     const deleteResult = await this.clientsRepository.delete(id);
     if (deleteResult.affected === 0) {
@@ -262,7 +278,7 @@ export class ClientRepository {
     }
 
     if (searchData.organizationId) {
-      queryBuilder.andWhere('client.organizationId = :organizationId', {
+      queryBuilder.andWhere('organization.id = :organizationId', {
         organizationId: searchData.organizationId,
       });
     }
@@ -322,7 +338,7 @@ export class ClientRepository {
     }
 
     if (searchData.organizationId) {
-      queryBuilder.andWhere('client.organizationId = :organizationId', {
+      queryBuilder.andWhere('organization.id = :organizationId', {
         organizationId: searchData.organizationId,
       });
     }

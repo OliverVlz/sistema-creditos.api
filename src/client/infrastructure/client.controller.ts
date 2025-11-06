@@ -68,24 +68,26 @@ export class ClientsController {
 
   @Get('/me/profile')
   @ApiOperation({
-    summary: 'Obtener perfil de cliente del usuario autenticado',
+    summary: 'Obtener perfil del cliente autenticado',
     description:
-      'Devuelve el perfil crediticio (información de cliente y préstamos) del usuario autenticado. Solo accesible por usuarios con rol CLIENT.',
+      'Devuelve el perfil crediticio completo (información personal, préstamos, organización, etc) del usuario autenticado. Busca el cliente usando el user.id del token JWT. Solo accesible por usuarios con rol CLIENT.',
   })
   async getMyClientProfile(@Req() req: any) {
     return this.queryBus.execute(new GetUsersClientInfoByIdQuery(req.user.id));
   }
 
-  @Get('/:userId/profile')
+  @Get('/:id/profile')
   //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
   @Public()
   @ApiOperation({
-    summary: 'Obtener información de cliente por id - Solo ADMIN/ADVISOR',
+    summary: 'Obtener perfil de cliente por client.id - Solo ADMIN/ADVISOR',
     description:
-      'Devuelve información de cliente (perfil crediticio, préstamos, etc) para el ID de usuario indicado. Solo accesible por ADMIN o ADVISOR.',
+      'Devuelve información completa del cliente (perfil crediticio, préstamos, organización, etc) usando el ID del cliente (client.id). Este es el ID que se obtiene del endpoint /clients/all. Solo accesible por ADMIN o ADVISOR.',
   })
-  async getClientInfoById(@Param('userId') userId: string, @Req() req: any) {
-    return this.queryBus.execute(new GetUsersClientInfoByIdQuery(userId));
+  async getClientInfoById(@Param('id') clientId: string, @Req() req: any) {
+    return this.queryBus.execute(
+      new GetUsersClientInfoByIdQuery(clientId, true),
+    );
   }
 
   @Patch('/:id')

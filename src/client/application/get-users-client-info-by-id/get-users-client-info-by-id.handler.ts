@@ -10,9 +10,9 @@ export class GetUsersClientInfoByIdHandler
   constructor(private readonly clientRepository: ClientRepository) {}
 
   async execute(query: GetUsersClientInfoByIdQuery) {
-    const client = await this.clientRepository.findOneByUserIdWithLoans(
-      query.userId,
-    );
+    const client = query.isClientId
+      ? await this.clientRepository.findOneByClientIdWithLoans(query.id)
+      : await this.clientRepository.findOneByUserIdWithLoans(query.id);
 
     if (!client) return null;
 
