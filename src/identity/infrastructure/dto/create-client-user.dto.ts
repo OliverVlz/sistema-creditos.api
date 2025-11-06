@@ -86,16 +86,6 @@ export class CreateClientUserDto {
   employmentStatus: EmploymentStatus;
 
   @ApiProperty({
-    description:
-      'Descripción del estado de empleo (solo si employmentStatus es OTHER)',
-    example: 'Contratista',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  employmentStatusOther?: string;
-
-  @ApiProperty({
     description: 'ID de la organización a la que pertenece el cliente',
     example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
   })

@@ -29,9 +29,6 @@ export class Client {
   })
   employmentStatus: EmploymentStatus;
 
-  @Column({ name: 'employment_status_other', nullable: true })
-  employmentStatusOther?: string;
-
   @Column({ name: 'address' })
   address: string;
 

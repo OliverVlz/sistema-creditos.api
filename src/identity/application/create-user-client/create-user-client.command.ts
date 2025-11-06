@@ -1,4 +1,4 @@
-import { EmploymentStatus, UserRole } from "src/shared/enums";
+import { EmploymentStatus, UserRole } from 'src/shared/enums';
 
 export class CreateUserClientCommand {
   readonly email: string;
@@ -10,7 +10,6 @@ export class CreateUserClientCommand {
   readonly documentNumber: string;
   readonly phoneNumber?: string;
   readonly employmentStatus: EmploymentStatus;
-  readonly employmentStatusOther?: string;
   readonly organizationId: string;
   readonly role: UserRole;
   readonly createdBy?: string;

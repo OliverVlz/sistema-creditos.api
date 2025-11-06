@@ -9,9 +9,15 @@ export class GetUsersClientInfoHandler
   constructor(private readonly clientRepository: ClientRepository) {}
 
   async execute(query: GetUsersClientInfoQuery) {
-    const result = await this.clientRepository.searchClientsForListView(query);
+    const result = await this.clientRepository.searchClientsForListView({
+      page: query.page,
+      limit: query.limit,
+      terms: query.terms,
+      organizationId: query.organizationId,
+    });
 
     const transformedData = result.data.map(client => ({
+      id: client.id,
       isActive: client.isActive,
       fullName: `${client.user.firstName} ${client.user.lastName}`.trim(),
       documentNumber: client.user.documentNumber,

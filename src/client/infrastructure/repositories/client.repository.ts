@@ -30,7 +30,6 @@ type CreateUserWithClientData = {
   address: string;
   birthDate: string;
   employmentStatus: EmploymentStatus;
-  employmentStatusOther?: string;
   organizationId: string;
   createdBy?: string;
 };
@@ -157,7 +156,6 @@ export class ClientRepository {
           address: data.address ?? null,
           birthDate: data.birthDate ? new Date(data.birthDate) : null,
           employmentStatus: data.employmentStatus ?? null,
-          employmentStatusOther: data.employmentStatusOther ?? null,
           isActive: true,
           creator: creatorUser || user,
         }),
@@ -258,7 +256,7 @@ export class ClientRepository {
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term)`,
+        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term OR LOWER(user.phoneNumber) LIKE :term)`,
         { term: `%${term}%` },
       );
     }
