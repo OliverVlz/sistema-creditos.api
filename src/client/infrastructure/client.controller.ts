@@ -20,8 +20,8 @@ import { CreateClientUserDto } from 'src/identity/infrastructure/dto/create-clie
 
 import { UpdateClientCommand } from '../application/update-client/update-client.command';
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
-import { GetUsersClientInfoByIdQuery } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.query';
-import { GetUsersClientInfoQuery } from '../application/get-users-client-info/get-users-client-info.query';
+import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
+import { GetClientsQuery } from '../application/get-clients/get-clients.query';
 import { CreateClientCommand } from '../application/create-client/create-client.command';
 import { AdminOrAdvisorGuard } from 'src/shared/guards';
 import { UserRole } from 'src/shared/enums';
@@ -65,7 +65,7 @@ export class ClientsController {
       'Devuelve lista optimizada de clientes con información esencial para tabla de dashboard. Permite filtrar por organizationId, términos de búsqueda, estado activo y estado de empleo.',
   })
   async getUsersWithClientInfo(@Query() query: GetClientsDto) {
-    return this.queryBus.execute(new GetUsersClientInfoQuery(query));
+    return this.queryBus.execute(new GetClientsQuery(query));
   }
 
   @Get('/me/profile')
@@ -75,7 +75,7 @@ export class ClientsController {
       'Devuelve el perfil crediticio completo (información personal, préstamos, organización, etc) del usuario autenticado. Busca el cliente usando el user.id del token JWT. Solo accesible por usuarios con rol CLIENT.',
   })
   async getMyClientProfile(@Req() req: any) {
-    return this.queryBus.execute(new GetUsersClientInfoByIdQuery(req.user.id));
+    return this.queryBus.execute(new GetClientByIdQuery(req.user.id));
   }
 
   @Get('/:id/profile')
@@ -87,9 +87,7 @@ export class ClientsController {
       'Devuelve información completa del cliente (perfil crediticio, préstamos, organización, etc) usando el ID del cliente (client.id). Este es el ID que se obtiene del endpoint /clients/all. Solo accesible por ADMIN o ADVISOR.',
   })
   async getClientInfoById(@Param('id') clientId: string, @Req() req: any) {
-    return this.queryBus.execute(
-      new GetUsersClientInfoByIdQuery(clientId, true),
-    );
+    return this.queryBus.execute(new GetClientByIdQuery(clientId, true));
   }
 
   @Patch('/:id')

@@ -8,8 +8,8 @@ import { ClientRepository } from './repositories/client.repository';
 import { CreateClientHandler } from '../application/create-client/create-client.handler';
 import { DeleteClientHandler } from '../application/delete-client/delete-client.handler';
 import { UpdateClientHandler } from '../application/update-client/update-client.handler';
-import { GetUsersClientInfoHandler } from '../application/get-users-client-info/get-users-client-info.handler';
-import { GetUsersClientInfoByIdHandler } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.handler';
+import { GetClientsHandler } from '../application/get-clients/get-clients.handler';
+import { GetClientByIdHandler } from '../application/get-client-by-id/get-client-by-id.handler';
 
 import { IdentityModule } from 'src/identity/infrastructure/identity.module';
 
@@ -25,8 +25,8 @@ import { IdentityModule } from 'src/identity/infrastructure/identity.module';
     CreateClientHandler,
     DeleteClientHandler,
     UpdateClientHandler,
-    GetUsersClientInfoHandler,
-    GetUsersClientInfoByIdHandler,
+    GetClientsHandler,
+    GetClientByIdHandler,
   ],
   exports: [ClientRepository, TypeOrmModule],
 })

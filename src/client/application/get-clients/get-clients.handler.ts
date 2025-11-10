@@ -1,14 +1,12 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { GetUsersClientInfoQuery } from './get-users-client-info.query';
+import { GetClientsQuery } from './get-clients.query';
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
 
-@QueryHandler(GetUsersClientInfoQuery)
-export class GetUsersClientInfoHandler
-  implements IQueryHandler<GetUsersClientInfoQuery>
-{
+@QueryHandler(GetClientsQuery)
+export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
   constructor(private readonly clientRepository: ClientRepository) {}
 
-  async execute(query: GetUsersClientInfoQuery) {
+  async execute(query: GetClientsQuery) {
     const result = await this.clientRepository.searchClientsForListView({
       page: query.page,
       limit: query.limit,
