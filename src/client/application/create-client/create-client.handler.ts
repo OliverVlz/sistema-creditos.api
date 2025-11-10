@@ -1,70 +1,51 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { QueryFailedError } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
-import { DomainError } from 'src/shared/domain';
-import { User } from 'src/identity/infrastructure/entity/user.entity';
-
-import { ClientRepository } from '../../infrastructure/repositories/client.repository';
+import { HashService } from 'src/shared/hash';
 import { CreateClientCommand } from './create-client.command';
+import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
+
+type CreateClientResult = {
+  id: string;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  documentNumber: string;
+  phoneNumber: string | null;
+  client: {
+    id: string;
+    address: string | null;
+    birthDate: string | null;
+    employmentStatus: string | null;
+    isActive: boolean;
+    organization: { id: string; name: string };
+  };
+};
 
 @CommandHandler(CreateClientCommand)
-export class CreateClientHandler implements ICommandHandler<CreateClientCommand> {
+export class CreateClientHandler
+  implements ICommandHandler<CreateClientCommand, CreateClientResult>
+{
   constructor(
+    private readonly hashService: HashService,
     private readonly clientRepository: ClientRepository,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
   ) {}
 
-  async execute(command: CreateClientCommand) {
-    try {
-      // Verificar que el usuario existe
-      const user = await this.userRepository.findOne({ 
-        where: { id: command.userId } 
-      });
-      
-      if (!user) {
-        throw new DomainError(
-          'USER_NOT_FOUND',
-          'User not found.',
-        );
-      }
+  async execute(command: CreateClientCommand): Promise<CreateClientResult> {
+    const hashedPassword = await this.hashService.hash(command.password);
 
-      // Verificar que no existe ya un cliente para este usuario
-      const existingClient = await this.clientRepository.findOne(command.userId);
-      if (existingClient) {
-        throw new DomainError(
-          'CLIENT_ALREADY_EXISTS',
-          'Client record already exists for this user.',
-        );
-      }
-
-      // Crear el registro de cliente
-      const clientDataToCreate = {
-        user: { id: command.userId },
-        organization: { id: command.organizationId },
-        creator: { id: command.createdBy },
-        documentNumber: command.documentNumber,
-        phoneNumber: command.phoneNumber,
-        address: command.address,
-        birthDate: command.birthDate,
-        employmentStatus: command.employmentStatus,
-      };
-
-      return await this.clientRepository.create(clientDataToCreate);
-      
-    } catch (error) {
-      if (error instanceof QueryFailedError) {
-        // Código de error de clave duplicada para PostgreSQL es '23505'
-        if (error.driverError && error.driverError.code === '23505') {
-          throw new DomainError(
-            'CLIENT_ALREADY_EXISTS',
-            'Client record already exists for this user.',
-          );
-        }
-      }
-      throw error;
-    }
+    return await this.clientRepository.createUserWithClient({
+      email: command.email,
+      password: hashedPassword,
+      firstName: command.firstName,
+      lastName: command.lastName,
+      role: command.role,
+      documentNumber: command.documentNumber,
+      phoneNumber: command.phoneNumber,
+      address: command.address,
+      birthDate: command.birthDate,
+      employmentStatus: command.employmentStatus,
+      organizationId: command.organizationId,
+      createdBy: command.createdBy,
+    });
   }
 }

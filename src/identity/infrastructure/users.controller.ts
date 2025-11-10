@@ -20,16 +20,14 @@ import {
   AdvisorGuard,
 } from 'src/shared/guards';
 
-import { CreateUserCommand } from '../application/create-user/create-user.command'; // Re-importado
+import { CreateUserCommand } from '../application/create-user/create-user.command';
 import { LoginQuery } from '../application/login/login.query';
 import { GetUsersQuery } from '../application/get-users/get-users.query';
-import { CreateUserClientCommand } from '../application/create-user-client/create-user-client.command';
 
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { GetUsersDto } from './dto/get-users.dto';
-import { CreateClientUserDto } from './dto/create-client-user.dto';
 import { User } from '../domain/user.model';
 
 @ApiTags('Users')
@@ -40,32 +38,16 @@ export class UsersController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Post('/sign-up')
-  @Public()
-  @ApiOperation({
-    summary: 'Registro público de cliente (User + Client Info)',
-    description:
-      'Permite que cualquier persona se registre como CLIENT, creando su cuenta de usuario y su perfil de cliente en un solo flujo. No requiere autenticación.',
-  })
-  async signUpClient(@Body() body: CreateClientUserDto) {
-    return this.commandBus.execute(
-      new CreateUserClientCommand({
-        ...body,
-        role: UserRole.CLIENTE,
-      }),
-    );
-  }
-
-  @Post('/admin/staff')
+  @Post('/staff')
   @ApiBearerAuth()
-  //@UseGuards(AdminGuard) no eliminar comentario
-  @Public()
+  @UseGuards(AdminGuard)
   @ApiOperation({
     summary: 'Crear usuario staff (Advisor/Admin) - Solo ADMIN',
     description:
-      'Permite a ADMIN crear usuarios con rol ADVISOR o ADMIN (personal interno). Para crear clientes usar POST /clients/register',
+      'Permite a ADMIN crear usuarios con rol ADVISOR o ADMIN (personal interno). ' +
+      'Para crear clientes usar POST /clients o POST /clients/sign-up',
   })
-  async createStaffUser(@Body() body: CreateStaffUserDto, @Req() req: any) {
+  async createStaff(@Body() body: CreateStaffUserDto, @Req() req: any) {
     return this.commandBus.execute(
       new CreateUserCommand({
         ...body,
@@ -90,8 +72,7 @@ export class UsersController {
 
   @Get('/')
   @ApiBearerAuth()
-  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
-  @Public()
+  @UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Listar usuarios - Solo ADMIN/ADVISOR',
     description: 'Obtener lista de usuarios con filtros y paginación',

@@ -22,7 +22,7 @@ import { UpdateClientCommand } from '../application/update-client/update-client.
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
 import { GetUsersClientInfoByIdQuery } from '../application/get-users-client-info-by-id/get-users-client-info-by-id.query';
 import { GetUsersClientInfoQuery } from '../application/get-users-client-info/get-users-client-info.query';
-import { CreateUserClientCommand } from 'src/identity/application/create-user-client/create-user-client.command';
+import { CreateClientCommand } from '../application/create-client/create-client.command';
 import { AdminOrAdvisorGuard } from 'src/shared/guards';
 import { UserRole } from 'src/shared/enums';
 import { Public } from 'src/shared/validation';
@@ -37,19 +37,21 @@ export class ClientsController {
   ) {}
 
   @Post('/register')
-  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
   @Public()
   @ApiOperation({
-    summary: 'Registrar nuevo cliente - Solo ADMIN/ADVISOR',
+    summary: 'Registrar nuevo cliente',
     description:
-      'Permite a Admin o Advisor crear un nuevo cliente (User + Client) con trazabilidad de quién lo creó',
+      'Registra un nuevo cliente en el sistema (User + Client). ' +
+      'Puede ser usado para auto-registro público (sin autenticación) o ' +
+      'por Admin/Advisor (con autenticación para trazabilidad). ' +
+      'Si hay un usuario autenticado, se registra automáticamente quién creó el cliente.',
   })
-  async registerClient(@Body() body: CreateClientUserDto, @Req() req: any) {
+  async register(@Body() body: CreateClientUserDto, @Req() req: any) {
     return this.commandBus.execute(
-      new CreateUserClientCommand({
+      new CreateClientCommand({
         ...body,
         role: UserRole.CLIENTE,
-        createdBy: req.user.id,
+        createdBy: req.user?.id,
       }),
     );
   }

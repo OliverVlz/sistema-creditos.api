@@ -21,6 +21,7 @@ import { GetOrganizationsQuery } from '../application/get-organizations/get-orga
 import { GetOrganizationByIdQuery } from '../application/get-organization-by-id/get-organization-by-id.query';
 import { UpdateOrganizationCommand } from '../application/update-organization/update-organization.command';
 import { DeleteOrganizationCommand } from '../application/delete-organization/delete-organization.command';
+import { Public } from 'src/shared/validation';
 
 @ApiTags('Organizations')
 @Controller('organizations')
@@ -41,6 +42,7 @@ export class OrganizationsController {
   }
 
   @Get('/')
+  @Public()
   @ApiOperation({ summary: 'Search organizations with optional filters and pagination' })
   async searchOrganizations(@Query() query: GetOrganizationDto) {
     return this.queryBus.execute(new GetOrganizationsQuery(query));

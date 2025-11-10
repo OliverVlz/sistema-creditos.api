@@ -11,8 +11,6 @@ import { CreateUserHandler } from '../application/create-user/create-user.handle
 import { LoginHandler } from '../application/login/login.handler';
 import { GetUsersHandler } from '../application/get-users/get-users.handler';
 import { RecoverPasswordHandler } from '../application/recover-password/recover-password.handler';
-import { CreateUserClientHandler } from '../application/create-user-client/create-user-client.handler';
-import { CreateUserClientCommand } from '../application/create-user-client/create-user-client.command';
 
 import { User } from './entity/user.entity';
 import { UserRepository } from './repositories/user.repository';
@@ -34,7 +32,6 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
     ClientRouteBuilder,
     CreateUserHandler,
     GetUsersHandler,
-    CreateUserClientHandler,
     HashService,
     LoginHandler,
     RecoverPasswordHandler,
