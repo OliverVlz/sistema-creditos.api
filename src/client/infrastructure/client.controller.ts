@@ -14,13 +14,11 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
-import { UpdateClientDto } from './dto/update-client.dto';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { UpdateClientAdminDto } from './dto/update-client-admin.dto';
 import { GetClientsDto } from './dto/get-clients.dto';
 import { CreateClientUserDto } from 'src/identity/infrastructure/dto/create-client-user.dto';
 
-import { UpdateClientCommand } from '../application/update-client/update-client.command';
 import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
 import { UpdateClientAdminCommand } from '../application/update-client-admin/update-client-admin.command';
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
