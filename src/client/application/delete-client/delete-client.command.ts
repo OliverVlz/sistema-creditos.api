@@ -1,3 +1,3 @@
 export class DeleteClientCommand {
-  constructor(readonly id: string) {}
+  constructor(readonly userId: string) {}
 }

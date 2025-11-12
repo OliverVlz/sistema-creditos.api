@@ -228,6 +228,14 @@ export class ClientRepository {
     return client;
   }
 
+  async findOneByUserId(userId: string) {
+    const client = await this.clientsRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['organization', 'creator', 'updater', 'user'],
+    });
+    return client;
+  }
+
   async findOneByClientIdWithLoans(clientId: string) {
     const client = await this.clientsRepository.findOne({
       where: { id: clientId },

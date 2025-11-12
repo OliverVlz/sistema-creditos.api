@@ -78,39 +78,41 @@ export class ClientsController {
     return this.queryBus.execute(new GetClientByIdQuery(req.user.id));
   }
 
-  @Get('/:id/profile')
+  @Get('/:userId/profile')
   //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
   @Public()
   @ApiOperation({
-    summary: 'Obtener perfil de cliente por client.id - Solo ADMIN/ADVISOR',
+    summary: 'Obtener perfil de cliente por userId - Solo ADMIN/ADVISOR',
     description:
-      'Devuelve información completa del cliente (perfil crediticio, préstamos, organización, etc) usando el ID del cliente (client.id). Este es el ID que se obtiene del endpoint /clients/all. Solo accesible por ADMIN o ADVISOR.',
+      'Devuelve información completa del cliente (perfil crediticio, préstamos, organización, etc) usando el userId. Solo accesible por ADMIN o ADVISOR.',
   })
-  async getClientInfoById(@Param('id') clientId: string, @Req() req: any) {
-    return this.queryBus.execute(new GetClientByIdQuery(clientId, true));
+  async getClientInfoById(@Param('userId') userId: string) {
+    return this.queryBus.execute(new GetClientByIdQuery(userId));
   }
 
-  @Patch('/:id')
+  @Patch('/:userId')
   //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
   @Public()
   @ApiOperation({
     summary:
       'Actualizar información crediticia del cliente - Solo ADMIN/ADVISOR',
     description:
-      'Actualiza campos relacionados con el perfil crediticio del cliente',
+      'Actualiza campos relacionados con el perfil crediticio del cliente usando userId',
   })
-  async update(@Param('id') id: string, @Body() body: UpdateClientDto) {
-    return this.commandBus.execute(new UpdateClientCommand({ id, ...body }));
+  async update(@Param('userId') userId: string, @Body() body: UpdateClientDto) {
+    return this.commandBus.execute(
+      new UpdateClientCommand({ userId, ...body }),
+    );
   }
 
-  @Delete('/:id')
+  @Delete('/:userId')
   //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
   @Public()
   @ApiOperation({
     summary: 'Eliminar perfil crediticio - Solo ADMIN/ADVISOR',
-    description: 'Elimina el perfil crediticio del cliente',
+    description: 'Elimina el perfil crediticio del cliente usando userId',
   })
-  async remove(@Param('id') id: string) {
-    return this.commandBus.execute(new DeleteClientCommand(id));
+  async remove(@Param('userId') userId: string) {
+    return this.commandBus.execute(new DeleteClientCommand(userId));
   }
 }

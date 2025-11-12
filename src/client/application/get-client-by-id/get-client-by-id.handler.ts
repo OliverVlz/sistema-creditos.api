@@ -8,9 +8,9 @@ export class GetClientByIdHandler implements IQueryHandler<GetClientByIdQuery> {
   constructor(private readonly clientRepository: ClientRepository) {}
 
   async execute(query: GetClientByIdQuery) {
-    const client = query.isClientId
-      ? await this.clientRepository.findOneByClientIdWithLoans(query.id)
-      : await this.clientRepository.findOneByUserIdWithLoans(query.id);
+    const client = await this.clientRepository.findOneByUserIdWithLoans(
+      query.userId,
+    );
 
     if (!client) return null;
 

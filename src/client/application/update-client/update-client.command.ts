@@ -1,5 +1,5 @@
 export class UpdateClientCommand {
-  readonly id: string;
+  readonly userId: string;
   readonly organizationId?: string;
   readonly isActive?: boolean;
 
