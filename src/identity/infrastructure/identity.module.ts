@@ -11,6 +11,10 @@ import { CreateUserHandler } from '../application/create-user/create-user.handle
 import { LoginHandler } from '../application/login/login.handler';
 import { GetUsersHandler } from '../application/get-users/get-users.handler';
 import { RecoverPasswordHandler } from '../application/recover-password/recover-password.handler';
+import { UpdatePasswordHandler } from '../application/update-password/update-password.handler';
+import { UpdatePasswordAdminHandler } from '../application/update-password-admin/update-password-admin.handler';
+import { UpdateUserProfileHandler } from '../application/update-user-profile/update-user-profile.handler';
+import { UpdateUserAdminHandler } from '../application/update-user-admin/update-user-admin.handler';
 
 import { User } from './entity/user.entity';
 import { UserRepository } from './repositories/user.repository';
@@ -35,6 +39,10 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
     HashService,
     LoginHandler,
     RecoverPasswordHandler,
+    UpdatePasswordHandler,
+    UpdatePasswordAdminHandler,
+    UpdateUserProfileHandler,
+    UpdateUserAdminHandler,
     UserRepository,
   ],
   exports: [UserRepository, HashService],

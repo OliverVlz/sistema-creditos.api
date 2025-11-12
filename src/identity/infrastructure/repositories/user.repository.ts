@@ -46,6 +46,20 @@ export class UserRepository {
     return user;
   }
 
+  async findByIdWithPassword(userId: string, failIfNotFound = false) {
+    const query = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :userId', { userId })
+      .addSelect('user.password');
+
+    const user = await query.getOne();
+
+    if (!user && failIfNotFound) {
+      throw new NotFoundException(`User '${userId}' not found`);
+    }
+    return user;
+  }
+
   async findByEmail(
     email: string,
     failIfNotFound = false,

@@ -15,10 +15,14 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { UpdateClientDto } from './dto/update-client.dto';
+import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
+import { UpdateClientAdminDto } from './dto/update-client-admin.dto';
 import { GetClientsDto } from './dto/get-clients.dto';
 import { CreateClientUserDto } from 'src/identity/infrastructure/dto/create-client-user.dto';
 
 import { UpdateClientCommand } from '../application/update-client/update-client.command';
+import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
+import { UpdateClientAdminCommand } from '../application/update-client-admin/update-client-admin.command';
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
 import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
 import { GetClientsQuery } from '../application/get-clients/get-clients.query';
@@ -90,18 +94,44 @@ export class ClientsController {
     return this.queryBus.execute(new GetClientByIdQuery(userId));
   }
 
+  @Patch('/me/profile')
+  @ApiOperation({
+    summary: 'Actualizar perfil del cliente autenticado',
+    description:
+      'Permite al cliente actualizar su propia información: ' +
+      'nombres, apellidos, dirección, teléfono, fecha de nacimiento, estado laboral y organización. ' +
+      'NO puede modificar: email, documento de identidad, ni estado activo/inactivo.',
+  })
+  async updateMyProfile(@Req() req: any, @Body() body: UpdateClientProfileDto) {
+    return this.commandBus.execute(
+      new UpdateClientProfileCommand({
+        userId: req.user.id,
+        ...body,
+      }),
+    );
+  }
+
   @Patch('/:userId')
   //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
   @Public()
   @ApiOperation({
-    summary:
-      'Actualizar información crediticia del cliente - Solo ADMIN/ADVISOR',
+    summary: 'Actualizar cliente completo - Solo ADMIN/ADVISOR',
     description:
-      'Actualiza campos relacionados con el perfil crediticio del cliente usando userId',
+      'Permite al Admin/Advisor actualizar TODOS los campos del cliente: ' +
+      'nombres, apellidos, dirección, teléfono, fecha de nacimiento, estado laboral, organización, ' +
+      'email y estado activo/inactivo. El Admin tiene control total sobre la información del cliente.',
   })
-  async update(@Param('userId') userId: string, @Body() body: UpdateClientDto) {
+  async updateClientAsAdmin(
+    @Param('userId') userId: string,
+    @Body() body: UpdateClientAdminDto,
+    @Req() req: any,
+  ) {
     return this.commandBus.execute(
-      new UpdateClientCommand({ userId, ...body }),
+      new UpdateClientAdminCommand({
+        userId,
+        updatedBy: req.user.id,
+        ...body,
+      }),
     );
   }
 

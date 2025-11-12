@@ -8,6 +8,8 @@ import { ClientRepository } from './repositories/client.repository';
 import { CreateClientHandler } from '../application/create-client/create-client.handler';
 import { DeleteClientHandler } from '../application/delete-client/delete-client.handler';
 import { UpdateClientHandler } from '../application/update-client/update-client.handler';
+import { UpdateClientProfileHandler } from '../application/update-client-profile/update-client-profile.handler';
+import { UpdateClientAdminHandler } from '../application/update-client-admin/update-client-admin.handler';
 import { GetClientsHandler } from '../application/get-clients/get-clients.handler';
 import { GetClientByIdHandler } from '../application/get-client-by-id/get-client-by-id.handler';
 
@@ -25,6 +27,8 @@ import { IdentityModule } from 'src/identity/infrastructure/identity.module';
     CreateClientHandler,
     DeleteClientHandler,
     UpdateClientHandler,
+    UpdateClientProfileHandler,
+    UpdateClientAdminHandler,
     GetClientsHandler,
     GetClientByIdHandler,
   ],
