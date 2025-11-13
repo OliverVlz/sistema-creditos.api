@@ -16,8 +16,7 @@ export class CreateDocumentTypeHandler implements ICommandHandler<CreateDocument
       maxFileSize, 
       validationRules, 
       isActive, 
-      displayOrder, 
-      createdBy 
+      displayOrder 
     } = command;
 
     const existingDocumentType = await this.documentTypeRepository.findByCode(code);
@@ -34,7 +33,6 @@ export class CreateDocumentTypeHandler implements ICommandHandler<CreateDocument
       validationRules,
       isActive: isActive !== undefined ? isActive : true,
       displayOrder: displayOrder || 0,
-      createdBy,
     });
 
     return { documentTypeId: newDocumentType.id };

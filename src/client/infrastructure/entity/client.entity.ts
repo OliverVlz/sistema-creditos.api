@@ -51,10 +51,6 @@ export class Client {
   organization: Organization;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  creator: User;
-
-  @ManyToOne(() => User)
   @JoinColumn({ name: 'updated_by' })
   updater: User;
 

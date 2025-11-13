@@ -44,10 +44,6 @@ export class User {
   isActive: boolean;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by' })
-  creator?: User;
-
-  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updater?: User;
 

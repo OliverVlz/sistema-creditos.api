@@ -7,7 +7,6 @@ export class CreateLoanTypeCommand {
   readonly maxTermMonths: number;
   readonly isActive: boolean;
   readonly requiredDocumentTypes?: string[];
-  readonly createdBy: string; // Para auditoría
 
   constructor(params: CreateLoanTypeCommand) {
     Object.assign(this, params);

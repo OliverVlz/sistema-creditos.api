@@ -10,7 +10,6 @@ type CreateOrganizationData = Omit<Partial<Organization>, 'id' | 'createdAt' | '
   baseInterestRate: number;
   discountRate: number;
   taxRate: number;
-  createdBy: string;
 };
 
 type UpdateOrganizationData = Partial<Pick<Organization, 'name' | 'baseInterestRate' | 'discountRate' | 'taxRate' | 'isActive' | 'updatedBy'>>;
@@ -36,7 +35,7 @@ export class OrganizationRepository {
 
   async findAll() {
     const organizations = await this.organizationRepository.find({
-      relations: ['creator', 'updater'],
+      relations: ['updater'],
       order: { createdAt: 'DESC' },
     });
     return organizations;
@@ -45,7 +44,7 @@ export class OrganizationRepository {
   async findOne(id: string) {
     const organization = await this.organizationRepository.findOne({ 
       where: { id },
-      relations: ['creator', 'updater']
+      relations: ['updater']
     });
     if (!organization) {
       throw new DomainError('ORGANIZATION_NOT_FOUND', 'Organization not found');
@@ -67,7 +66,6 @@ export class OrganizationRepository {
 
   async searchOrganizationsWithPagination(searchData: OrganizationSearchData) {
     const queryBuilder = this.organizationRepository.createQueryBuilder('organization')
-      .leftJoinAndSelect('organization.creator', 'creator')
       .leftJoinAndSelect('organization.updater', 'updater');
 
     if (searchData.terms) {

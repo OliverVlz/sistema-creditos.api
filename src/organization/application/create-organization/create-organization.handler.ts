@@ -7,7 +7,7 @@ export class CreateOrganizationHandler implements ICommandHandler<CreateOrganiza
   constructor(private readonly organizationRepository: OrganizationRepository) {}
 
   async execute(command: CreateOrganizationCommand) {
-    const { name, baseInterestRate, discountRate, taxRate, createdBy } = command;
+    const { name, baseInterestRate, discountRate, taxRate } = command;
 
     // Asegúrate de que solo se pasen los campos relevantes a la creación de la organización
     return await this.organizationRepository.create({
@@ -15,7 +15,6 @@ export class CreateOrganizationHandler implements ICommandHandler<CreateOrganiza
       baseInterestRate,
       discountRate,
       taxRate,
-      createdBy,
     });
   }
 }

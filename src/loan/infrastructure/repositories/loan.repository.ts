@@ -19,7 +19,6 @@ type CreateLoanData = {
   totalAmount: number;
   processingFee: number;
   status: LoanStatus;
-  createdBy: string;
   notes?: string;
 };
 
@@ -74,7 +73,7 @@ export class LoanRepository {
   async findOne(id: string): Promise<Loan> {
     const loan = await this.loansRepository.findOne({ 
       where: { id },
-      relations: ['client', 'loanType', 'organization', 'creator', 'updater', 'approver']
+      relations: ['client', 'loanType', 'organization', 'updater', 'approver']
     });
     if (!loan) {
       throw new NotFoundException('Loan not found');
@@ -87,7 +86,6 @@ export class LoanRepository {
       .leftJoinAndSelect('loan.client', 'client')
       .leftJoinAndSelect('loan.loanType', 'loanType') // Nueva relación
       .leftJoinAndSelect('loan.organization', 'organization')
-      .leftJoinAndSelect('loan.creator', 'creator')
       .leftJoinAndSelect('loan.updater', 'updater')
       .leftJoinAndSelect('loan.approver', 'approver');
 

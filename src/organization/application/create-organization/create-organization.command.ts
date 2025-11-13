@@ -5,14 +5,12 @@ export class CreateOrganizationCommand {
   readonly baseInterestRate: number;
   readonly discountRate: number;
   readonly taxRate: number;
-  readonly createdBy: string; // Add createdBy
 
   constructor(params: {
     name: string;
     baseInterestRate: number;
     discountRate: number;
     taxRate: number;
-    createdBy: string;
   }) {
     Object.assign(this, params);
   }

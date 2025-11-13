@@ -37,9 +37,6 @@ export class GetClientByIdHandler implements IQueryHandler<GetClientByIdQuery> {
               updatedAt: client.organization.updatedAt,
             }
           : null,
-        creator: client.creator
-          ? User.fromModel(client.creator).getUserInfo()
-          : null,
         updater: client.updater
           ? User.fromModel(client.updater).getUserInfo()
           : null,

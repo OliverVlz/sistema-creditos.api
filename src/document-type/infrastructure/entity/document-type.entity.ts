@@ -58,16 +58,6 @@ export class DocumentType {
   })
   displayOrder: number;
 
-  @Column({ 
-    nullable: true,
-    name: 'created_by'
-  })
-  createdBy?: string;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by' })
-  creator?: User;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

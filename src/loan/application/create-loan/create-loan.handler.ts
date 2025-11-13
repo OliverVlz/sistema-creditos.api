@@ -17,7 +17,7 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
   ) {}
 
   async execute(command: CreateLoanCommand): Promise<any> {
-    const { clientId, loanTypeId, organizationId, amountRequested, interestRate, termMonths, monthlyPayment, createdBy, notes } = command;
+    const { clientId, loanTypeId, organizationId, amountRequested, interestRate, termMonths, monthlyPayment, notes } = command;
 
     // 1. Verificar existencia del cliente
     const client = await this.clientRepository.findOne(clientId);
@@ -64,7 +64,6 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
       termMonths,
       processingFee,
       totalAmount,
-      createdBy,
       notes,
       status: LoanStatus.PENDING, // Estado inicial
       // Otros campos de fecha se establecerán al aprobar/firmar/desembolsar

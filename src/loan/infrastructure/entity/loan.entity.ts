@@ -58,9 +58,6 @@ export class Loan {
   @Column({ name: 'rejection_reason', nullable: true })
   rejectionReason?: string; // Nuevo atributo
 
-  @Column({ name: 'created_by' })
-  createdBy: string;
-
   @Column({ name: 'updated_by', nullable: true })
   updatedBy?: string;
 
@@ -97,10 +94,6 @@ export class Loan {
   @ManyToOne(() => Organization)
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  creator: User;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'updated_by' })

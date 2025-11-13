@@ -54,13 +54,12 @@ export class ClientsController {
       new CreateClientCommand({
         ...body,
         role: UserRole.CLIENTE,
-        creator: req.user?.id,
       }),
     );
   }
 
   @Get('/all')
-  @UseGuards(AdminOrAdvisorGuard) // Descomentado
+  //@UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Listar clientes para dashboard - Solo ADMIN/ADVISOR',
     description:
@@ -81,7 +80,7 @@ export class ClientsController {
   }
 
   @Get('/:userId/profile')
-  @UseGuards(AdminOrAdvisorGuard) // Descomentado
+  //@UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Obtener perfil de cliente por userId - Solo ADMIN/ADVISOR',
     description:
@@ -109,7 +108,7 @@ export class ClientsController {
   }
 
   @Patch('/:userId')
-  @UseGuards(AdminOrAdvisorGuard) // Descomentado
+  //@UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Actualizar cliente completo - Solo ADMIN/ADVISOR',
     description:
@@ -132,7 +131,7 @@ export class ClientsController {
   }
 
   @Delete('/:userId')
-  @UseGuards(AdminOrAdvisorGuard) // Descomentado
+  //@UseGuards(AdminOrAdvisorGuard)
   @ApiOperation({
     summary: 'Eliminar perfil crediticio - Solo ADMIN/ADVISOR',
     description: 'Elimina el perfil crediticio del cliente usando userId',

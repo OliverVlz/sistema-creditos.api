@@ -8,7 +8,6 @@ export class CreateDocumentRequirementCommand {
   readonly isMandatory: boolean;
   readonly displayOrder: number;
   readonly validationRules?: object;
-  readonly createdBy: string;
 
   constructor(params: CreateDocumentRequirementCommand) {
     Object.assign(this, params);

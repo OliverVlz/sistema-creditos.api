@@ -7,7 +7,6 @@ export class CreateDocumentTypeCommand {
   readonly validationRules?: object;
   readonly isActive?: boolean;
   readonly displayOrder?: number;
-  readonly createdBy: string;
 
   constructor(params: CreateDocumentTypeCommand) {
     Object.assign(this, params);

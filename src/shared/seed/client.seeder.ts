@@ -92,7 +92,6 @@ export class ClientSeeder {
         clientRepository.create({
           user: clientUser,
           organization: defaultOrganization,
-          creator: adminUser,
           address: data.address,
           birthDate: data.birthDate,
           employmentStatus: data.employmentStatus,

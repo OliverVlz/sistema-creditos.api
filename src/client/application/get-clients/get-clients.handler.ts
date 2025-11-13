@@ -26,9 +26,6 @@ export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
       },
       employmentStatus: client.employmentStatus,
       createdAt: client.createdAt,
-      createdBy: client.creator
-        ? `${client.creator.firstName} ${client.creator.lastName}`.trim()
-        : null,
     }));
 
     return { ...result, data: transformedData };

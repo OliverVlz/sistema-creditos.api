@@ -6,7 +6,6 @@ export class CreateLoanCommand {
   readonly interestRate: number;
   readonly termMonths: number;
   readonly monthlyPayment: number;
-  readonly createdBy: string;
   readonly notes?: string; 
 
   constructor(params: CreateLoanCommand) {

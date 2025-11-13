@@ -11,7 +11,6 @@ import { EmploymentStatus, UserRole } from 'src/shared/enums';
 type CreateClientData = {
   user: { id: string };
   organization: { id: string };
-  creator: { id: string };
   documentNumber: string;
   phoneNumber?: string;
   address: string;
@@ -31,7 +30,6 @@ type CreateUserWithClientData = {
   birthDate: string;
   employmentStatus: EmploymentStatus;
   organizationId: string;
-  createdBy?: string;
 };
 
 type UserWithClientResult = {
@@ -142,10 +140,6 @@ export class ClientRepository {
           }),
         )) as User);
 
-      const creatorUser = data.createdBy
-        ? await userRepo.findOne({ where: { id: data.createdBy } })
-        : user;
-
       const client = (await clientRepo.save(
         clientRepo.create({
           user,
@@ -154,7 +148,6 @@ export class ClientRepository {
           birthDate: data.birthDate ? new Date(data.birthDate) : null,
           employmentStatus: data.employmentStatus ?? null,
           isActive: true,
-          creator: creatorUser || user,
         }),
       )) as Client;
 
@@ -187,7 +180,7 @@ export class ClientRepository {
 
   async findAll() {
     const clients = await this.clientsRepository.find({
-      relations: ['organization', 'creator', 'updater', 'user'],
+      relations: ['organization', 'updater', 'user'],
       order: { createdAt: 'DESC' },
     });
     return clients;
@@ -196,7 +189,7 @@ export class ClientRepository {
   async findOne(id: string) {
     const client = await this.clientsRepository.findOne({
       where: { id },
-      relations: ['organization', 'creator', 'updater', 'user'],
+      relations: ['organization', 'updater', 'user'],
     });
     if (!client) {
       throw new DomainError('CLIENT_NOT_FOUND', 'Client not found');
@@ -215,7 +208,6 @@ export class ClientRepository {
       relations: [
         'user',
         'organization',
-        'creator',
         'updater',
         'loans',
         'loans.loanType',
@@ -228,7 +220,7 @@ export class ClientRepository {
   async findOneByUserId(userId: string) {
     const client = await this.clientsRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['organization', 'creator', 'updater', 'user'],
+      relations: ['organization', 'updater', 'user'],
     });
     return client;
   }
@@ -239,7 +231,6 @@ export class ClientRepository {
       relations: [
         'user',
         'organization',
-        'creator',
         'updater',
         'loans',
         'loans.loanType',
@@ -270,7 +261,6 @@ export class ClientRepository {
     const queryBuilder = this.clientsRepository
       .createQueryBuilder('client')
       .leftJoinAndSelect('client.organization', 'organization')
-      .leftJoinAndSelect('client.creator', 'creator')
       .leftJoinAndSelect('client.updater', 'updater')
       .leftJoinAndSelect('client.user', 'user');
 
@@ -329,10 +319,8 @@ export class ClientRepository {
         'user.phoneNumber',
       ])
       .addSelect(['organization.id', 'organization.name'])
-      .addSelect(['creator.id', 'creator.firstName', 'creator.lastName'])
       .leftJoin('client.user', 'user')
-      .leftJoin('client.organization', 'organization')
-      .leftJoin('client.creator', 'creator');
+      .leftJoin('client.organization', 'organization');
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();

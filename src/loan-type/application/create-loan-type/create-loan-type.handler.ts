@@ -8,7 +8,7 @@ export class CreateLoanTypeHandler implements ICommandHandler<CreateLoanTypeComm
   constructor(private readonly loanTypeRepository: LoanTypeRepository) {}
 
   async execute(command: CreateLoanTypeCommand): Promise<any> {
-    const { name, description, baseProcessingFee, maxAmount, minAmount, maxTermMonths, isActive, requiredDocumentTypes, createdBy } = command;
+    const { name, description, baseProcessingFee, maxAmount, minAmount, maxTermMonths, isActive, requiredDocumentTypes } = command;
 
     // Opcional: Validar que no exista un LoanType con el mismo nombre
     const existingLoanType = await this.loanTypeRepository.findByName(name);
@@ -25,7 +25,6 @@ export class CreateLoanTypeHandler implements ICommandHandler<CreateLoanTypeComm
       maxTermMonths,
       isActive,
       requiredDocumentTypes,
-      createdBy,
     });
 
     return { loanTypeId: newLoanType.id };

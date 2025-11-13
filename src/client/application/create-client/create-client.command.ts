@@ -12,7 +12,6 @@ export class CreateClientCommand {
   readonly employmentStatus: EmploymentStatus;
   readonly organizationId: string;
   readonly role: UserRole;
-  readonly creator: string;
 
   constructor(params: CreateClientCommand) {
     Object.assign(this, params);

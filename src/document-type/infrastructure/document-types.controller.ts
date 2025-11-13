@@ -33,7 +33,6 @@ export class DocumentTypesController {
   async create(@Body() body: CreateDocumentTypeDto, @Req() req: any) {
     return this.commandBus.execute(new CreateDocumentTypeCommand({
       ...body,
-      createdBy: req.user.id,
     }));
   }
 
@@ -98,7 +97,6 @@ export class DocumentTypesController {
   ) {
     return this.commandBus.execute(new CreateDocumentRequirementCommand({
       ...body,
-      createdBy: req.user.id,
     }));
   }
 }

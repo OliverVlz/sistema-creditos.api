@@ -12,10 +12,9 @@ type CreateLoanTypeData = Omit<Partial<LoanType>, 'id' | 'createdAt' | 'updatedA
   minAmount: number;
   maxTermMonths: number;
   isActive: boolean;
-  createdBy: string;
 };
 
-type UpdateLoanTypeData = Partial<Omit<LoanType, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>> & {
+type UpdateLoanTypeData = Partial<Omit<LoanType, 'id' | 'createdAt' | 'updatedAt'>> & {
   updatedBy?: string; // Add updatedBy for auditoría
 };
 

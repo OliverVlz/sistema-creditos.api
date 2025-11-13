@@ -36,7 +36,6 @@ export class LoansController {
   async create(@Body() body: CreateLoanDto, @Req() req: any) {
     return this.commandBus.execute(new CreateLoanCommand({
       ...body,
-      createdBy: req.user.id,
     }));
   }
 

@@ -31,9 +31,6 @@ export class Organization {
   @Column({ name: 'tax_rate', type: 'decimal', precision: 5, scale: 2 })
   taxRate: number;
 
-  @Column({ name: 'created_by' })
-  createdBy: string;
-
   @Column({ name: 'updated_by', nullable: true })
   updatedBy?: string;
 
@@ -47,10 +44,6 @@ export class Organization {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  creator: User;
-
   @ManyToOne(() => User)
   @JoinColumn({ name: 'updated_by' })
   updater?: User;

@@ -37,7 +37,6 @@ export class OrganizationsController {
   async create(@Body() body: CreateOrganizationDto, @Req() req: any) {
     return this.commandBus.execute(new CreateOrganizationCommand({
       ...body,
-      createdBy: req.user.id,
     }));
   }
 
