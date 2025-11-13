@@ -279,7 +279,7 @@ export class ClientRepository {
     }
 
     if (searchData.isActive !== undefined) {
-      queryBuilder.andWhere('client.isActive = :isActive', {
+      queryBuilder.andWhere('user.isActive = :isActive', {
         isActive: searchData.isActive,
       });
     }

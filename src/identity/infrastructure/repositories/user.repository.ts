@@ -81,7 +81,19 @@ export class UserRepository {
     return user;
   }
 
-  // Método findByPhone eliminado ya que phone ahora está en Client
+  async findByDocumentNumber(
+    documentNumber: string,
+    failIfNotFound = false,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { documentNumber },
+    });
+
+    if (!user && failIfNotFound) {
+      throw new NotFoundException(`User with document number '${documentNumber}' not found`);
+    }
+    return user;
+  }
 
   async update(userId: string, data: Partial<User>) {
     await this.userRepository.update(userId, data);

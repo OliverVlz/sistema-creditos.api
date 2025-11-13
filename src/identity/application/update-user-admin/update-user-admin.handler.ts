@@ -2,99 +2,59 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UpdateUserAdminCommand } from './update-user-admin.command';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { User } from 'src/identity/infrastructure/entity/user.entity';
 
 @CommandHandler(UpdateUserAdminCommand)
 export class UpdateUserAdminHandler
-  implements ICommandHandler<UpdateUserAdminCommand>
+  implements ICommandHandler<UpdateUserAdminCommand, User>
 {
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(command: UpdateUserAdminCommand): Promise<void> {
-    const {
-      userId,
-      firstName,
-      lastName,
-      email,
-      documentNumber,
-      phoneNumber,
-      role,
-      isActive,
-    } = command;
+  async execute(command: UpdateUserAdminCommand): Promise<User> {
+    const { userId, ...restCommand } = command;
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Verificar que el usuario existe
-      const user = await this.userRepository.findById(userId);
-      if (!user) {
-        throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
-      }
-
-      // Si se actualiza el email, verificar que no esté en uso
-      if (email && email !== user.email) {
-        const existingUserWithEmail =
-          await this.userRepository.findByEmail(email);
-        if (existingUserWithEmail) {
-          throw new BadRequestException(
-            `El email ${email} ya está en uso por otro usuario`,
-          );
-        }
-      }
-
-      // Si se actualiza el documento, verificar que no esté en uso
-      if (documentNumber && documentNumber !== user.documentNumber) {
-        const existingUserWithDoc = await queryRunner.manager.findOne('users', {
-          where: { documentNumber },
-        });
-        if (existingUserWithDoc) {
-          throw new BadRequestException(
-            `El número de documento ${documentNumber} ya está en uso por otro usuario`,
-          );
-        }
-      }
-
-      // Actualizar campos si se proporcionan
-      const updateData: any = {};
-
-      if (firstName !== undefined) {
-        updateData.firstName = firstName;
-      }
-      if (lastName !== undefined) {
-        updateData.lastName = lastName;
-      }
-      if (email !== undefined) {
-        updateData.email = email;
-      }
-      if (documentNumber !== undefined) {
-        updateData.documentNumber = documentNumber;
-      }
-      if (phoneNumber !== undefined) {
-        updateData.phoneNumber = phoneNumber;
-      }
-      if (role !== undefined) {
-        updateData.role = role;
-      }
-      if (isActive !== undefined) {
-        updateData.isActive = isActive;
-      }
-
-      // Solo actualizar si hay cambios
-      if (Object.keys(updateData).length > 0) {
-        await queryRunner.manager.update('users', { id: userId }, updateData);
-      }
-
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
     }
+
+    if (restCommand.email && restCommand.email !== user.email) {
+      const existingUserWithEmail = await this.userRepository.findByEmail(
+        restCommand.email,
+      );
+      if (existingUserWithEmail) {
+        throw new BadRequestException(
+          `El email ${restCommand.email} ya está en uso por otro usuario`,
+        );
+      }
+    }
+
+    // Si se actualiza el documento, verificar que no esté en uso
+    if (
+      restCommand.documentNumber &&
+      restCommand.documentNumber !== user.documentNumber
+    ) {
+      const existingUserWithDoc =
+        await this.userRepository.findByDocumentNumber(
+          restCommand.documentNumber,
+        );
+      if (existingUserWithDoc) {
+        throw new BadRequestException(
+          `El número de documento ${restCommand.documentNumber} ya está en uso por otro usuario`,
+        );
+      }
+    }
+
+    const updateData = await this.formatUpdateData(restCommand);
+
+    if (Object.keys(updateData).length > 0) {
+      const updatedUser = await this.userRepository.update(userId, updateData);
+      return updatedUser;
+    }
+    return user;
+  }
+
+  private async formatUpdateData(data: Omit<UpdateUserAdminCommand, 'userId'>) {
+    return { ...data };
   }
 }
