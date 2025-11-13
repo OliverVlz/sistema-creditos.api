@@ -15,6 +15,7 @@ import { UpdatePasswordHandler } from '../application/update-password/update-pas
 import { UpdatePasswordAdminHandler } from '../application/update-password-admin/update-password-admin.handler';
 import { UpdateUserProfileHandler } from '../application/update-user-profile/update-user-profile.handler';
 import { UpdateUserAdminHandler } from '../application/update-user-admin/update-user-admin.handler';
+import { GetUserByIdHandler } from '../application/get-user-by-id/get-user-by-id.handler';
 
 import { User } from './entity/user.entity';
 import { UserRepository } from './repositories/user.repository';
@@ -43,6 +44,7 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
     UpdatePasswordAdminHandler,
     UpdateUserProfileHandler,
     UpdateUserAdminHandler,
+    GetUserByIdHandler,
     UserRepository,
   ],
   exports: [UserRepository, HashService],

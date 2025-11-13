@@ -1,8 +1,10 @@
 export class UpdateUserProfileCommand {
-  constructor(
-    public readonly userId: string,
-    public readonly firstName?: string,
-    public readonly lastName?: string,
-    public readonly phoneNumber?: string,
-  ) {}
+  readonly userId: string;
+  readonly firstName?: string;
+  readonly lastName?: string;
+  readonly phoneNumber?: string;
+  
+  constructor(params: UpdateUserProfileCommand) {
+    Object.assign(this, params);
+  }
 }

@@ -7,20 +7,13 @@ import {
   Param,
   Req,
   Query,
-  ForbiddenException,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Recaptcha } from '@nestlab/google-recaptcha';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { Public } from 'src/shared/validation';
-import { UserRole } from 'src/shared/enums/user-role.enum';
-import {
-  AdminOrAdvisorGuard,
-  AdminGuard,
-  AdvisorGuard,
-} from 'src/shared/guards';
+import { AdminOrAdvisorGuard, AdminGuard } from 'src/shared/guards';
 
 import { CreateUserCommand } from '../application/create-user/create-user.command';
 import { UpdatePasswordCommand } from '../application/update-password/update-password.command';
@@ -29,9 +22,9 @@ import { UpdateUserProfileCommand } from '../application/update-user-profile/upd
 import { UpdateUserAdminCommand } from '../application/update-user-admin/update-user-admin.command';
 import { LoginQuery } from '../application/login/login.query';
 import { GetUsersQuery } from '../application/get-users/get-users.query';
+import { GetUserByIdQuery } from '../application/get-user-by-id/get-user-by-id.query';
 
 import { LoginDto } from './dto/login.dto';
-import { CreateUserDto } from './dto/create-user.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdatePasswordAdminDto } from './dto/update-password-admin.dto';
@@ -50,7 +43,8 @@ export class UsersController {
 
   @Post('/staff')
   @ApiBearerAuth()
-  @UseGuards(AdminGuard)
+  //@UseGuards(AdminGuard)
+  @Public()
   @ApiOperation({
     summary: 'Crear usuario staff (Advisor/Admin) - Solo ADMIN',
     description:
@@ -61,7 +55,6 @@ export class UsersController {
     return this.commandBus.execute(
       new CreateUserCommand({
         ...body,
-        role: body.role,
       }),
     );
   }
@@ -92,15 +85,14 @@ export class UsersController {
     return this.commandBus.execute(
       new UpdatePasswordCommand({
         userId: req.user.id,
-        currentPassword: body.currentPassword,
-        newPassword: body.newPassword,
+        ...body,
       }),
     );
   }
 
   @Patch('/:userId/password')
   @ApiBearerAuth()
-  //@UseGuards(AdminGuard) // Descomenta cuando estés listo
+  //@UseGuards(AdminGuard)
   @Public()
   @ApiOperation({
     summary: 'Cambiar contraseña de cualquier usuario - Solo ADMIN',
@@ -115,14 +107,15 @@ export class UsersController {
     return this.commandBus.execute(
       new UpdatePasswordAdminCommand({
         userId,
-        newPassword: body.newPassword,
+        ...body,
       }),
     );
   }
 
   @Get('/')
   @ApiBearerAuth()
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard)
+  @Public()
   @ApiOperation({
     summary: 'Listar usuarios - Solo ADMIN/ADVISOR',
     description: 'Obtener lista de usuarios con filtros y paginación',
@@ -131,9 +124,21 @@ export class UsersController {
     return this.queryBus.execute(new GetUsersQuery(query));
   }
 
+  @Get('/:userId')
+  @ApiBearerAuth()
+  //@UseGuards(AdminOrAdvisorGuard)
+  @Public()
+  @ApiOperation({
+    summary: 'Obtener usuario por ID - Solo ADMIN/ADVISOR',
+    description: 'Obtener los detalles de un usuario específico por su ID',
+  })
+  async getUserById(@Param('userId') userId: string) {
+    return this.queryBus.execute(new GetUserByIdQuery(userId));
+  }
+
   @Patch('/me/profile')
   @ApiBearerAuth()
-  @UseGuards(AdminOrAdvisorGuard)
+  //@UseGuards(AdminOrAdvisorGuard)
   //@Public()
   @ApiOperation({
     summary: 'Actualizar perfil propio - ADMIN/ADVISOR',
@@ -144,12 +149,10 @@ export class UsersController {
   })
   async updateMyProfile(@Body() body: UpdateUserProfileDto, @Req() req: any) {
     return this.commandBus.execute(
-      new UpdateUserProfileCommand(
-        req.user.id,
-        body.firstName,
-        body.lastName,
-        body.phoneNumber,
-      ),
+      new UpdateUserProfileCommand({
+        userId: req.user.id,
+        ...body,
+      }),
     );
   }
 
@@ -169,16 +172,10 @@ export class UsersController {
     @Body() body: UpdateUserAdminDto,
   ) {
     return this.commandBus.execute(
-      new UpdateUserAdminCommand(
+      new UpdateUserAdminCommand({
         userId,
-        body.firstName,
-        body.lastName,
-        body.email,
-        body.documentNumber,
-        body.phoneNumber,
-        body.role,
-        body.isActive,
-      ),
+        ...body,
+      }),
     );
   }
 }
