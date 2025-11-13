@@ -81,16 +81,15 @@ export class UserRepository {
     return user;
   }
 
-  async findByDocumentNumber(
-    documentNumber: string,
-    failIfNotFound = false,
-  ) {
+  async findByDocumentNumber(documentNumber: string, failIfNotFound = false) {
     const user = await this.userRepository.findOne({
       where: { documentNumber },
     });
 
     if (!user && failIfNotFound) {
-      throw new NotFoundException(`User with document number '${documentNumber}' not found`);
+      throw new NotFoundException(
+        `User with document number '${documentNumber}' not found`,
+      );
     }
     return user;
   }

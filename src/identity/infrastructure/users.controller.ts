@@ -134,7 +134,7 @@ export class UsersController {
   @Patch('/me/profile')
   @ApiBearerAuth()
   @UseGuards(AdminOrAdvisorGuard)
-  //@Public() 
+  //@Public()
   @ApiOperation({
     summary: 'Actualizar perfil propio - ADMIN/ADVISOR',
     description:
