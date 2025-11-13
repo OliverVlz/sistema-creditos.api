@@ -7,6 +7,7 @@ import { Organization } from 'src/organization/infrastructure/entity/organizatio
 import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 import { EmploymentStatus, UserRole } from 'src/shared/enums';
+import { User as UserDomainModel } from 'src/identity/domain/user.model';
 
 type CreateClientData = {
   user: { id: string };
@@ -40,18 +41,18 @@ type UserWithClientResult = {
   lastName: string;
   documentNumber: string;
   phoneNumber: string | null;
+  createdAt: Date; // Añadido
+  updatedAt: Date; // Añadido
   client: {
     id: string;
     address: string | null;
     birthDate: string | null;
     employmentStatus: string | null;
-    isActive: boolean;
     organization: { id: string; name: string };
   };
 };
 
 type UpdateClientData = Partial<{
-  isActive?: boolean;
   employmentStatus?: EmploymentStatus;
   organization?: { id: string };
   updater?: { id: string };
@@ -67,7 +68,6 @@ type ClientSearchData = {
   limit?: number;
   employmentStatus?: EmploymentStatus;
   organizationId?: string;
-  isActive?: boolean;
 };
 
 type ClientSelect = { [key in keyof Client]?: boolean };
@@ -147,24 +147,18 @@ export class ClientRepository {
           address: data.address ?? null,
           birthDate: data.birthDate ? new Date(data.birthDate) : null,
           employmentStatus: data.employmentStatus ?? null,
-          isActive: true,
         }),
       )) as Client;
 
+      const userInfo = UserDomainModel.fromModel(user).getUserInfo();
+
       return {
-        id: user.id,
-        email: user.email,
-        role: String(user.role),
-        firstName: user.firstName,
-        lastName: user.lastName,
-        documentNumber: user.documentNumber,
-        phoneNumber: user.phoneNumber,
+        ...userInfo,
         client: {
           id: client.id,
           address: client.address,
           birthDate: client.birthDate?.toISOString().split('T')[0] ?? null,
           employmentStatus: client.employmentStatus,
-          isActive: client.isActive,
           organization: {
             id: organization.id,
             name: organization.name,
@@ -278,12 +272,6 @@ export class ClientRepository {
       });
     }
 
-    if (searchData.isActive !== undefined) {
-      queryBuilder.andWhere('user.isActive = :isActive', {
-        isActive: searchData.isActive,
-      });
-    }
-
     queryBuilder.orderBy('client.createdAt', 'DESC');
 
     const paginationOptions = PaginationUtils.createRepositoryPaginationOptions(
@@ -304,12 +292,7 @@ export class ClientRepository {
   async searchClientsForListView(searchData: ClientSearchData) {
     const queryBuilder = this.clientsRepository
       .createQueryBuilder('client')
-      .select([
-        'client.id',
-        'client.isActive',
-        'client.employmentStatus',
-        'client.createdAt',
-      ])
+      .select(['client.id', 'client.employmentStatus', 'client.createdAt'])
       .addSelect([
         'user.id',
         'user.firstName',
@@ -333,12 +316,6 @@ export class ClientRepository {
     if (searchData.organizationId) {
       queryBuilder.andWhere('organization.id = :organizationId', {
         organizationId: searchData.organizationId,
-      });
-    }
-
-    if (searchData.isActive !== undefined) {
-      queryBuilder.andWhere('client.isActive = :isActive', {
-        isActive: searchData.isActive,
       });
     }
 

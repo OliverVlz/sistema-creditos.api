@@ -112,7 +112,7 @@ export class UsersController {
     );
   }
 
-  @Get('/')
+  @Get('/all')
   @ApiBearerAuth()
   //@UseGuards(AdminOrAdvisorGuard)
   @Public()

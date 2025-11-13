@@ -19,9 +19,6 @@ export class Client {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'is_active', default: true })
-  isActive: boolean;
-
   @Column({
     name: 'employment_status',
     type: 'enum',

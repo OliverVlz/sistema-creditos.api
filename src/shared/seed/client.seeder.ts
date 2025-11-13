@@ -95,7 +95,6 @@ export class ClientSeeder {
           address: data.address,
           birthDate: data.birthDate,
           employmentStatus: data.employmentStatus,
-          isActive: true,
         }),
       );
 

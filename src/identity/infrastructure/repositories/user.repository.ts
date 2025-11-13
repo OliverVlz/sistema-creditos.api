@@ -200,7 +200,6 @@ export class UserRepository {
             address: user.client.address,
             birthDate: user.client.birthDate,
             employmentStatus: user.client.employmentStatus,
-            isActive: user.client.isActive,
             createdAt: user.client.createdAt,
             updatedAt: user.client.updatedAt,
           }

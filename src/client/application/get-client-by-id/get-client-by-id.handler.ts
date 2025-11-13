@@ -18,7 +18,6 @@ export class GetClientByIdHandler implements IQueryHandler<GetClientByIdQuery> {
       ...User.fromModel(client.user).getUserInfo(),
       clientInfo: {
         id: client.id,
-        isActive: client.isActive,
         employmentStatus: client.employmentStatus,
         address: client.address,
         birthDate: client.birthDate,

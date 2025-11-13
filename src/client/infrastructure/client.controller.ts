@@ -23,7 +23,6 @@ import { CreateClientCommand } from '../application/create-client/create-client.
 
 import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
 import { UpdateClientAdminCommand } from '../application/update-client-admin/update-client-admin.command';
-import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
 import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
 import { GetClientsQuery } from '../application/get-clients/get-clients.query';
 import { AdminOrAdvisorGuard } from 'src/shared/guards';
@@ -128,15 +127,5 @@ export class ClientsController {
         ...body,
       }),
     );
-  }
-
-  @Delete('/:userId')
-  //@UseGuards(AdminOrAdvisorGuard)
-  @ApiOperation({
-    summary: 'Eliminar perfil crediticio - Solo ADMIN/ADVISOR',
-    description: 'Elimina el perfil crediticio del cliente usando userId',
-  })
-  async remove(@Param('userId') userId: string) {
-    return this.commandBus.execute(new DeleteClientCommand(userId));
   }
 }
