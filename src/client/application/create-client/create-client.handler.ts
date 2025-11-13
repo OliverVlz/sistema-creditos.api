@@ -1,51 +1,43 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { HashService } from 'src/shared/hash';
 import { CreateClientCommand } from './create-client.command';
-import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
-
-type CreateClientResult = {
-  id: string;
-  email: string;
-  role: string;
-  firstName: string;
-  lastName: string;
-  documentNumber: string;
-  phoneNumber: string | null;
-  client: {
-    id: string;
-    address: string | null;
-    birthDate: string | null;
-    employmentStatus: string | null;
-    isActive: boolean;
-    organization: { id: string; name: string };
-  };
-};
+import { ClientRepository } from '../../infrastructure/repositories/client.repository';
+import { HashService } from '../../../shared/hash';
+import { DomainError } from 'src/shared/domain';
+import { UserRole } from 'src/shared/enums';
 
 @CommandHandler(CreateClientCommand)
 export class CreateClientHandler
-  implements ICommandHandler<CreateClientCommand, CreateClientResult>
+  implements ICommandHandler<CreateClientCommand>
 {
   constructor(
     private readonly hashService: HashService,
     private readonly clientRepository: ClientRepository,
   ) {}
 
-  async execute(command: CreateClientCommand): Promise<CreateClientResult> {
-    const hashedPassword = await this.hashService.hash(command.password);
+  async execute(command: CreateClientCommand) {
+    const formattedClientData = await this.formatClientData(command);
 
-    return await this.clientRepository.createUserWithClient({
-      email: command.email,
-      password: hashedPassword,
-      firstName: command.firstName,
-      lastName: command.lastName,
-      role: command.role,
-      documentNumber: command.documentNumber,
-      phoneNumber: command.phoneNumber,
-      address: command.address,
-      birthDate: command.birthDate,
-      employmentStatus: command.employmentStatus,
-      organizationId: command.organizationId,
-      createdBy: command.createdBy,
-    });
+    try {
+      const userWithClient =
+        await this.clientRepository.createUserWithClient(formattedClientData);
+      return userWithClient;
+    } catch (e) {
+      if (e.code === '23505' || e.code === 'ER_DUP_ENTRY') {
+        throw new DomainError(
+          'USER_ALREADY_REGISTERED',
+          'User already exists or document number is duplicated.',
+        );
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  private async formatClientData(command: CreateClientCommand) {
+    return {
+      ...command,
+      role: UserRole.CLIENTE,
+      password: await this.hashService.hash(command.password),
+    };
   }
 }

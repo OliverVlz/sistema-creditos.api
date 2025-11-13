@@ -82,9 +82,7 @@ export class ClientRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  async createUserWithClient(
-    data: CreateUserWithClientData,
-  ): Promise<UserWithClientResult> {
+  async createUserWithClient(data: CreateUserWithClientData) {
     return await this.dataSource.transaction(async manager => {
       const userRepo = manager.getRepository(User);
       const clientRepo = manager.getRepository(Client);
@@ -141,7 +139,6 @@ export class ClientRepository {
             lastName: data.lastName,
             documentNumber: data.documentNumber,
             phoneNumber: data.phoneNumber ?? null,
-            createdBy: data.createdBy,
           }),
         )) as User);
 
@@ -238,7 +235,7 @@ export class ClientRepository {
 
   async findOneByClientIdWithLoans(clientId: string) {
     const client = await this.clientsRepository.findOne({
-      where: { id: clientId },
+      where: { user: { id: clientId } },
       relations: [
         'user',
         'organization',

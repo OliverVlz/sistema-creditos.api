@@ -1,8 +1,8 @@
 import * as theme from './theme';
 
-export function Html({ lang, title, children }) {
+export function Html({ title, children }) {
   return (
-    <html lang={lang}>
+    <html>
       <head>
         <title>{title}</title>
         <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />

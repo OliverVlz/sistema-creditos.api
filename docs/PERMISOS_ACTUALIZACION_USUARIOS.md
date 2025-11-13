@@ -3,42 +3,47 @@
 ## 🎯 Separación de Dominios
 
 ### 📂 **Módulo CLIENTS** (`/clients`)
+
 **Dominio**: Información crediticia (préstamos, empleo, organización)
 
-| Endpoint | Rol | Campos Editables |
-|----------|-----|------------------|
+| Endpoint                    | Rol     | Campos Editables                                                                                      |
+| --------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
 | `PATCH /clients/me/profile` | CLIENTE | firstName, lastName, address, phoneNumber, birthDate, employmentStatus, organizationId **(7 campos)** |
-| `PATCH /clients/:userId` | ADMIN | Los 7 anteriores + email, isActive **(9 campos)** |
+| `PATCH /clients/:userId`    | ADMIN   | Los 7 anteriores + email, isActive **(9 campos)**                                                     |
 
 **❌ Inmutable**: `documentNumber` (nadie puede cambiar)
 
 ---
 
 ### 📂 **Módulo USERS** (`/users`)
+
 **Dominio**: Identidad y autenticación (staff, roles, contraseñas)
 
-| Endpoint | Rol | Campos Editables |
-|----------|-----|------------------|
-| `PATCH /users/me/profile` | ADVISOR | firstName, lastName, phoneNumber **(3 campos)** |
-| `PATCH /users/:userId` | ADMIN | firstName, lastName, email, documentNumber, phoneNumber, role, isActive **(7 campos)** |
-| `PATCH /users/me/password` | Cualquiera | password (requiere currentPassword) |
-| `PATCH /users/:userId/password` | ADMIN | password (sin currentPassword requerido) |
+| Endpoint                        | Rol        | Campos Editables                                                                       |
+| ------------------------------- | ---------- | -------------------------------------------------------------------------------------- |
+| `PATCH /users/me/profile`       | ADVISOR    | firstName, lastName, phoneNumber **(3 campos)**                                        |
+| `PATCH /users/:userId`          | ADMIN      | firstName, lastName, email, documentNumber, phoneNumber, role, isActive **(7 campos)** |
+| `PATCH /users/me/password`      | Cualquiera | password (requiere currentPassword)                                                    |
+| `PATCH /users/:userId/password` | ADMIN      | password (sin currentPassword requerido)                                               |
 
 ---
 
 ## 🔐 Matriz de Permisos
 
 ### CLIENTE
+
 - ✅ Edita su perfil crediticio (7 campos)
 - ❌ No puede cambiar: email, documentNumber, isActive
 
 ### ADVISOR (ASESOR)
+
 - ✅ Edita su perfil básico (3 campos)
 - ✅ Cambia su propia contraseña
 - ✅ Gestiona clientes (lectura/actualización vía `/clients`)
 - ❌ No puede cambiar: su email, documentNumber, role, isActive
 
 ### ADMIN
+
 - ✅ **Control total** sobre usuarios y clientes
 - ✅ Puede cambiar roles, activar/desactivar cuentas
 - ✅ Puede resetear contraseñas sin validación

@@ -54,7 +54,7 @@ export class UpdateClientAdminHandler
 
       // Actualizar datos del cliente (tabla clients)
       const clientUpdateData: any = {
-        updatedBy: command.updatedBy,
+        updater: { id: command.updatedBy },
       };
 
       if (command.isActive !== undefined)

@@ -1,14 +1,12 @@
 import ReactDOM from 'react-dom';
 
-import { Language } from 'src/shared/enums';
-
 import { RecoverPasswordTemplate } from 'src/identity/application/recover-password/recover-password.template';
 
 const DATA = {
   firstName: 'John',
   recoveryLink: 'http://localhost:3000',
 };
-const lang = Language.Spanish;
+
 function App() {
   return (
     <>
@@ -29,7 +27,7 @@ function App() {
           </div>
         </div>
       </header>
-      <RecoverPasswordTemplate lang={lang} data={DATA} />
+      <RecoverPasswordTemplate data={DATA} />
     </>
   );
 }

@@ -36,14 +36,8 @@ export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {
 
   private async formatUser(data: CreateUserCommand) {
     return {
-      email: data.email,
+      ...data,
       password: await this.hashService.hash(data.password),
-      firstName: data.firstName,
-      lastName: data.lastName,
-      documentNumber: data.documentNumber,
-      phoneNumber: data.phoneNumber,
-      role: data.role || UserRole.CLIENTE,
-      language: data.language,
     };
   }
 }

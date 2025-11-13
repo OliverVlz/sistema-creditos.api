@@ -12,7 +12,7 @@ export class CreateClientCommand {
   readonly employmentStatus: EmploymentStatus;
   readonly organizationId: string;
   readonly role: UserRole;
-  readonly createdBy?: string;
+  readonly creator: string;
 
   constructor(params: CreateClientCommand) {
     Object.assign(this, params);

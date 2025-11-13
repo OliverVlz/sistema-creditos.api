@@ -1,4 +1,4 @@
-import { UserRole, Language } from 'src/shared/enums';
+import { UserRole } from 'src/shared/enums';
 
 export class CreateUserCommand {
   readonly firstName: string;
@@ -8,7 +8,6 @@ export class CreateUserCommand {
   readonly documentNumber: string;
   readonly phoneNumber?: string;
   readonly role?: UserRole;
-  readonly language?: Language;
 
   constructor(params: CreateUserCommand) {
     Object.assign(this, params);

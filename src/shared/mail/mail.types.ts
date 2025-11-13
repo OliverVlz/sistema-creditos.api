@@ -1,8 +1,6 @@
 import { ModuleMetadata } from '@nestjs/common';
 import { SendMailOptions, Transporter } from 'nodemailer';
 
-import { Language } from 'src/shared/enums';
-
 export type MailContent = Promise<SendMailOptions>;
 export interface EmailTemplate {
   build(): MailContent;
@@ -10,7 +8,6 @@ export interface EmailTemplate {
 
 export interface EmailTemplateProps<TData = Record<string, any>> {
   email: string;
-  lang?: Language;
   data: TData;
   fileName?: string;
   fileContent?: Buffer;
@@ -18,7 +15,6 @@ export interface EmailTemplateProps<TData = Record<string, any>> {
 }
 
 export type TemplateComponentProps<TData = Record<string, any>> = {
-  lang: Language;
   data: TData;
 };
 

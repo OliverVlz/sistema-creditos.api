@@ -4,19 +4,9 @@ import { Paragraph } from './Paragraph';
 import { NestedTable } from './NestedTable';
 import { LineSeparator } from './LineSeparator';
 
-const translations = {
-  es: {
-    logoAlt: 'Digheontech EHR',
-  },
-  en: {
-    logoAlt: 'Digheontech EHR',
-  },
-};
-
-export function MailTemplate({ lang, title, children }) {
-  const t = translations[lang];
+export function MailTemplate({ title, children }) {
   return (
-    <Html lang={lang} title={title}>
+    <Html title={title}>
       <table
         align="center"
         cellPadding={0}
@@ -48,7 +38,7 @@ export function MailTemplate({ lang, title, children }) {
             >
               <img
                 src="https://files-digheon-public.s3.us-east-1.amazonaws.com/mail-ehr-logo-horizontal.png"
-                alt={t.logoAlt}
+                alt="Digheontech EHR"
                 width="40%"
                 height="auto"
               />

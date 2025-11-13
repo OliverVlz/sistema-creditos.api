@@ -17,14 +17,15 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { UpdateClientAdminDto } from './dto/update-client-admin.dto';
 import { GetClientsDto } from './dto/get-clients.dto';
-import { CreateClientUserDto } from 'src/identity/infrastructure/dto/create-client-user.dto';
+import { CreateClientDto } from './dto/create-client.dto';
+
+import { CreateClientCommand } from '../application/create-client/create-client.command';
 
 import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
 import { UpdateClientAdminCommand } from '../application/update-client-admin/update-client-admin.command';
 import { DeleteClientCommand } from '../application/delete-client/delete-client.command';
 import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
 import { GetClientsQuery } from '../application/get-clients/get-clients.query';
-import { CreateClientCommand } from '../application/create-client/create-client.command';
 import { AdminOrAdvisorGuard } from 'src/shared/guards';
 import { UserRole } from 'src/shared/enums';
 import { Public } from 'src/shared/validation';
@@ -48,19 +49,18 @@ export class ClientsController {
       'por Admin/Advisor (con autenticación para trazabilidad). ' +
       'Si hay un usuario autenticado, se registra automáticamente quién creó el cliente.',
   })
-  async register(@Body() body: CreateClientUserDto, @Req() req: any) {
+  async register(@Body() body: CreateClientDto, @Req() req: any) {
     return this.commandBus.execute(
       new CreateClientCommand({
         ...body,
         role: UserRole.CLIENTE,
-        createdBy: req.user?.id,
+        creator: req.user?.id,
       }),
     );
   }
 
   @Get('/all')
-  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
-  @Public()
+  @UseGuards(AdminOrAdvisorGuard) // Descomentado
   @ApiOperation({
     summary: 'Listar clientes para dashboard - Solo ADMIN/ADVISOR',
     description:
@@ -81,8 +81,7 @@ export class ClientsController {
   }
 
   @Get('/:userId/profile')
-  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
-  @Public()
+  @UseGuards(AdminOrAdvisorGuard) // Descomentado
   @ApiOperation({
     summary: 'Obtener perfil de cliente por userId - Solo ADMIN/ADVISOR',
     description:
@@ -110,8 +109,7 @@ export class ClientsController {
   }
 
   @Patch('/:userId')
-  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
-  @Public()
+  @UseGuards(AdminOrAdvisorGuard) // Descomentado
   @ApiOperation({
     summary: 'Actualizar cliente completo - Solo ADMIN/ADVISOR',
     description:
@@ -134,8 +132,7 @@ export class ClientsController {
   }
 
   @Delete('/:userId')
-  //@UseGuards(AdminOrAdvisorGuard) no eliminar comentario
-  @Public()
+  @UseGuards(AdminOrAdvisorGuard) // Descomentado
   @ApiOperation({
     summary: 'Eliminar perfil crediticio - Solo ADMIN/ADVISOR',
     description: 'Elimina el perfil crediticio del cliente usando userId',

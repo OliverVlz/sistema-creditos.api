@@ -7,8 +7,11 @@ import {
   TemplateComponentProps,
 } from 'src/shared/mail';
 
-export const translations = {
-  es: {
+export function RecoverPasswordTemplate({
+  data,
+}: TemplateComponentProps) {
+  const { firstName, recoveryLink } = data;
+  const t = {
     subject: 'Restablecer contraseña',
     title: 'Restablecer Contraseña',
     greeting: (name: string) => `¡Hola ${name}!`,
@@ -23,32 +26,9 @@ export const translations = {
     regardsBottom: 'Equipo de PR Ready',
     receivedReason:
       'Ha recibido este correo porque tiene una cuenta de PR Ready.',
-  },
-  en: {
-    subject: 'Reset Password',
-    title: 'Reset your Password',
-    greeting: (name: string) => `Hello ${name}!`,
-    explanation:
-      'You have received this email because you requested to reset your current password.',
-    instructions: 'Please click the button below to reset your password.',
-    button: 'Reset password',
-    alternateInstructions:
-      'If you do not wish to reset your password, ignore this email and your password will not be modified.',
-    regardsTop: 'Thank you,',
-    regardsBottom: 'PR Ready Team',
-    receivedReason:
-      'You have received this email because you have a PR Ready account.',
-  },
-};
-
-export function RecoverPasswordTemplate({
-  lang,
-  data,
-}: TemplateComponentProps) {
-  const { firstName, recoveryLink } = data;
-  const t = translations[lang];
+  };
   return (
-    <MailTemplate lang={lang} title={t.title}>
+    <MailTemplate title={t.title}>
       <Paragraph paddingTop={16}>{t.greeting(firstName)}</Paragraph>
       <Paragraph paddingTop={16}>{t.explanation}</Paragraph>
       <Paragraph paddingTop={16}>{t.instructions}</Paragraph>

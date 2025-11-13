@@ -8,7 +8,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
-import { UserRole, Language } from 'src/shared/enums';
+import { UserRole } from 'src/shared/enums';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
 
 @Entity('users')
@@ -43,12 +43,13 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ nullable: true })
-  createdBy?: string;
-
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'created_by' })
   creator?: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updater?: User;
 
   @CreateDateColumn()
   createdAt: Date;
