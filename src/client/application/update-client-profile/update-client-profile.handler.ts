@@ -63,9 +63,11 @@ export class UpdateClientProfileHandler
         userUpdateData.firstName = command.firstName;
       if (command.lastName !== undefined)
         userUpdateData.lastName = command.lastName;
+      
+      userUpdateData.updater = client.user;
 
       if (Object.keys(userUpdateData).length > 0) {
-        await userRepo.update(client.user.id, userUpdateData);
+        await userRepo.save({ ...client.user, ...userUpdateData });
       }
 
       // Retornar cliente actualizado

@@ -12,6 +12,8 @@ export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
       limit: query.limit,
       terms: query.terms,
       organizationId: query.organizationId,
+      employmentStatus: query.employmentStatus,
+      isActive: query.isActive,
     });
 
     const transformedData = result.data.map(client => ({

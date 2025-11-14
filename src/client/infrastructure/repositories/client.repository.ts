@@ -68,6 +68,7 @@ type ClientSearchData = {
   limit?: number;
   employmentStatus?: EmploymentStatus;
   organizationId?: string;
+  isActive?: boolean;
 };
 
 type ClientSelect = { [key in keyof Client]?: boolean };
@@ -174,7 +175,7 @@ export class ClientRepository {
 
   async findAll() {
     const clients = await this.clientsRepository.find({
-      relations: ['organization', 'updater', 'user'],
+      relations: ['organization', 'user', 'user.updater'],
       order: { createdAt: 'DESC' },
     });
     return clients;
@@ -183,7 +184,7 @@ export class ClientRepository {
   async findOne(id: string) {
     const client = await this.clientsRepository.findOne({
       where: { id },
-      relations: ['organization', 'updater', 'user'],
+      relations: ['organization', 'user', 'user.updater'],
     });
     if (!client) {
       throw new DomainError('CLIENT_NOT_FOUND', 'Client not found');
@@ -201,8 +202,8 @@ export class ClientRepository {
       where: { user: { id: userId } },
       relations: [
         'user',
+        'user.updater',
         'organization',
-        'updater',
         'loans',
         'loans.loanType',
         'loans.organization',
@@ -214,7 +215,7 @@ export class ClientRepository {
   async findOneByUserId(userId: string) {
     const client = await this.clientsRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['organization', 'updater', 'user'],
+      relations: ['organization', 'user', 'user.updater'],
     });
     return client;
   }
@@ -224,8 +225,8 @@ export class ClientRepository {
       where: { user: { id: clientId } },
       relations: [
         'user',
+        'user.updater',
         'organization',
-        'updater',
         'loans',
         'loans.loanType',
         'loans.organization',
@@ -255,8 +256,8 @@ export class ClientRepository {
     const queryBuilder = this.clientsRepository
       .createQueryBuilder('client')
       .leftJoinAndSelect('client.organization', 'organization')
-      .leftJoinAndSelect('client.updater', 'updater')
-      .leftJoinAndSelect('client.user', 'user');
+      .leftJoinAndSelect('client.user', 'user')
+      .leftJoinAndSelect('user.updater', 'userUpdater');
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
@@ -300,6 +301,7 @@ export class ClientRepository {
         'user.email',
         'user.documentNumber',
         'user.phoneNumber',
+        'user.isActive',
       ])
       .addSelect(['organization.id', 'organization.name'])
       .leftJoin('client.user', 'user')
@@ -316,6 +318,18 @@ export class ClientRepository {
     if (searchData.organizationId) {
       queryBuilder.andWhere('organization.id = :organizationId', {
         organizationId: searchData.organizationId,
+      });
+    }
+
+    if (searchData.employmentStatus) {
+      queryBuilder.andWhere('client.employmentStatus = :employmentStatus', {
+        employmentStatus: searchData.employmentStatus,
+      });
+    }
+
+    if (searchData.isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', {
+        isActive: searchData.isActive,
       });
     }
 

@@ -5,6 +5,8 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
+import { Client } from '../../infrastructure/entity/client.entity';
+import { User as UserDomainModel } from 'src/identity/domain/user.model';
 
 @CommandHandler(UpdateClientAdminCommand)
 export class UpdateClientAdminHandler
@@ -17,7 +19,7 @@ export class UpdateClientAdminHandler
 
   async execute(command: UpdateClientAdminCommand) {
     return await this.dataSource.transaction(async manager => {
-      const clientRepo = manager.getRepository('clients');
+      const clientRepo = manager.getRepository(Client);
       const userRepo = manager.getRepository(User);
       const orgRepo = manager.getRepository(Organization);
 
@@ -53,22 +55,18 @@ export class UpdateClientAdminHandler
       }
 
       // Actualizar datos del cliente (tabla clients)
-      const clientUpdateData: any = {
-        updater: { id: command.updatedBy },
-      };
-
-      if (command.isActive !== undefined)
-        clientUpdateData.isActive = command.isActive;
       if (command.employmentStatus !== undefined)
-        clientUpdateData.employmentStatus = command.employmentStatus;
-      if (command.address !== undefined)
-        clientUpdateData.address = command.address;
+        client.employmentStatus = command.employmentStatus;
+      if (command.address !== undefined) client.address = command.address;
       if (command.birthDate !== undefined)
-        clientUpdateData.birthDate = new Date(command.birthDate);
-      if (command.organizationId !== undefined)
-        clientUpdateData.organizationId = command.organizationId;
+        client.birthDate = new Date(command.birthDate);
+      if (command.organizationId !== undefined) {
+        client.organization = await orgRepo.findOne({
+          where: { id: command.organizationId },
+        });
+      }
 
-      await clientRepo.update(client.id, clientUpdateData);
+      await clientRepo.save(client);
 
       // Actualizar datos del usuario (tabla users)
       const userUpdateData: any = {};
@@ -79,13 +77,66 @@ export class UpdateClientAdminHandler
       if (command.lastName !== undefined)
         userUpdateData.lastName = command.lastName;
       if (command.email !== undefined) userUpdateData.email = command.email;
-
-      if (Object.keys(userUpdateData).length > 0) {
-        await userRepo.update(client.user.id, userUpdateData);
+      if (command.isActive !== undefined)
+        userUpdateData.isActive = command.isActive;
+      if (command.updater) {
+        userUpdateData.updater = await userRepo.findOne({
+          where: { id: command.updater },
+        });
       }
 
-      // Retornar cliente actualizado
-      return this.clientRepository.findOneByUserId(command.userId);
+      if (Object.keys(userUpdateData).length > 0) {
+        await userRepo.save({ ...client.user, ...userUpdateData });
+      }
+
+      // Obtener datos actualizados
+      const updatedClient = await this.clientRepository.findOneByUserId(
+        command.userId,
+      );
+
+      if (!updatedClient) {
+        throw new NotFoundException(
+          'Cliente no encontrado después de la actualización',
+        );
+      }
+
+      // Retornar respuesta estructurada
+      const userInfo = UserDomainModel.fromModel(
+        updatedClient.user,
+      ).getUserInfo();
+
+      return {
+        ...userInfo,
+        clientInfo: {
+          id: updatedClient.id,
+          employmentStatus: updatedClient.employmentStatus,
+          address: updatedClient.address,
+          birthDate: updatedClient.birthDate
+            ? updatedClient.birthDate instanceof Date
+              ? updatedClient.birthDate.toISOString().split('T')[0]
+              : String(updatedClient.birthDate).split('T')[0]
+            : null,
+          createdAt: updatedClient.createdAt,
+          updatedAt: updatedClient.updatedAt,
+          organization: updatedClient.organization
+            ? {
+                id: updatedClient.organization.id,
+                name: updatedClient.organization.name,
+                baseInterestRate: updatedClient.organization.baseInterestRate,
+                discountRate: updatedClient.organization.discountRate,
+                taxRate: updatedClient.organization.taxRate,
+                isActive: updatedClient.organization.isActive,
+                createdAt: updatedClient.organization.createdAt,
+                updatedAt: updatedClient.organization.updatedAt,
+              }
+            : null,
+          updater: updatedClient.user.updater
+            ? UserDomainModel.fromModel(
+                updatedClient.user.updater,
+              ).getUserInfo()
+            : null,
+        },
+      };
     });
   }
 }

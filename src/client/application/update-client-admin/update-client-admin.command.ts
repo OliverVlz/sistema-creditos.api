@@ -2,7 +2,7 @@ import { EmploymentStatus } from 'src/shared/enums';
 
 export class UpdateClientAdminCommand {
   readonly userId: string;
-  readonly updatedBy: string;
+  readonly updater?: string;
   readonly firstName?: string;
   readonly lastName?: string;
   readonly address?: string;

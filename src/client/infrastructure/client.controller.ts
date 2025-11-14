@@ -59,6 +59,7 @@ export class ClientsController {
 
   @Get('/all')
   //@UseGuards(AdminOrAdvisorGuard)
+  @Public()
   @ApiOperation({
     summary: 'Listar clientes para dashboard - Solo ADMIN/ADVISOR',
     description:
@@ -80,6 +81,7 @@ export class ClientsController {
 
   @Get('/:userId/profile')
   //@UseGuards(AdminOrAdvisorGuard)
+  @Public()
   @ApiOperation({
     summary: 'Obtener perfil de cliente por userId - Solo ADMIN/ADVISOR',
     description:
@@ -111,9 +113,11 @@ export class ClientsController {
   @ApiOperation({
     summary: 'Actualizar cliente completo - Solo ADMIN/ADVISOR',
     description:
-      'Permite al Admin/Advisor actualizar TODOS los campos del cliente: ' +
-      'nombres, apellidos, dirección, teléfono, fecha de nacimiento, estado laboral, organización, ' +
-      'email y estado activo/inactivo. El Admin tiene control total sobre la información del cliente.',
+      'Permite al Admin/Advisor actualizar los campos del cliente y usuario. ' +
+      'Campos editables: firstName, lastName, email, phoneNumber, address, birthDate, ' +
+      'employmentStatus, organizationId (solo asignar a otra organización), isActive. ' +
+      'NOTA: Los datos internos de la organización (tasas, descuentos, etc.) NO se pueden modificar desde aquí. ' +
+      'Se gestionan desde el módulo de organizaciones.',
   })
   async updateClientAsAdmin(
     @Param('userId') userId: string,
@@ -123,7 +127,7 @@ export class ClientsController {
     return this.commandBus.execute(
       new UpdateClientAdminCommand({
         userId,
-        updatedBy: req.user.id,
+        updater: req.user?.id,
         ...body,
       }),
     );
