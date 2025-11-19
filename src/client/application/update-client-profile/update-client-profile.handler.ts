@@ -63,7 +63,7 @@ export class UpdateClientProfileHandler
         userUpdateData.firstName = command.firstName;
       if (command.lastName !== undefined)
         userUpdateData.lastName = command.lastName;
-      
+
       userUpdateData.updater = client.user;
 
       if (Object.keys(userUpdateData).length > 0) {
@@ -71,7 +71,7 @@ export class UpdateClientProfileHandler
       }
 
       // Retornar cliente actualizado
-      return this.clientRepository.findOneByUserId(command.userId);
+      return this.clientRepository.findOneByUserId(command.userId, manager);
     });
   }
 }

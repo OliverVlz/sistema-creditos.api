@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Client } from '../entity/client.entity';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
@@ -212,8 +212,12 @@ export class ClientRepository {
     return client;
   }
 
-  async findOneByUserId(userId: string) {
-    const client = await this.clientsRepository.findOne({
+  async findOneByUserId(userId: string, manager?: EntityManager) {
+    const repo = manager
+      ? manager.getRepository(Client)
+      : this.clientsRepository;
+
+    const client = await repo.findOne({
       where: { user: { id: userId } },
       relations: ['organization', 'user', 'user.updater'],
     });

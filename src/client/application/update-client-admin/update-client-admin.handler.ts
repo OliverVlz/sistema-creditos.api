@@ -92,6 +92,7 @@ export class UpdateClientAdminHandler
       // Obtener datos actualizados
       const updatedClient = await this.clientRepository.findOneByUserId(
         command.userId,
+        manager,
       );
 
       if (!updatedClient) {
