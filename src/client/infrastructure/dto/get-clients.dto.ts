@@ -1,11 +1,19 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsEnum,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { PaginationDto } from 'src/shared/dto';
 import { EmploymentStatus } from 'src/shared/enums';
 
 export class GetClientsDto extends PaginationDto {
-  @ApiPropertyOptional({ description: 'Search term for client name or document' })
+  @ApiPropertyOptional({
+    description: 'Search term for client name or document',
+  })
   @IsOptional()
   @IsString()
   terms?: string;
@@ -18,7 +26,7 @@ export class GetClientsDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filter by active status' })
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean)
+  @Transform(({ value }) => value === 'true')
   isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Filter by employment status' })

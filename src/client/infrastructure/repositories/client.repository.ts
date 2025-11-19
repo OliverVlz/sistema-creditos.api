@@ -277,6 +277,12 @@ export class ClientRepository {
       });
     }
 
+    if (searchData.isActive !== undefined) {
+      queryBuilder.andWhere('user.isActive = :isActive', {
+        isActive: searchData.isActive,
+      });
+    }
+
     queryBuilder.orderBy('client.createdAt', 'DESC');
 
     const paginationOptions = PaginationUtils.createRepositoryPaginationOptions(
