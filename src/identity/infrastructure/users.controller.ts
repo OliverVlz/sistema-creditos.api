@@ -23,6 +23,7 @@ import { UpdateUserAdminCommand } from '../application/update-user-admin/update-
 import { LoginQuery } from '../application/login/login.query';
 import { GetUsersQuery } from '../application/get-users/get-users.query';
 import { GetUserByIdQuery } from '../application/get-user-by-id/get-user-by-id.query';
+import { GetMeQuery } from '../application/get-me/get-me.query';
 
 import { LoginDto } from './dto/login.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
@@ -68,9 +69,14 @@ export class UsersController {
 
   @Get('/me')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtener información del usuario actual' })
+  @ApiOperation({
+    summary: 'Obtener información del usuario actual',
+    description:
+      'Retorna la información del usuario autenticado. ' +
+      'Si el usuario es CLIENTE, incluye también el clientId.',
+  })
   async me(@Req() req: { user: User }) {
-    return req.user.getUserInfo();
+    return this.queryBus.execute(new GetMeQuery(req.user));
   }
 
   @Patch('/me/password')

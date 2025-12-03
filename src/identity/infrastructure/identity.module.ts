@@ -16,8 +16,10 @@ import { UpdatePasswordAdminHandler } from '../application/update-password-admin
 import { UpdateUserProfileHandler } from '../application/update-user-profile/update-user-profile.handler';
 import { UpdateUserAdminHandler } from '../application/update-user-admin/update-user-admin.handler';
 import { GetUserByIdHandler } from '../application/get-user-by-id/get-user-by-id.handler';
+import { GetMeHandler } from '../application/get-me/get-me.handler';
 
 import { User } from './entity/user.entity';
+import { Client } from 'src/client/infrastructure/entity/client.entity';
 import { UserRepository } from './repositories/user.repository';
 import { AuthService } from './auth.service';
 import { UsersController } from './users.controller';
@@ -28,7 +30,7 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
     ConfigModule,
     CqrsModule,
     JwtModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Client]),
     forwardRef(() => ClientsModule),
   ],
   controllers: [UsersController],
@@ -45,6 +47,7 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
     UpdateUserProfileHandler,
     UpdateUserAdminHandler,
     GetUserByIdHandler,
+    GetMeHandler,
     UserRepository,
   ],
   exports: [UserRepository, HashService],
