@@ -123,9 +123,7 @@ export class UpdateClientAdminHandler
             ? {
                 id: updatedClient.organization.id,
                 name: updatedClient.organization.name,
-                baseInterestRate: updatedClient.organization.baseInterestRate,
-                discountRate: updatedClient.organization.discountRate,
-                taxRate: updatedClient.organization.taxRate,
+                description: updatedClient.organization.description,
                 isActive: updatedClient.organization.isActive,
                 createdAt: updatedClient.organization.createdAt,
                 updatedAt: updatedClient.organization.updatedAt,

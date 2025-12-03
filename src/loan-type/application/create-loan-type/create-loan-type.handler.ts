@@ -4,32 +4,43 @@ import { LoanTypeRepository } from '../../infrastructure/repositories/loan-type.
 import { BadRequestException } from '@nestjs/common';
 
 @CommandHandler(CreateLoanTypeCommand)
-export class CreateLoanTypeHandler implements ICommandHandler<CreateLoanTypeCommand> {
+export class CreateLoanTypeHandler
+  implements ICommandHandler<CreateLoanTypeCommand>
+{
   constructor(private readonly loanTypeRepository: LoanTypeRepository) {}
 
   async execute(command: CreateLoanTypeCommand): Promise<any> {
-    const { name, description, baseProcessingFee, maxAmount, minAmount, maxTermMonths, isActive, requiredDocumentTypes } = command;
+    const {
+      name,
+      description,
+      interestRate,
+      minAmount,
+      maxAmount,
+      minTerm,
+      maxTerm,
+      isActive = true,
+      requiredDocumentTypeIds,
+    } = command;
 
-    // Opcional: Validar que no exista un LoanType con el mismo nombre
     const existingLoanType = await this.loanTypeRepository.findByName(name);
     if (existingLoanType) {
-      throw new BadRequestException(`LoanType with name "${name}" already exists`);
+      throw new BadRequestException(
+        `Ya existe un tipo de préstamo con el nombre "${name}"`,
+      );
     }
 
     const newLoanType = await this.loanTypeRepository.createLoanType({
       name,
       description,
-      baseProcessingFee,
-      maxAmount,
+      interestRate,
       minAmount,
-      maxTermMonths,
+      maxAmount,
+      minTerm,
+      maxTerm,
       isActive,
-      requiredDocumentTypes,
+      requiredDocumentTypeIds,
     });
 
     return { loanTypeId: newLoanType.id };
   }
 }
-
-
-

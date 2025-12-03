@@ -1,25 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Loan, LoanStatus } from '../entity/loan.entity';
-import { DomainError } from 'src/shared/domain';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
-import { NotFoundException } from '@nestjs/common';
 import { DeepPartial } from 'src/shared/types/utility.types';
 
 type CreateLoanData = {
   loanNumber: string;
-  client: { id: string }; // Corregido a objeto de relación
-  loanType: { id: string }; // Corregido a objeto de relación
-  organization: { id: string }; // Corregido a objeto de relación
+  client: { id: string };
+  loanType: { id: string };
+  organization: { id: string };
   amountRequested: number;
-  interestRate: number;
   termMonths: number;
+  appliedInterestRate: number;
   monthlyPayment: number;
-  totalAmount: number;
-  processingFee: number;
+  totalInterest: number;
+  totalPayable: number;
   status: LoanStatus;
-  notes?: string;
 };
 
 type UpdateLoanData = DeepPartial<Loan>; // Cambiado a DeepPartial<Loan>
@@ -71,54 +68,65 @@ export class LoanRepository {
   }
 
   async findOne(id: string): Promise<Loan> {
-    const loan = await this.loansRepository.findOne({ 
+    const loan = await this.loansRepository.findOne({
       where: { id },
-      relations: ['client', 'loanType', 'organization', 'updater', 'approver']
+      relations: ['client', 'loanType', 'organization', 'manager'],
     });
     if (!loan) {
-      throw new NotFoundException('Loan not found');
+      throw new NotFoundException('Préstamo no encontrado');
     }
     return loan;
   }
 
   async searchLoansWithPagination(searchData: LoanSearchData) {
-    const queryBuilder = this.loansRepository.createQueryBuilder('loan')
+    const queryBuilder = this.loansRepository
+      .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.client', 'client')
-      .leftJoinAndSelect('loan.loanType', 'loanType') // Nueva relación
+      .leftJoinAndSelect('loan.loanType', 'loanType')
       .leftJoinAndSelect('loan.organization', 'organization')
-      .leftJoinAndSelect('loan.updater', 'updater')
-      .leftJoinAndSelect('loan.approver', 'approver');
+      .leftJoinAndSelect('loan.manager', 'manager');
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
-      queryBuilder.andWhere(
-        `(LOWER(loan.loanNumber) LIKE :term OR LOWER(loan.notes) LIKE :term)`,
-        { term: `%${term}%` }
-      );
+      queryBuilder.andWhere(`(LOWER(loan.loanNumber) LIKE :term)`, {
+        term: `%${term}%`,
+      });
     }
 
     if (searchData.clientId) {
-      queryBuilder.andWhere('loan.client.id = :clientId', { clientId: searchData.clientId });
+      queryBuilder.andWhere('loan.client.id = :clientId', {
+        clientId: searchData.clientId,
+      });
     }
 
     if (searchData.loanTypeId) {
-      queryBuilder.andWhere('loan.loanType.id = :loanTypeId', { loanTypeId: searchData.loanTypeId });
+      queryBuilder.andWhere('loan.loanType.id = :loanTypeId', {
+        loanTypeId: searchData.loanTypeId,
+      });
     }
 
     if (searchData.organizationId) {
-      queryBuilder.andWhere('loan.organization.id = :organizationId', { organizationId: searchData.organizationId });
+      queryBuilder.andWhere('loan.organization.id = :organizationId', {
+        organizationId: searchData.organizationId,
+      });
     }
 
     if (searchData.loanNumber) {
-      queryBuilder.andWhere('LOWER(loan.loanNumber) LIKE :loanNumber', { loanNumber: `%${searchData.loanNumber.toLowerCase()}%` });
+      queryBuilder.andWhere('LOWER(loan.loanNumber) LIKE :loanNumber', {
+        loanNumber: `%${searchData.loanNumber.toLowerCase()}%`,
+      });
     }
 
     if (searchData.status) {
-      queryBuilder.andWhere('loan.status = :status', { status: searchData.status });
+      queryBuilder.andWhere('loan.status = :status', {
+        status: searchData.status,
+      });
     }
 
     if (searchData.isActive !== undefined) {
-      queryBuilder.andWhere('loan.isActive = :isActive', { isActive: searchData.isActive });
+      queryBuilder.andWhere('loan.isActive = :isActive', {
+        isActive: searchData.isActive,
+      });
     }
 
     queryBuilder.orderBy('loan.createdAt', 'DESC');
@@ -128,9 +136,7 @@ export class LoanRepository {
       searchData.limit,
     );
 
-    queryBuilder
-      .skip(paginationOptions.offset)
-      .take(paginationOptions.limit);
+    queryBuilder.skip(paginationOptions.offset).take(paginationOptions.limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
 

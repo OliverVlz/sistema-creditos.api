@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
@@ -26,10 +26,8 @@ export class LoanTypesController {
 
   @Post('/')
   @ApiOperation({ summary: 'Create a new loan type - ADMIN only' })
-  async create(@Body() body: CreateLoanTypeDto, @Req() req: any) {
-    return this.commandBus.execute(new CreateLoanTypeCommand({
-      ...body,
-    }));
+  async create(@Body() body: CreateLoanTypeDto) {
+    return this.commandBus.execute(new CreateLoanTypeCommand(body));
   }
 
   @Get('/')
@@ -46,16 +44,11 @@ export class LoanTypesController {
 
   @Patch('/:id')
   @ApiOperation({ summary: 'Update loan type - ADMIN only' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateLoanTypeDto,
-    @Req() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() body: UpdateLoanTypeDto) {
     return this.commandBus.execute(
-      new UpdateLoanTypeCommand({ 
+      new UpdateLoanTypeCommand({
         id,
-        ...body, 
-        updatedBy: req.user.id 
+        ...body,
       }),
     );
   }

@@ -1,17 +1,8 @@
-import { IsNotEmpty, IsString, IsNumber, Min, Max, IsUUID } from 'class-validator';
-
 export class CreateOrganizationCommand {
   readonly name: string;
-  readonly baseInterestRate: number;
-  readonly discountRate: number;
-  readonly taxRate: number;
+  readonly description?: string;
 
-  constructor(params: {
-    name: string;
-    baseInterestRate: number;
-    discountRate: number;
-    taxRate: number;
-  }) {
+  constructor(params: CreateOrganizationCommand) {
     Object.assign(this, params);
   }
 }

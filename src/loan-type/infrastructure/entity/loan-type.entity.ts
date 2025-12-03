@@ -4,12 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne, // Añadido ManyToOne
-  JoinColumn, // Añadido JoinColumn
-  OneToMany, // Añadido OneToMany
+  OneToMany,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
-import { Organization } from 'src/organization/infrastructure/entity/organization.entity'; // Importar Organization
-import { Loan } from 'src/loan/infrastructure/entity/loan.entity'; // Importar Loan
+import { Loan } from 'src/loan/infrastructure/entity/loan.entity';
+import { DocumentType } from 'src/document-type/infrastructure/entity/document-type.entity';
 
 @Entity('loan_types')
 export class LoanType {
@@ -22,17 +22,25 @@ export class LoanType {
   @Column({ nullable: true })
   description?: string;
 
-  @Column({ name: 'base_processing_fee', type: 'decimal', precision: 5, scale: 2 })
-  baseProcessingFee: number;
+  @Column({
+    name: 'interest_rate',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+  })
+  interestRate: number;
 
-  @Column({ name: 'max_amount', type: 'decimal', precision: 10, scale: 2 })
-  maxAmount: number;
-
-  @Column({ name: 'min_amount', type: 'decimal', precision: 10, scale: 2 })
+  @Column({ name: 'min_amount', type: 'decimal', precision: 14, scale: 2 })
   minAmount: number;
 
-  @Column({ name: 'max_term_months' })
-  maxTermMonths: number;
+  @Column({ name: 'max_amount', type: 'decimal', precision: 14, scale: 2 })
+  maxAmount: number;
+
+  @Column({ name: 'min_term', type: 'int' })
+  minTerm: number;
+
+  @Column({ name: 'max_term', type: 'int' })
+  maxTerm: number;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
@@ -43,18 +51,14 @@ export class LoanType {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ type: 'jsonb', nullable: true, name: 'required_document_types' })
-  requiredDocumentTypes: string[]; // Ahora almacenará IDs de DocumentDefinition
-
-  // Relations
-  @ManyToOne(() => Organization, organization => organization.loanTypes, { eager: true })
-  @JoinColumn({ name: 'organization_id' })
-  organization: Organization;
-
   @OneToMany(() => Loan, loan => loan.loanType)
   loans: Loan[];
+
+  @ManyToMany(() => DocumentType)
+  @JoinTable({
+    name: 'loan_type_documents',
+    joinColumn: { name: 'loan_type_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'document_type_id', referencedColumnName: 'id' },
+  })
+  requiredDocuments: DocumentType[];
 }
-
-
-
-

@@ -4,18 +4,23 @@ import { Repository } from 'typeorm';
 import { LoanType } from '../entity/loan-type.entity';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 
-type CreateLoanTypeData = Omit<Partial<LoanType>, 'id' | 'createdAt' | 'updatedAt'> & {
+type CreateLoanTypeData = {
   name: string;
-  description: string;
-  baseProcessingFee: number;
-  maxAmount: number;
+  description?: string;
+  interestRate: number;
   minAmount: number;
-  maxTermMonths: number;
-  isActive: boolean;
+  maxAmount: number;
+  minTerm: number;
+  maxTerm: number;
+  isActive?: boolean;
+  requiredDocumentTypeIds?: string[];
 };
 
-type UpdateLoanTypeData = Partial<Omit<LoanType, 'id' | 'createdAt' | 'updatedAt'>> & {
-  updatedBy?: string; // Add updatedBy for auditoría
+type UpdateLoanTypeData = Partial<
+  Omit<LoanType, 'id' | 'createdAt' | 'updatedAt' | 'requiredDocuments'>
+> & {
+  updatedBy?: string;
+  requiredDocumentTypeIds?: string[];
 };
 
 type LoanTypeSearchData = {
@@ -33,12 +38,23 @@ export class LoanTypeRepository {
   ) {}
 
   async createLoanType(data: CreateLoanTypeData): Promise<LoanType> {
-    const newLoanType = this.loanTypesRepository.create(data);
+    const { requiredDocumentTypeIds, ...loanData } = data;
+    const newLoanType = this.loanTypesRepository.create(loanData);
+
+    if (requiredDocumentTypeIds && requiredDocumentTypeIds.length > 0) {
+      newLoanType.requiredDocuments = requiredDocumentTypeIds.map(
+        id => ({ id }) as any,
+      );
+    }
+
     return this.loanTypesRepository.save(newLoanType);
   }
 
   async findOne(id: string): Promise<LoanType> {
-    const loanType = await this.loanTypesRepository.findOne({ where: { id } });
+    const loanType = await this.loanTypesRepository.findOne({
+      where: { id },
+      relations: ['requiredDocuments'],
+    });
     if (!loanType) {
       throw new NotFoundException(`LoanType with ID ${id} not found`);
     }
@@ -49,9 +65,22 @@ export class LoanTypeRepository {
     return this.loanTypesRepository.findOne({ where: { name } });
   }
 
-  async updateLoanType(id: string, updateData: UpdateLoanTypeData): Promise<LoanType> {
-    await this.loanTypesRepository.update(id, updateData);
-    return this.findOne(id);
+  async updateLoanType(
+    id: string,
+    updateData: UpdateLoanTypeData,
+  ): Promise<LoanType> {
+    const { requiredDocumentTypeIds, ...data } = updateData;
+    const loanType = await this.findOne(id);
+
+    this.loanTypesRepository.merge(loanType, data);
+
+    if (requiredDocumentTypeIds) {
+      loanType.requiredDocuments = requiredDocumentTypeIds.map(
+        docId => ({ id: docId }) as any,
+      );
+    }
+
+    return this.loanTypesRepository.save(loanType);
   }
 
   async softDelete(id: string, deletedBy: string): Promise<void> {
@@ -59,18 +88,21 @@ export class LoanTypeRepository {
   }
 
   async searchLoanTypesWithPagination(searchData: LoanTypeSearchData) {
-    const queryBuilder = this.loanTypesRepository.createQueryBuilder('loanType');
+    const queryBuilder =
+      this.loanTypesRepository.createQueryBuilder('loanType');
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
         `(LOWER(loanType.name) LIKE :term OR LOWER(loanType.description) LIKE :term)`,
-        { term: `%${term}%` }
+        { term: `%${term}%` },
       );
     }
 
     if (searchData.isActive !== undefined) {
-      queryBuilder.andWhere('loanType.isActive = :isActive', { isActive: searchData.isActive });
+      queryBuilder.andWhere('loanType.isActive = :isActive', {
+        isActive: searchData.isActive,
+      });
     }
 
     queryBuilder.orderBy('loanType.createdAt', 'DESC');
@@ -80,9 +112,7 @@ export class LoanTypeRepository {
       searchData.limit,
     );
 
-    queryBuilder
-      .skip(paginationOptions.offset)
-      .take(paginationOptions.limit);
+    queryBuilder.skip(paginationOptions.offset).take(paginationOptions.limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
@@ -92,4 +122,3 @@ export class LoanTypeRepository {
     );
   }
 }
-

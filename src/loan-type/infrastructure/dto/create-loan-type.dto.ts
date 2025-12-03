@@ -1,49 +1,74 @@
-import { IsNotEmpty, IsString, IsNumber, Min, Max, IsBoolean, IsArray, ArrayMinSize, IsOptional, IsUUID } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  Min,
+  IsBoolean,
+  IsArray,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateLoanTypeDto {
-  @ApiProperty({ description: 'Nombre del tipo de préstamo', example: 'Préstamo Personal' })
+  @ApiProperty({
+    description: 'Nombre del tipo de préstamo',
+    example: 'Libranza',
+  })
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty({ description: 'Descripción del tipo de préstamo', example: 'Préstamo de libre inversión' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({
+    description: 'Descripción del tipo de préstamo',
+    example: 'Préstamo por descuento de nómina',
+  })
+  @IsOptional()
   @IsString()
-  description: string;
+  description?: string;
 
-  @ApiProperty({ description: 'Tasa base de comisión por procesamiento (decimal)', example: 0.02 })
+  @ApiProperty({
+    description: 'Tasa de interés anual (%)',
+    example: 25,
+  })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Max(1)
-  baseProcessingFee: number;
+  interestRate: number;
 
-  @ApiProperty({ description: 'Monto máximo permitido para este tipo de préstamo', example: 50000.00 })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  maxAmount: number;
-
-  @ApiProperty({ description: 'Monto mínimo permitido para este tipo de préstamo', example: 1000.00 })
+  @ApiProperty({ description: 'Monto mínimo permitido', example: 500000 })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   minAmount: number;
 
-  @ApiProperty({ description: 'Plazo máximo en meses para este tipo de préstamo', example: 60 })
+  @ApiProperty({ description: 'Monto máximo permitido', example: 20000000 })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  maxAmount: number;
+
+  @ApiProperty({ description: 'Plazo mínimo en meses', example: 6 })
   @IsNumber()
   @Min(1)
-  maxTermMonths: number;
+  minTerm: number;
 
-  @ApiProperty({ description: 'Indica si el tipo de préstamo está activo', example: true })
-  @IsBoolean()
-  isActive: boolean;
+  @ApiProperty({ description: 'Plazo máximo en meses', example: 60 })
+  @IsNumber()
+  @Min(1)
+  maxTerm: number;
 
-  @ApiProperty({ description: 'Tipos de documentos requeridos para este tipo de préstamo', example: ['uuid-cedula', 'uuid-nomina'] })
-  @IsArray()
-  @IsUUID('4', { each: true }) // Validar cada elemento como UUID v4
-  @ArrayMinSize(0) // Permitir un array vacío si no se requieren documentos específicos
+  @ApiPropertyOptional({
+    description: 'Indica si el tipo de préstamo está activo',
+    example: true,
+  })
   @IsOptional()
-  requiredDocumentTypes?: string[];
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'IDs de los tipos de documentos requeridos',
+    example: ['uuid-1', 'uuid-2'],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  requiredDocumentTypeIds?: string[];
 }
-
-
-

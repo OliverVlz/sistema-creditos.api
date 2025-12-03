@@ -4,40 +4,51 @@ import { LoanTypeRepository } from '../../infrastructure/repositories/loan-type.
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 @CommandHandler(UpdateLoanTypeCommand)
-export class UpdateLoanTypeHandler implements ICommandHandler<UpdateLoanTypeCommand> {
+export class UpdateLoanTypeHandler
+  implements ICommandHandler<UpdateLoanTypeCommand>
+{
   constructor(private readonly loanTypeRepository: LoanTypeRepository) {}
 
   async execute(command: UpdateLoanTypeCommand): Promise<any> {
-    const { id, name, description, baseProcessingFee, maxAmount, minAmount, maxTermMonths, isActive, requiredDocumentTypes, updatedBy } = command;
+    const {
+      id,
+      name,
+      description,
+      interestRate,
+      minAmount,
+      maxAmount,
+      minTerm,
+      maxTerm,
+      isActive,
+      requiredDocumentTypeIds,
+    } = command;
 
     const existingLoanType = await this.loanTypeRepository.findOne(id);
     if (!existingLoanType) {
-      throw new NotFoundException(`LoanType with ID ${id} not found`);
+      throw new NotFoundException(`Tipo de préstamo con ID ${id} no encontrado`);
     }
 
-    // Opcional: Validar que el nuevo nombre no exista para otro LoanType
     if (name && name !== existingLoanType.name) {
       const loanTypeWithName = await this.loanTypeRepository.findByName(name);
       if (loanTypeWithName) {
-        throw new BadRequestException(`LoanType with name "${name}" already exists`);
+        throw new BadRequestException(
+          `Ya existe un tipo de préstamo con el nombre "${name}"`,
+        );
       }
     }
 
     const updatedLoanType = await this.loanTypeRepository.updateLoanType(id, {
       name,
       description,
-      baseProcessingFee,
-      maxAmount,
+      interestRate,
       minAmount,
-      maxTermMonths,
+      maxAmount,
+      minTerm,
+      maxTerm,
       isActive,
-      requiredDocumentTypes,
-      updatedBy,
+      requiredDocumentTypeIds,
     });
 
     return { loanTypeId: updatedLoanType.id };
   }
 }
-
-
-

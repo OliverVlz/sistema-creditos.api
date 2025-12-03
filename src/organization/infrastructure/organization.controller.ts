@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -34,10 +33,8 @@ export class OrganizationsController {
 
   @Post('/')
   @ApiOperation({ summary: 'Create new organization' })
-  async create(@Body() body: CreateOrganizationDto, @Req() req: any) {
-    return this.commandBus.execute(new CreateOrganizationCommand({
-      ...body,
-    }));
+  async create(@Body() body: CreateOrganizationDto) {
+    return this.commandBus.execute(new CreateOrganizationCommand(body));
   }
 
   @Get('/')
@@ -55,15 +52,11 @@ export class OrganizationsController {
 
   @Patch('/:id')
   @ApiOperation({ summary: 'Update organization' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateOrganizationDto,
-    @Req() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() body: UpdateOrganizationDto) {
     return this.commandBus.execute(
-      new UpdateOrganizationCommand(id, { 
-        ...body, 
-        updatedBy: req.user.id 
+      new UpdateOrganizationCommand({
+        id,
+        ...body,
       }),
     );
   }

@@ -5,14 +5,15 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { Loan } from './entity/loan.entity';
 import { LoansController } from './loan.controller';
 import { LoanRepository } from './repositories/loan.repository';
+import { LoanCalculatorService } from '../domain/loan-calculator.service';
 
 import { CreateLoanHandler } from '../application/create-loan/create-loan.handler';
 import { GetLoansHandler } from '../application/get-loans/get-loans.handler';
 import { GetLoanByIdHandler } from '../application/get-loan-by-id/get-loan-by-id.handler';
 import { UpdateLoanHandler } from '../application/update-loan/update-loan.handler';
 import { SoftDeleteLoanHandler } from '../application/soft-delete-loan/soft-delete-loan.handler';
+import { CalculateLoanHandler } from '../application/calculate-loan/calculate-loan.handler';
 
-// Importar módulos de otras entidades
 import { ClientsModule } from 'src/client/infrastructure/client.module';
 import { OrganizationModule } from 'src/organization/infrastructure/organization.module';
 import { IdentityModule } from 'src/identity/infrastructure/identity.module';
@@ -24,14 +25,11 @@ const CommandHandlers = [
   SoftDeleteLoanHandler,
 ];
 
-const QueryHandlers = [
-  GetLoansHandler,
-  GetLoanByIdHandler,
-];
+const QueryHandlers = [GetLoansHandler, GetLoanByIdHandler, CalculateLoanHandler];
 
-const Repositories = [
-  LoanRepository,
-];
+const Repositories = [LoanRepository];
+
+const Services = [LoanCalculatorService];
 
 @Module({
   imports: [
@@ -45,11 +43,13 @@ const Repositories = [
   controllers: [LoansController],
   providers: [
     ...Repositories,
+    ...Services,
     ...CommandHandlers,
     ...QueryHandlers,
   ],
   exports: [
     ...Repositories,
+    ...Services,
     TypeOrmModule.forFeature([Loan]),
   ],
 })

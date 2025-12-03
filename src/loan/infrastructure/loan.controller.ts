@@ -15,12 +15,14 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { UpdateLoanDto } from './dto/update-loan.dto';
 import { GetLoansDto } from './dto/get-loans.dto';
+import { CalculateLoanDto } from './dto/calculate-loan.dto';
 
 import { CreateLoanCommand } from '../application/create-loan/create-loan.command';
 import { GetLoansQuery } from '../application/get-loans/get-loans.query';
 import { UpdateLoanCommand } from '../application/update-loan/update-loan.command';
 import { SoftDeleteLoanCommand } from '../application/soft-delete-loan/soft-delete-loan.command';
 import { GetLoanByIdQuery } from '../application/get-loan-by-id/get-loan-by-id.query';
+import { CalculateLoanQuery } from '../application/calculate-loan/calculate-loan.query';
 
 @ApiTags('Loans')
 @Controller('loans')
@@ -30,6 +32,12 @@ export class LoansController {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
   ) {}
+
+  @Post('/calculate')
+  @ApiOperation({ summary: 'Calculate loan without creating it' })
+  async calculate(@Body() body: CalculateLoanDto) {
+    return this.queryBus.execute(new CalculateLoanQuery(body));
+  }
 
   @Post('/')
   @ApiOperation({ summary: 'Create new loan' })

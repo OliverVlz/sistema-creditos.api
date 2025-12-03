@@ -3,7 +3,8 @@ import { CreateLoanCommand } from './create-loan.command';
 import { LoanRepository } from '../../infrastructure/repositories/loan.repository';
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
 import { OrganizationRepository } from 'src/organization/infrastructure/repositories/organization.repository';
-import { LoanTypeRepository } from 'src/loan-type/infrastructure/repositories/loan-type.repository'; // Corregida la ruta
+import { LoanTypeRepository } from 'src/loan-type/infrastructure/repositories/loan-type.repository';
+import { LoanCalculatorService } from '../../domain/loan-calculator.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 
@@ -14,59 +15,82 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
     private readonly clientRepository: ClientRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly loanTypeRepository: LoanTypeRepository,
+    private readonly loanCalculatorService: LoanCalculatorService,
   ) {}
 
   async execute(command: CreateLoanCommand): Promise<any> {
-    const { clientId, loanTypeId, organizationId, amountRequested, interestRate, termMonths, monthlyPayment, notes } = command;
+    const {
+      clientId,
+      loanTypeId,
+      organizationId,
+      amountRequested,
+      termMonths,
+      monthlyPayment: frontendMonthlyPayment,
+      totalInterest: frontendTotalInterest,
+      totalPayable: frontendTotalPayable,
+    } = command;
 
-    // 1. Verificar existencia del cliente
     const client = await this.clientRepository.findOne(clientId);
     if (!client) {
-      throw new NotFoundException(`Client with ID ${clientId} not found`);
-    }
-    
-    // 2. Verificar existencia de la organización
-    const organization = await this.organizationRepository.findOne(organizationId);
-    if (!organization) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
+      throw new NotFoundException(`Cliente con ID ${clientId} no encontrado`);
     }
 
-    // 3. Verificar existencia del tipo de préstamo
+    const organization =
+      await this.organizationRepository.findOne(organizationId);
+    if (!organization) {
+      throw new NotFoundException(
+        `Organización con ID ${organizationId} no encontrada`,
+      );
+    }
+
     const loanType = await this.loanTypeRepository.findOne(loanTypeId);
     if (!loanType) {
-      throw new NotFoundException(`LoanType with ID ${loanTypeId} not found`);
+      throw new NotFoundException(
+        `Tipo de préstamo con ID ${loanTypeId} no encontrado`,
+      );
     }
 
-    // Opcional: Validar que el monto y plazo estén dentro de los límites del tipo de préstamo
-    if (amountRequested < loanType.minAmount || amountRequested > loanType.maxAmount) {
-        throw new BadRequestException(`Amount requested is outside the limits for this loan type (${loanType.minAmount}-${loanType.maxAmount})`);
-    }
-    if (termMonths > loanType.maxTermMonths) {
-        throw new BadRequestException(`Term months exceed the maximum for this loan type (${loanType.maxTermMonths} months)`);
+    if (
+      amountRequested < loanType.minAmount ||
+      amountRequested > loanType.maxAmount
+    ) {
+      throw new BadRequestException(
+        `Monto solicitado fuera de los límites para este tipo de préstamo (${loanType.minAmount}-${loanType.maxAmount})`,
+      );
     }
 
-    // 4. Generar número de préstamo único
+    if (termMonths < loanType.minTerm || termMonths > loanType.maxTerm) {
+      throw new BadRequestException(
+        `Plazo fuera de los límites para este tipo de préstamo (${loanType.minTerm}-${loanType.maxTerm} meses)`,
+      );
+    }
+
+    const appliedInterestRate = Number(loanType.interestRate);
+
+    const validatedCalculation =
+      this.loanCalculatorService.validateAndCalculate({
+        amountRequested,
+        termMonths,
+        annualInterestRate: appliedInterestRate,
+        frontendMonthlyPayment,
+        frontendTotalInterest,
+        frontendTotalPayable,
+      });
+
     const loanNumber = await this.loanRepository.generateLoanNumber();
 
-    // Calcular processingFee y totalAmount
-    const processingFee = amountRequested * loanType.baseProcessingFee;
-    const totalAmount = amountRequested + processingFee;
-
-    // 5. Crear el préstamo
     const newLoan = await this.loanRepository.createLoan({
       loanNumber,
-      client: { id: clientId }, // Usar objeto de relación
-      loanType: { id: loanTypeId }, // Usar objeto de relación
-      organization: { id: organizationId }, // Usar objeto de relación
+      client: { id: clientId },
+      loanType: { id: loanTypeId },
+      organization: { id: organizationId },
       amountRequested,
-      interestRate,
-      monthlyPayment,
       termMonths,
-      processingFee,
-      totalAmount,
-      notes,
-      status: LoanStatus.PENDING, // Estado inicial
-      // Otros campos de fecha se establecerán al aprobar/firmar/desembolsar
+      appliedInterestRate,
+      monthlyPayment: validatedCalculation.monthlyPayment,
+      totalInterest: validatedCalculation.totalInterest,
+      totalPayable: validatedCalculation.totalPayable,
+      status: LoanStatus.PENDIENTE,
     });
 
     return { loanId: newLoan.id };

@@ -4,35 +4,21 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  OneToMany, // Añadido OneToMany
+  OneToMany,
 } from 'typeorm';
-import { User } from 'src/identity/infrastructure/entity/user.entity';
-import { Client } from 'src/client/infrastructure/entity/client.entity'; // Importar Client
-import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity'; // Importar LoanType
-import { Loan } from 'src/loan/infrastructure/entity/loan.entity'; // Importar Loan
-import { LoanTypeDocumentRequirement } from 'src/document-type/infrastructure/entity/loan-type-document-requirement.entity'; // Corregida la ruta
+import { Client } from 'src/client/infrastructure/entity/client.entity';
+import { Loan } from 'src/loan/infrastructure/entity/loan.entity';
 
 @Entity('organizations')
 export class Organization {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ unique: true })
   name: string;
 
-  @Column({ name: 'base_interest_rate', type: 'decimal', precision: 5, scale: 2 })
-  baseInterestRate: number;
-
-  @Column({ name: 'discount_rate', type: 'decimal', precision: 5, scale: 2 })
-  discountRate: number;
-
-  @Column({ name: 'tax_rate', type: 'decimal', precision: 5, scale: 2 })
-  taxRate: number;
-
-  @Column({ name: 'updated_by', nullable: true })
-  updatedBy?: string;
+  @Column({ nullable: true })
+  description?: string;
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
@@ -43,20 +29,9 @@ export class Organization {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // Relations
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'updated_by' })
-  updater?: User;
-
   @OneToMany(() => Client, client => client.organization)
   clients: Client[];
 
-  @OneToMany(() => LoanType, loanType => loanType.organization)
-  loanTypes: LoanType[];
-
   @OneToMany(() => Loan, loan => loan.organization)
   loans: Loan[];
-
-  @OneToMany(() => LoanTypeDocumentRequirement, loanTypeDocumentRequirement => loanTypeDocumentRequirement.organization)
-  loanTypeDocumentRequirements: LoanTypeDocumentRequirement[];
 }

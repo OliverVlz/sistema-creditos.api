@@ -11,15 +11,13 @@ import {
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
-import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity'; // Nueva importación
+import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity';
 
 export enum LoanStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  DEFAULTED = 'defaulted',
-  CANCELLED = 'cancelled',
+  PENDIENTE = 'pendiente',
+  APROBADO = 'aprobado',
+  RECHAZADO = 'rechazado',
+  DESEMBOLSADO = 'desembolsado',
 }
 
 @Entity('loans')
@@ -30,48 +28,50 @@ export class Loan {
   @Column({ name: 'loan_number', unique: true })
   loanNumber: string;
 
-  @Column({ name: 'amount_requested', type: 'decimal', precision: 10, scale: 2 })
-  amountRequested: number; // Renombrado de 'amount'
+  @Column({
+    name: 'amount_requested',
+    type: 'decimal',
+    precision: 14,
+    scale: 2,
+  })
+  amountRequested: number;
 
   @Column({ name: 'term_months' })
   termMonths: number;
 
-  @Column({ name: 'monthly_payment', type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    name: 'applied_interest_rate',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+  })
+  appliedInterestRate: number;
+
+  @Column({ name: 'monthly_payment', type: 'decimal', precision: 14, scale: 2 })
   monthlyPayment: number;
 
-  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
-  totalAmount: number; // Nuevo atributo
+  @Column({ name: 'total_interest', type: 'bigint' })
+  totalInterest: number;
 
-  @Column({ name: 'interest_rate', type: 'decimal', precision: 5, scale: 2 })
-  interestRate: number;
-
-  @Column({ name: 'processing_fee', type: 'decimal', precision: 10, scale: 2 })
-  processingFee: number; // Nuevo atributo
+  @Column({ name: 'total_payable', type: 'bigint' })
+  totalPayable: number;
 
   @Column({
     type: 'enum',
     enum: LoanStatus,
-    default: LoanStatus.PENDING,
+    default: LoanStatus.PENDIENTE,
   })
   status: LoanStatus;
 
-  @Column({ name: 'rejection_reason', nullable: true })
-  rejectionReason?: string; // Nuevo atributo
+  @Column({ name: 'rejection_reason', nullable: true, type: 'text' })
+  rejectionReason?: string;
 
-  @Column({ name: 'updated_by', nullable: true })
-  updatedBy?: string;
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'managed_by' })
+  manager: User;
 
-  @Column({ name: 'approved_by', nullable: true })
-  approvedBy?: string; // Nuevo atributo
-
-  @Column({ name: 'approved_at', nullable: true })
-  approvedAt?: Date; // Nuevo atributo
-
-  @Column({ name: 'signed_at', type: 'date', nullable: true })
-  signedAt?: Date; // Nuevo atributo
-
-  @Column({ name: 'disbursed_at', type: 'date', nullable: true })
-  disbursedAt?: Date; // Nuevo atributo
+  @Column({ name: 'managed_at', nullable: true })
+  managedAt?: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -82,24 +82,15 @@ export class Loan {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt?: Date;
 
-  // Relations
   @ManyToOne(() => Client)
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
-  @ManyToOne(() => LoanType) // Nueva relación
+  @ManyToOne(() => LoanType)
   @JoinColumn({ name: 'loan_type_id' })
   loanType: LoanType;
 
   @ManyToOne(() => Organization)
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'updated_by' })
-  updater: User;
-
-  @ManyToOne(() => User) // Relación para approvedBy
-  @JoinColumn({ name: 'approved_by' })
-  approver: User;
 }

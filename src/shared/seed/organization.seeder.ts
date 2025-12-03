@@ -1,61 +1,47 @@
 import { Repository } from 'typeorm';
 import { Organization } from '../../organization/infrastructure/entity/organization.entity';
-import { User } from '../../identity/infrastructure/entity/user.entity';
-import { faker } from '@faker-js/faker';
+
+const ORGANIZATIONS_DATA = [
+  {
+    name: 'Policía Nacional',
+    description: 'Fuerza pública encargada de la seguridad ciudadana',
+  },
+  {
+    name: 'Ejército Nacional',
+    description: 'Fuerza militar terrestre de Colombia',
+  },
+  {
+    name: 'Armada Nacional',
+    description: 'Fuerza militar naval de Colombia',
+  },
+  {
+    name: 'Fuerza Aeroespacial',
+    description: 'Fuerza militar aérea de Colombia',
+  },
+];
 
 export class OrganizationSeeder {
-  async seed(
-    organizationRepository: Repository<Organization>,
-    userRepository: Repository<User>
-  ) {
-    // Obtener un usuario existente para usar como creador
-    const defaultUser = await userRepository.findOne({ where: {} });
+  async seed(organizationRepository: Repository<Organization>) {
+    const organizations: Organization[] = [];
 
-    if (!defaultUser) {
-      console.log('⚠️ No se encontró un usuario para crear organizaciones. Ejecuta primero el seeder de usuarios.');
-      return [];
+    for (const data of ORGANIZATIONS_DATA) {
+      let organization = await organizationRepository.findOne({
+        where: { name: data.name },
+      });
+
+      if (!organization) {
+        organization = await organizationRepository.save(
+          organizationRepository.create(data),
+        );
+        console.log(`  ✓ Organización "${data.name}" creada`);
+      }
+
+      organizations.push(organization);
     }
 
-    const organizationsData = [
-      {
-        name: 'Policía Nacional',
-        baseInterestRate: 12.0,
-        discountRate: 2.0,
-        taxRate: 8.0,
-      },
-      {
-        name: 'Armada Nacional',
-        baseInterestRate: 10.5,
-        discountRate: 1.5,
-        taxRate: 7.5,
-      },
-      {
-        name: 'Ejército Nacional',
-        baseInterestRate: 15.0,
-        discountRate: 3.0,
-        taxRate: 10.0,
-      },
-      {
-        name: 'Fuerza Aeroespacial',
-        baseInterestRate: 11.0,
-        discountRate: 2.5,
-        taxRate: 9.0,
-      }
-    ];
-
-    const organizations = await Promise.all(
-      organizationsData.map(async data => {
-        let organization = await organizationRepository.findOne({
-          where: { name: data.name }
-        });
-        if (!organization) {
-          organization = await organizationRepository.save(organizationRepository.create(data));
-        }
-        return organization;
-      }),
+    console.log(
+      `✅ Seeders de organizaciones ejecutados: ${organizations.length} organizaciones`,
     );
-
-    console.log('✅ Seeders de organizations ejecutados con éxito');
     return organizations;
   }
 }

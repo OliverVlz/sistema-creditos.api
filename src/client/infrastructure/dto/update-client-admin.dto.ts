@@ -67,10 +67,7 @@ export class UpdateClientAdminDto {
   employmentStatus?: EmploymentStatus;
 
   @ApiProperty({
-    description:
-      'ID de la organización a la que pertenece el cliente. ' +
-      'NOTA: Solo se puede cambiar la organización asignada, NO se pueden modificar los datos internos de la organización ' +
-      '(tasas, descuentos, etc.). Esos datos se gestionan desde el módulo de organizaciones.',
+    description: 'ID de la organización a la que pertenece el cliente',
     required: false,
   })
   @IsOptional()

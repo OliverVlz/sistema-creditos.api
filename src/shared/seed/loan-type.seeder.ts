@@ -1,58 +1,45 @@
 import { Repository } from 'typeorm';
 import { LoanType } from '../../loan-type/infrastructure/entity/loan-type.entity';
-import { Organization } from '../../organization/infrastructure/entity/organization.entity';
+
+const LOAN_TYPES_DATA = [
+  {
+    name: 'Libranza',
+    description: 'Préstamo por descuento de nómina para funcionarios de fuerzas armadas',
+    interestRate: 25,
+    minAmount: 500000,
+    maxAmount: 20000000,
+    minTerm: 6,
+    maxTerm: 60,
+  },
+];
 
 export class LoanTypeSeeder {
-  async seed(
-    loanTypeRepository: Repository<LoanType>,
-    organizationRepository: Repository<Organization>,
-  ) {
-    // Obtener una organización existente (la primera que se encuentre)
-    const defaultOrganization = await organizationRepository.findOne({ where: {} });
+  async seed(loanTypeRepository: Repository<LoanType>) {
+    const loanTypes: LoanType[] = [];
 
-    if (!defaultOrganization) {
-      console.log('⚠️ No se encontró una organización para crear LoanTypes. Ejecuta primero el seeder de organizaciones.');
-      return [];
+    for (const data of LOAN_TYPES_DATA) {
+      let loanType = await loanTypeRepository.findOne({
+        where: { name: data.name },
+      });
+
+      if (!loanType) {
+        loanType = await loanTypeRepository.save(
+          loanTypeRepository.create({
+            ...data,
+            isActive: true,
+          }),
+        );
+        console.log(
+          `  ✓ Tipo de préstamo "${data.name}" creado (tasa: ${data.interestRate}%)`,
+        );
+      }
+
+      loanTypes.push(loanType);
     }
 
-    const loanTypesData = [
-      {
-        name: 'Libranza',
-        description: 'Préstamo por descuento de nómina',
-        baseProcessingFee: 1.5,
-        maxAmount: 5000000,
-        minAmount: 1000000,
-        maxTermMonths: 36,
-        isActive: true,
-        organization: defaultOrganization, // Asociar a la organización por defecto
-      },
-      // Puedes añadir más tipos de préstamos aquí
-    ];
-
-    const loanTypes = await Promise.all(
-      loanTypesData.map(async data => {
-        let loanType = await loanTypeRepository.findOne({
-          where: { name: data.name, organization: { id: data.organization.id } }
-        });
-        if (!loanType) {
-          loanType = await loanTypeRepository.save(loanTypeRepository.create(data));
-        }
-        return loanType;
-      }),
+    console.log(
+      `✅ Seeders de LoanTypes ejecutados: ${loanTypes.length} tipos creados`,
     );
-
-    console.log('✅ Seeders de LoanTypes ejecutados con éxito');
     return loanTypes;
   }
 }
-
-
-
-
-
-
-
-
-
-
-

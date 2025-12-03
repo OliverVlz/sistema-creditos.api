@@ -115,9 +115,7 @@ export class ClientsController {
     description:
       'Permite al Admin/Advisor actualizar los campos del cliente y usuario. ' +
       'Campos editables: firstName, lastName, email, phoneNumber, address, birthDate, ' +
-      'employmentStatus, organizationId (solo asignar a otra organización), isActive. ' +
-      'NOTA: Los datos internos de la organización (tasas, descuentos, etc.) NO se pueden modificar desde aquí. ' +
-      'Se gestionan desde el módulo de organizaciones.',
+      'employmentStatus, organizationId, isActive.',
   })
   async updateClientAsAdmin(
     @Param('userId') userId: string,

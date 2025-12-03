@@ -1,5 +1,5 @@
-import { IsUUID, IsNumber, Min, Max, IsString, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUUID, IsNumber, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateLoanDto {
   @ApiProperty({ description: 'ID del cliente' })
@@ -14,29 +14,40 @@ export class CreateLoanDto {
   @IsUUID()
   organizationId: string;
 
-  @ApiProperty({ description: 'Monto solicitado del préstamo', example: 1000.00 })
+  @ApiProperty({
+    description: 'Monto solicitado del préstamo',
+    example: 2000000,
+  })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   amountRequested: number;
 
-  @ApiProperty({ description: 'Tasa de interés del préstamo', example: 0.05 })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Max(100)
-  interestRate: number; // Reintroducido
-
-  @ApiProperty({ description: 'Plazo del préstamo en meses', example: 12 })
+  @ApiProperty({ description: 'Plazo del préstamo en meses', example: 24 })
   @IsNumber()
   @Min(1)
   termMonths: number;
 
-  @ApiProperty({ description: 'Pago mensual estimado', example: 100.00 })
+  @ApiProperty({
+    description: 'Pago mensual calculado por el frontend',
+    example: 104273.38,
+  })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   monthlyPayment: number;
 
-  @ApiPropertyOptional({ description: 'Notas adicionales', example: 'Préstamo para educación' })
-  @IsOptional()
-  @IsString()
-  notes?: string;
+  @ApiProperty({
+    description: 'Total de intereses calculado por el frontend',
+    example: 502561.12,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  totalInterest: number;
+
+  @ApiProperty({
+    description: 'Total a pagar calculado por el frontend (monthlyPayment × termMonths)',
+    example: 2502561.12,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  totalPayable: number;
 }
