@@ -1,9 +1,7 @@
 export class DeleteDocumentTypeCommand {
   readonly id: string;
-  readonly deletedBy: string;
 
-  constructor(id: string, deletedBy: string) {
+  constructor(id: string) {
     this.id = id;
-    this.deletedBy = deletedBy;
   }
 }

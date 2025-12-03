@@ -1,20 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { CreateDocumentTypeDto } from './dto/create-document-type.dto';
 import { UpdateDocumentTypeDto } from './dto/update-document-type.dto';
-import { GetDocumentTypesDto } from './dto/get-document-types.dto';
 
 import { CreateDocumentTypeCommand } from '../application/create-document-type/create-document-type.command';
 import { GetDocumentTypesQuery } from '../application/get-document-types/get-document-types.query';
 import { GetDocumentTypeByIdQuery } from '../application/get-document-type-by-id/get-document-type-by-id.query';
 import { UpdateDocumentTypeCommand } from '../application/update-document-type/update-document-type.command';
 import { DeleteDocumentTypeCommand } from '../application/delete-document-type/delete-document-type.command';
-import { GetRequiredDocumentsByClientQuery } from '../application/get-required-documents-by-client/get-required-documents-by-client.query';
-import { GetDocumentRequirementsQuery } from '../application/manage-document-requirements/get-document-requirements.query';
-import { CreateDocumentRequirementCommand } from '../application/manage-document-requirements/create-document-requirement.command';
-import { CreateDocumentRequirementDto } from './dto/create-document-requirement.dto';
 
 import { AdminGuard } from 'src/shared/guards';
 
@@ -29,74 +33,34 @@ export class DocumentTypesController {
   ) {}
 
   @Post('/')
-  @ApiOperation({ summary: 'Create a new document type - ADMIN only' })
-  async create(@Body() body: CreateDocumentTypeDto, @Req() req: any) {
-    return this.commandBus.execute(new CreateDocumentTypeCommand({
-      ...body,
-    }));
+  @ApiOperation({ summary: 'Crear un nuevo tipo de documento - Solo ADMIN' })
+  async create(@Body() body: CreateDocumentTypeDto) {
+    return this.commandBus.execute(new CreateDocumentTypeCommand({ ...body }));
   }
 
   @Get('/')
-  @ApiOperation({ summary: 'Search document types with optional filters and pagination - ADMIN only' })
-  async searchDocumentTypes(@Query() query: GetDocumentTypesDto) {
-    return this.queryBus.execute(new GetDocumentTypesQuery(query));
+  @ApiOperation({ summary: 'Obtener todos los tipos de documento - Solo ADMIN' })
+  async findAll() {
+    return this.queryBus.execute(new GetDocumentTypesQuery());
   }
 
   @Get('/:id')
-  @ApiOperation({ summary: 'Get document type by ID - ADMIN only' })
-  async getDocumentTypeById(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Obtener tipo de documento por ID - Solo ADMIN' })
+  async findOne(@Param('id') id: string) {
     return this.queryBus.execute(new GetDocumentTypeByIdQuery(id));
   }
 
   @Patch('/:id')
-  @ApiOperation({ summary: 'Update document type - ADMIN only' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: UpdateDocumentTypeDto,
-    @Req() req: any,
-  ) {
+  @ApiOperation({ summary: 'Actualizar tipo de documento - Solo ADMIN' })
+  async update(@Param('id') id: string, @Body() body: UpdateDocumentTypeDto) {
     return this.commandBus.execute(
-      new UpdateDocumentTypeCommand({ 
-        id,
-        ...body, 
-        updatedBy: req.user.id 
-      }),
+      new UpdateDocumentTypeCommand({ id, ...body }),
     );
   }
 
   @Delete('/:id')
-  @ApiOperation({ summary: 'Soft delete document type - ADMIN only' })
-  async remove(@Param('id') id: string, @Req() req: any) {
-    return this.commandBus.execute(
-      new DeleteDocumentTypeCommand(id, req.user.id)
-    );
-  }
-
-  @Get('/required/:loanTypeId/:clientId')
-  @ApiOperation({ summary: 'Get required documents for a specific client and loan type' })
-  async getRequiredDocumentsByClient(
-    @Param('loanTypeId') loanTypeId: string,
-    @Param('clientId') clientId: string,
-  ) {
-    return this.queryBus.execute(
-      new GetRequiredDocumentsByClientQuery(loanTypeId, clientId)
-    );
-  }
-
-  @Get('/requirements/:loanTypeId')
-  @ApiOperation({ summary: 'Get document requirements configuration for a loan type - ADMIN only' })
-  async getDocumentRequirements(@Param('loanTypeId') loanTypeId: string) {
-    return this.queryBus.execute(new GetDocumentRequirementsQuery(loanTypeId));
-  }
-
-  @Post('/requirements')
-  @ApiOperation({ summary: 'Add document requirement to a loan type - ADMIN only' })
-  async addDocumentRequirement(
-    @Body() body: CreateDocumentRequirementDto,
-    @Req() req: any,
-  ) {
-    return this.commandBus.execute(new CreateDocumentRequirementCommand({
-      ...body,
-    }));
+  @ApiOperation({ summary: 'Eliminar tipo de documento (soft delete) - Solo ADMIN' })
+  async remove(@Param('id') id: string) {
+    return this.commandBus.execute(new DeleteDocumentTypeCommand(id));
   }
 }

@@ -4,12 +4,14 @@ import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity';
+import { DocumentType } from 'src/document-type/infrastructure/entity/document-type.entity';
 import { HashService } from 'src/shared/hash/hash.service';
 
 import { UserSeeder } from '../seed/user.seeder';
 import { OrganizationSeeder } from '../seed/organization.seeder';
 import { ClientSeeder } from '../seed/client.seeder';
 import { LoanTypeSeeder } from '../seed/loan-type.seeder';
+import { DocumentTypeSeeder } from '../seed/document-type.seeder';
 
 async function bootstrap() {
   console.log('🌱 Iniciando seeders...\n');
@@ -22,6 +24,7 @@ async function bootstrap() {
     const organizationRepository = dataSource.getRepository(Organization);
     const clientRepository = dataSource.getRepository(Client);
     const loanTypeRepository = dataSource.getRepository(LoanType);
+    const documentTypeRepository = dataSource.getRepository(DocumentType);
 
     const hashService = new HashService();
 
@@ -40,6 +43,9 @@ async function bootstrap() {
       userRepository,
       organizationRepository,
     );
+
+    console.log('\n5️⃣ Sembrando tipos de documento...');
+    await new DocumentTypeSeeder().seed(documentTypeRepository);
 
     console.log('\n🎉 Todos los seeders ejecutados correctamente!');
   } catch (error) {
