@@ -7,17 +7,19 @@ import { BadRequestException } from '@nestjs/common';
 export class UpdateDocumentTypeHandler
   implements ICommandHandler<UpdateDocumentTypeCommand>
 {
-  constructor(private readonly documentTypeRepository: DocumentTypeRepository) {}
+  constructor(
+    private readonly documentTypeRepository: DocumentTypeRepository,
+  ) {}
 
   async execute(command: UpdateDocumentTypeCommand): Promise<any> {
-    const { id, name, isActive } = command;
+    const { id, code, name, isActive } = command;
 
-    if (name) {
+    if (code) {
       const existingDocumentType =
-        await this.documentTypeRepository.findByName(name);
+        await this.documentTypeRepository.findByCode(code);
       if (existingDocumentType && existingDocumentType.id !== id) {
         throw new BadRequestException(
-          `Ya existe un tipo de documento con el nombre "${name}"`,
+          `Ya existe un tipo de documento con el código "${code}"`,
         );
       }
     }
@@ -25,6 +27,7 @@ export class UpdateDocumentTypeHandler
     await this.documentTypeRepository.findOne(id);
 
     const updatedDocumentType = await this.documentTypeRepository.update(id, {
+      code,
       name,
       isActive,
     });

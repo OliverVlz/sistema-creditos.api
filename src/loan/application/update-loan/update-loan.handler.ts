@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UpdateLoanCommand } from './update-loan.command';
 import { LoanRepository } from '../../infrastructure/repositories/loan.repository';
+import { LoanDocumentRepository } from 'src/loan-document/infrastructure/repositories/loan-document.repository';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
@@ -9,11 +10,12 @@ import { UserRepository } from 'src/identity/infrastructure/repositories/user.re
 export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
   constructor(
     private readonly loanRepository: LoanRepository,
+    private readonly loanDocumentRepository: LoanDocumentRepository,
     private readonly userRepository: UserRepository,
   ) {}
 
   async execute(command: UpdateLoanCommand): Promise<any> {
-    const { id, status, rejectionReason, managerId } = command;
+    const { id, status, rejectionReason, managerId, documents } = command;
 
     const existingLoan = await this.loanRepository.findOne(id);
     if (!existingLoan) {
@@ -43,6 +45,13 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
     };
 
     const updatedLoan = await this.loanRepository.updateLoan(id, updateData);
+
+    if (documents && documents.length > 0) {
+      for (const doc of documents) {
+        await this.loanDocumentRepository.update(doc.id, doc.url);
+      }
+    }
+
     return { loanId: updatedLoan.id };
   }
 }

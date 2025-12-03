@@ -4,6 +4,8 @@ import { LoanRepository } from '../../infrastructure/repositories/loan.repositor
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
 import { OrganizationRepository } from 'src/organization/infrastructure/repositories/organization.repository';
 import { LoanTypeRepository } from 'src/loan-type/infrastructure/repositories/loan-type.repository';
+import { LoanDocumentRepository } from 'src/loan-document/infrastructure/repositories/loan-document.repository';
+import { DocumentTypeRepository } from 'src/document-type/infrastructure/repositories/document-type.repository';
 import { LoanCalculatorService } from '../../domain/loan-calculator.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
@@ -15,6 +17,8 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
     private readonly clientRepository: ClientRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly loanTypeRepository: LoanTypeRepository,
+    private readonly loanDocumentRepository: LoanDocumentRepository,
+    private readonly documentTypeRepository: DocumentTypeRepository,
     private readonly loanCalculatorService: LoanCalculatorService,
   ) {}
 
@@ -28,6 +32,7 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
       monthlyPayment: frontendMonthlyPayment,
       totalInterest: frontendTotalInterest,
       totalPayable: frontendTotalPayable,
+      documents,
     } = command;
 
     const client = await this.clientRepository.findOne(clientId);
@@ -92,6 +97,29 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
       totalPayable: validatedCalculation.totalPayable,
       status: LoanStatus.PENDIENTE,
     });
+
+    if (documents && documents.length > 0) {
+      const codes = documents.map(d => d.documentTypeCode);
+      const documentTypes =
+        await this.documentTypeRepository.findByCodes(codes);
+
+      const codeToIdMap = new Map(documentTypes.map(dt => [dt.code, dt.id]));
+
+      const documentsWithIds = documents.map(doc => {
+        const documentTypeId = codeToIdMap.get(doc.documentTypeCode);
+        if (!documentTypeId) {
+          throw new BadRequestException(
+            `Tipo de documento con código "${doc.documentTypeCode}" no encontrado`,
+          );
+        }
+        return { documentTypeId, url: doc.url };
+      });
+
+      await this.loanDocumentRepository.createBatch(
+        newLoan.id,
+        documentsWithIds,
+      );
+    }
 
     return { loanId: newLoan.id };
   }

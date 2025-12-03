@@ -70,7 +70,14 @@ export class LoanRepository {
   async findOne(id: string): Promise<Loan> {
     const loan = await this.loansRepository.findOne({
       where: { id },
-      relations: ['client', 'loanType', 'organization', 'manager'],
+      relations: [
+        'client',
+        'loanType',
+        'organization',
+        'manager',
+        'documents',
+        'documents.documentType',
+      ],
     });
     if (!loan) {
       throw new NotFoundException('Préstamo no encontrado');

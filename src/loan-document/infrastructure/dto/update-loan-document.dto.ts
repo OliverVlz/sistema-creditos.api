@@ -1,25 +1,12 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { LoanDocumentStatus } from '../entity/loan-document.entity';
 
 export class UpdateLoanDocumentDto {
-  @ApiProperty({ description: 'Nueva URL del documento', required: false })
-  @IsOptional()
-  @IsString()
-  url?: string;
-
   @ApiProperty({
-    description: 'Nuevo estado del documento',
-    enum: LoanDocumentStatus,
-    required: false,
+    description: 'Nueva URL del documento',
+    example: 'https://storage.example.com/docs/cedula-corregida.pdf',
   })
-  @IsOptional()
-  @IsEnum(LoanDocumentStatus)
-  status?: LoanDocumentStatus;
-
-  @ApiProperty({ description: 'Nota de rechazo', required: false })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  rejectionNote?: string;
+  url: string;
 }
-

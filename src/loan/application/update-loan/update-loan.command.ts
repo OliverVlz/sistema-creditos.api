@@ -6,6 +6,7 @@ export class UpdateLoanCommand {
   readonly rejectionReason?: string;
   readonly managerId?: string;
   readonly updatedBy: string;
+  readonly documents?: { id: string; url: string }[];
 
   constructor(params: UpdateLoanCommand) {
     Object.assign(this, params);

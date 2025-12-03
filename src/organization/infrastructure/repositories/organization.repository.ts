@@ -32,17 +32,14 @@ export class OrganizationRepository {
   }
 
   async findAll() {
-    const organizations = await this.organizationRepository.find({
-      relations: ['updater'],
+    return this.organizationRepository.find({
       order: { createdAt: 'DESC' },
     });
-    return organizations;
   }
 
   async findOne(id: string) {
-    const organization = await this.organizationRepository.findOne({ 
+    const organization = await this.organizationRepository.findOne({
       where: { id },
-      relations: ['updater']
     });
     if (!organization) {
       throw new DomainError('ORGANIZATION_NOT_FOUND', 'Organization not found');
@@ -63,8 +60,8 @@ export class OrganizationRepository {
   }
 
   async searchOrganizationsWithPagination(searchData: OrganizationSearchData) {
-    const queryBuilder = this.organizationRepository.createQueryBuilder('organization')
-      .leftJoinAndSelect('organization.updater', 'updater');
+    const queryBuilder =
+      this.organizationRepository.createQueryBuilder('organization');
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();

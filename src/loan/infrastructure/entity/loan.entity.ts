@@ -6,12 +6,14 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
 import { LoanType } from 'src/loan-type/infrastructure/entity/loan-type.entity';
+import { LoanDocument } from 'src/loan-document/infrastructure/entity/loan-document.entity';
 
 export enum LoanStatus {
   PENDIENTE = 'pendiente',
@@ -93,4 +95,7 @@ export class Loan {
   @ManyToOne(() => Organization)
   @JoinColumn({ name: 'organization_id' })
   organization: Organization;
+
+  @OneToMany(() => LoanDocument, document => document.loan)
+  documents: LoanDocument[];
 }

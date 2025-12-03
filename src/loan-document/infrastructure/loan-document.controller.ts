@@ -12,10 +12,14 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { CreateLoanDocumentDto } from './dto/create-loan-document.dto';
+import { CreateLoanDocumentsBatchDto } from './dto/create-loan-documents-batch.dto';
 import { UpdateLoanDocumentDto } from './dto/update-loan-document.dto';
+import { UpdateLoanDocumentsBatchDto } from './dto/update-loan-documents-batch.dto';
 
 import { CreateLoanDocumentCommand } from '../application/create-loan-document/create-loan-document.command';
+import { CreateLoanDocumentsBatchCommand } from '../application/create-loan-documents-batch/create-loan-documents-batch.command';
 import { UpdateLoanDocumentCommand } from '../application/update-loan-document/update-loan-document.command';
+import { UpdateLoanDocumentsBatchCommand } from '../application/update-loan-documents-batch/update-loan-documents-batch.command';
 import { DeleteLoanDocumentCommand } from '../application/delete-loan-document/delete-loan-document.command';
 import { GetLoanDocumentByIdQuery } from '../application/get-loan-document-by-id/get-loan-document-by-id.query';
 import { GetLoanDocumentsByLoanQuery } from '../application/get-loan-documents-by-loan/get-loan-documents-by-loan.query';
@@ -38,6 +42,14 @@ export class LoanDocumentController {
     return this.commandBus.execute(new CreateLoanDocumentCommand({ ...body }));
   }
 
+  @Post('/batch')
+  @ApiOperation({ summary: 'Crear múltiples documentos para un préstamo' })
+  async createBatch(@Body() body: CreateLoanDocumentsBatchDto) {
+    return this.commandBus.execute(
+      new CreateLoanDocumentsBatchCommand({ ...body }),
+    );
+  }
+
   @Get('/loan/:loanId')
   @ApiOperation({ summary: 'Obtener documentos por préstamo' })
   async findByLoan(@Param('loanId') loanId: string) {
@@ -50,8 +62,16 @@ export class LoanDocumentController {
     return this.queryBus.execute(new GetLoanDocumentByIdQuery(id));
   }
 
+  @Patch('/batch')
+  @ApiOperation({ summary: 'Actualizar múltiples documentos' })
+  async updateBatch(@Body() body: UpdateLoanDocumentsBatchDto) {
+    return this.commandBus.execute(
+      new UpdateLoanDocumentsBatchCommand({ ...body }),
+    );
+  }
+
   @Patch('/:id')
-  @ApiOperation({ summary: 'Actualizar documento' })
+  @ApiOperation({ summary: 'Reemplazar documento (actualizar URL)' })
   async update(@Param('id') id: string, @Body() body: UpdateLoanDocumentDto) {
     return this.commandBus.execute(
       new UpdateLoanDocumentCommand({ id, ...body }),
@@ -64,4 +84,3 @@ export class LoanDocumentController {
     return this.commandBus.execute(new DeleteLoanDocumentCommand(id));
   }
 }
-

@@ -1,4 +1,5 @@
 export class CreateDocumentTypeCommand {
+  readonly code: string;
   readonly name: string;
 
   constructor(params: CreateDocumentTypeCommand) {

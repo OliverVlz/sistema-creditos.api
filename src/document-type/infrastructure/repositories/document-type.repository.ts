@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { DocumentType } from '../entity/document-type.entity';
 
 type CreateDocumentTypeData = {
+  code: string;
   name: string;
 };
 
 type UpdateDocumentTypeData = {
+  code?: string;
   name?: string;
   isActive?: boolean;
 };
@@ -36,8 +38,14 @@ export class DocumentTypeRepository {
     return documentType;
   }
 
-  async findByName(name: string): Promise<DocumentType | undefined> {
-    return this.documentTypesRepository.findOne({ where: { name } });
+  async findByCode(code: string): Promise<DocumentType | undefined> {
+    return this.documentTypesRepository.findOne({ where: { code } });
+  }
+
+  async findByCodes(codes: string[]): Promise<DocumentType[]> {
+    return this.documentTypesRepository.find({
+      where: { code: In(codes) },
+    });
   }
 
   async findAll(): Promise<DocumentType[]> {
@@ -47,7 +55,10 @@ export class DocumentTypeRepository {
     });
   }
 
-  async update(id: string, data: UpdateDocumentTypeData): Promise<DocumentType> {
+  async update(
+    id: string,
+    data: UpdateDocumentTypeData,
+  ): Promise<DocumentType> {
     await this.documentTypesRepository.update(id, data);
     return this.findOne(id);
   }

@@ -10,17 +10,20 @@ export class CreateDocumentTypeHandler
   constructor(private readonly documentTypeRepository: DocumentTypeRepository) {}
 
   async execute(command: CreateDocumentTypeCommand): Promise<any> {
-    const { name } = command;
+    const { code, name } = command;
 
     const existingDocumentType =
-      await this.documentTypeRepository.findByName(name);
+      await this.documentTypeRepository.findByCode(code);
     if (existingDocumentType) {
       throw new BadRequestException(
-        `Ya existe un tipo de documento con el nombre "${name}"`,
+        `Ya existe un tipo de documento con el código "${code}"`,
       );
     }
 
-    const newDocumentType = await this.documentTypeRepository.create({ name });
+    const newDocumentType = await this.documentTypeRepository.create({
+      code,
+      name,
+    });
 
     return { documentTypeId: newDocumentType.id };
   }

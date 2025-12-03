@@ -12,6 +12,9 @@ export class DocumentType {
   id: string;
 
   @Column({ unique: true })
+  code: string;
+
+  @Column()
   name: string;
 
   @Column({ name: 'is_active', default: true })

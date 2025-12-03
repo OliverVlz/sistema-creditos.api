@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoanDocument, LoanDocumentStatus } from '../entity/loan-document.entity';
+import { LoanDocument } from '../entity/loan-document.entity';
 
 type CreateLoanDocumentData = {
   loanId: string;
@@ -9,10 +9,9 @@ type CreateLoanDocumentData = {
   url: string;
 };
 
-type UpdateLoanDocumentData = {
-  url?: string;
-  status?: LoanDocumentStatus;
-  rejectionNote?: string;
+type BatchDocumentItem = {
+  documentTypeId: string;
+  url: string;
 };
 
 @Injectable()
@@ -29,6 +28,20 @@ export class LoanDocumentRepository {
       documentType: { id: data.documentTypeId },
     });
     return this.loanDocumentRepository.save(newDocument);
+  }
+
+  async createBatch(
+    loanId: string,
+    documents: BatchDocumentItem[],
+  ): Promise<LoanDocument[]> {
+    const entities = documents.map(doc =>
+      this.loanDocumentRepository.create({
+        url: doc.url,
+        loan: { id: loanId },
+        documentType: { id: doc.documentTypeId },
+      }),
+    );
+    return this.loanDocumentRepository.save(entities);
   }
 
   async findOne(id: string): Promise<LoanDocument> {
@@ -50,8 +63,8 @@ export class LoanDocumentRepository {
     });
   }
 
-  async update(id: string, data: UpdateLoanDocumentData): Promise<LoanDocument> {
-    await this.loanDocumentRepository.update(id, data);
+  async update(id: string, url: string): Promise<LoanDocument> {
+    await this.loanDocumentRepository.update(id, { url });
     return this.findOne(id);
   }
 
@@ -59,4 +72,3 @@ export class LoanDocumentRepository {
     await this.loanDocumentRepository.delete(id);
   }
 }
-

@@ -11,15 +11,11 @@ export class UpdateLoanDocumentHandler
   ) {}
 
   async execute(command: UpdateLoanDocumentCommand): Promise<any> {
-    const { id, url, status, rejectionNote } = command;
+    const { id, url } = command;
 
     await this.loanDocumentRepository.findOne(id);
 
-    const updated = await this.loanDocumentRepository.update(id, {
-      url,
-      status,
-      rejectionNote,
-    });
+    const updated = await this.loanDocumentRepository.update(id, url);
 
     return { documentId: updated.id };
   }

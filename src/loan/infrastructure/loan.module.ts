@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CqrsModule } from '@nestjs/cqrs';
 
@@ -18,6 +18,8 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
 import { OrganizationModule } from 'src/organization/infrastructure/organization.module';
 import { IdentityModule } from 'src/identity/infrastructure/identity.module';
 import { LoanTypeModule } from 'src/loan-type/infrastructure/loan-type.module';
+import { LoanDocumentModule } from 'src/loan-document/infrastructure/loan-document.module';
+import { DocumentTypeModule } from 'src/document-type/infrastructure/document-type.module';
 
 const CommandHandlers = [
   CreateLoanHandler,
@@ -25,7 +27,11 @@ const CommandHandlers = [
   SoftDeleteLoanHandler,
 ];
 
-const QueryHandlers = [GetLoansHandler, GetLoanByIdHandler, CalculateLoanHandler];
+const QueryHandlers = [
+  GetLoansHandler,
+  GetLoanByIdHandler,
+  CalculateLoanHandler,
+];
 
 const Repositories = [LoanRepository];
 
@@ -39,6 +45,8 @@ const Services = [LoanCalculatorService];
     OrganizationModule,
     IdentityModule,
     LoanTypeModule,
+    DocumentTypeModule,
+    forwardRef(() => LoanDocumentModule),
   ],
   controllers: [LoansController],
   providers: [
@@ -47,10 +55,6 @@ const Services = [LoanCalculatorService];
     ...CommandHandlers,
     ...QueryHandlers,
   ],
-  exports: [
-    ...Repositories,
-    ...Services,
-    TypeOrmModule.forFeature([Loan]),
-  ],
+  exports: [...Repositories, ...Services, TypeOrmModule.forFeature([Loan])],
 })
 export class LoanModule {}

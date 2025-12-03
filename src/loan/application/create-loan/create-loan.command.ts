@@ -7,6 +7,7 @@ export class CreateLoanCommand {
   readonly monthlyPayment: number;
   readonly totalInterest: number;
   readonly totalPayable: number;
+  readonly documents?: { documentTypeCode: string; url: string }[];
 
   constructor(params: CreateLoanCommand) {
     Object.assign(this, params);

@@ -1,5 +1,33 @@
-import { IsUUID, IsNumber, Min } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  Min,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsString,
+  IsNotEmpty,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+class DocumentItemDto {
+  @ApiProperty({
+    description: 'Código del tipo de documento',
+    example: 'CEDULA',
+  })
+  @IsNotEmpty()
+  @IsString()
+  documentTypeCode: string;
+
+  @ApiProperty({
+    description: 'URL del documento',
+    example: 'https://storage.example.com/docs/file.pdf',
+  })
+  @IsNotEmpty()
+  @IsString()
+  url: string;
+}
 
 export class CreateLoanDto {
   @ApiProperty({ description: 'ID del cliente' })
@@ -37,17 +65,29 @@ export class CreateLoanDto {
 
   @ApiProperty({
     description: 'Total de intereses calculado por el frontend',
-    example: 502561.12,
+    example: 502561,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNumber()
   @Min(0)
   totalInterest: number;
 
   @ApiProperty({
-    description: 'Total a pagar calculado por el frontend (monthlyPayment × termMonths)',
-    example: 2502561.12,
+    description:
+      'Total a pagar calculado por el frontend (monthlyPayment × termMonths)',
+    example: 2502561,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNumber()
   @Min(0)
   totalPayable: number;
+
+  @ApiProperty({
+    description: 'Documentos del préstamo (opcional)',
+    type: [DocumentItemDto],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DocumentItemDto)
+  documents?: DocumentItemDto[];
 }
