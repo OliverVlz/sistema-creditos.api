@@ -6,11 +6,11 @@ export class UpdateLoanWithFilesCommand {
   public readonly rejectionReason?: string;
   public readonly managerId?: string;
   public readonly updatedBy: string;
-  
+
   // Archivos nuevos a agregar
   public readonly newDocumentTypeCodes?: string[];
   public readonly newFiles: Express.Multer.File[];
-  
+
   // Archivos para reemplazar documentos existentes
   public readonly replaceDocumentIds?: string[];
   public readonly replaceFiles: Express.Multer.File[];

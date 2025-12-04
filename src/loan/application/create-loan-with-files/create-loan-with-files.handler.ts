@@ -29,22 +29,28 @@ export class CreateLoanWithFilesHandler
   ) {}
 
   async execute(command: CreateLoanWithFilesCommand): Promise<any> {
-    const { clientId, loanTypeId, organizationId, files, documentTypeCodes } = command;
+    const { clientId, loanTypeId, organizationId, files, documentTypeCodes } =
+      command;
 
     // Validaciones
     await this.validateEntities(clientId, organizationId);
-    const loanType = await this.validateLoanType(loanTypeId, command.amountRequested, command.termMonths);
+    const loanType = await this.validateLoanType(
+      loanTypeId,
+      command.amountRequested,
+      command.termMonths,
+    );
 
     // Calcular préstamo
     const appliedInterestRate = Number(loanType.interestRate);
-    const validatedCalculation = this.loanCalculatorService.validateAndCalculate({
-      amountRequested: command.amountRequested,
-      termMonths: command.termMonths,
-      annualInterestRate: appliedInterestRate,
-      frontendMonthlyPayment: command.monthlyPayment,
-      frontendTotalInterest: command.totalInterest,
-      frontendTotalPayable: command.totalPayable,
-    });
+    const validatedCalculation =
+      this.loanCalculatorService.validateAndCalculate({
+        amountRequested: command.amountRequested,
+        termMonths: command.termMonths,
+        annualInterestRate: appliedInterestRate,
+        frontendMonthlyPayment: command.monthlyPayment,
+        frontendTotalInterest: command.totalInterest,
+        frontendTotalPayable: command.totalPayable,
+      });
 
     // Crear préstamo
     const loanNumber = await this.loanRepository.generateLoanNumber();
@@ -70,22 +76,34 @@ export class CreateLoanWithFilesHandler
     return { loanId: newLoan.id, loanNumber: newLoan.loanNumber };
   }
 
-  private async validateEntities(clientId: string, organizationId: string): Promise<void> {
+  private async validateEntities(
+    clientId: string,
+    organizationId: string,
+  ): Promise<void> {
     const client = await this.clientRepository.findOne(clientId);
     if (!client) {
       throw new NotFoundException(`Cliente con ID ${clientId} no encontrado`);
     }
 
-    const organization = await this.organizationRepository.findOne(organizationId);
+    const organization =
+      await this.organizationRepository.findOne(organizationId);
     if (!organization) {
-      throw new NotFoundException(`Organización con ID ${organizationId} no encontrada`);
+      throw new NotFoundException(
+        `Organización con ID ${organizationId} no encontrada`,
+      );
     }
   }
 
-  private async validateLoanType(loanTypeId: string, amount: number, term: number) {
+  private async validateLoanType(
+    loanTypeId: string,
+    amount: number,
+    term: number,
+  ) {
     const loanType = await this.loanTypeRepository.findOne(loanTypeId);
     if (!loanType) {
-      throw new NotFoundException(`Tipo de préstamo con ID ${loanTypeId} no encontrado`);
+      throw new NotFoundException(
+        `Tipo de préstamo con ID ${loanTypeId} no encontrado`,
+      );
     }
 
     if (amount < loanType.minAmount || amount > loanType.maxAmount) {
@@ -108,21 +126,31 @@ export class CreateLoanWithFilesHandler
     files: Express.Multer.File[],
     documentTypeCodes: string[],
   ): Promise<void> {
-    const documentTypes = await this.documentTypeRepository.findByCodes(documentTypeCodes);
+    const documentTypes =
+      await this.documentTypeRepository.findByCodes(documentTypeCodes);
     const codeToIdMap = new Map(documentTypes.map(dt => [dt.code, dt.id]));
 
     // Validar códigos
-    const invalidCodes = documentTypeCodes.filter(code => !codeToIdMap.has(code));
+    const invalidCodes = documentTypeCodes.filter(
+      code => !codeToIdMap.has(code),
+    );
     if (invalidCodes.length > 0) {
-      throw new BadRequestException(`Tipos de documento no encontrados: ${invalidCodes.join(', ')}`);
+      throw new BadRequestException(
+        `Tipos de documento no encontrados: ${invalidCodes.join(', ')}`,
+      );
     }
 
     // Subir archivos y crear registros
     const uploadedDocuments = await Promise.all(
       files.map(async (file, index) => {
         const documentTypeId = codeToIdMap.get(documentTypeCodes[index]);
-        const uploadResult = await this.storageService.uploadFile(file, `loans/${loanId}`);
-        this.logger.log(`Archivo subido: ${file.originalname} -> ${uploadResult.url}`);
+        const uploadResult = await this.storageService.uploadFile(
+          file,
+          `loans/${loanId}`,
+        );
+        this.logger.log(
+          `Archivo subido: ${file.originalname} -> ${uploadResult.url}`,
+        );
         return { documentTypeId, url: uploadResult.url };
       }),
     );

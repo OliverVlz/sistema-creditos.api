@@ -22,17 +22,30 @@ export class StorageService implements OnModuleInit {
   private readonly useSSL: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+    this.endpoint = this.configService.get<string>(
+      'MINIO_ENDPOINT',
+      'localhost',
+    );
     this.port = this.configService.get<number>('MINIO_PORT', 9000);
-    this.useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
-    this.bucket = this.configService.get<string>('MINIO_BUCKET', 'loan-documents');
+    this.useSSL =
+      this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+    this.bucket = this.configService.get<string>(
+      'MINIO_BUCKET',
+      'loan-documents',
+    );
 
     this.minioClient = new Minio.Client({
       endPoint: this.endpoint,
       port: this.port,
       useSSL: this.useSSL,
-      accessKey: this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin'),
-      secretKey: this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin'),
+      accessKey: this.configService.get<string>(
+        'MINIO_ACCESS_KEY',
+        'minioadmin',
+      ),
+      secretKey: this.configService.get<string>(
+        'MINIO_SECRET_KEY',
+        'minioadmin',
+      ),
     });
   }
 
@@ -63,8 +76,13 @@ export class StorageService implements OnModuleInit {
           },
         ],
       };
-      await this.minioClient.setBucketPolicy(this.bucket, JSON.stringify(policy));
-      this.logger.log(`Política de lectura pública configurada para "${this.bucket}"`);
+      await this.minioClient.setBucketPolicy(
+        this.bucket,
+        JSON.stringify(policy),
+      );
+      this.logger.log(
+        `Política de lectura pública configurada para "${this.bucket}"`,
+      );
     } catch (error) {
       this.logger.error(`Error al verificar/crear bucket: ${error.message}`);
     }
@@ -77,13 +95,9 @@ export class StorageService implements OnModuleInit {
     const fileExtension = file.originalname.split('.').pop();
     const key = `${folder}/${uuidv4()}.${fileExtension}`;
 
-    await this.minioClient.putObject(
-      this.bucket,
-      key,
-      file.buffer,
-      file.size,
-      { 'Content-Type': file.mimetype },
-    );
+    await this.minioClient.putObject(this.bucket, key, file.buffer, file.size, {
+      'Content-Type': file.mimetype,
+    });
 
     const url = this.getPublicUrl(key);
 
@@ -123,7 +137,10 @@ export class StorageService implements OnModuleInit {
     return `${protocol}://${publicEndpoint}/${this.bucket}/${key}`;
   }
 
-  async getPresignedUrl(key: string, expirySeconds: number = 3600): Promise<string> {
+  async getPresignedUrl(
+    key: string,
+    expirySeconds: number = 3600,
+  ): Promise<string> {
     return this.minioClient.presignedGetObject(this.bucket, key, expirySeconds);
   }
 }

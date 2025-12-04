@@ -50,7 +50,9 @@ export class UpdateLoanWithFilesHandler
     if (managerId) {
       const manager = await this.userRepository.findById(managerId);
       if (!manager) {
-        throw new NotFoundException(`Usuario gestor con ID ${managerId} no encontrado`);
+        throw new NotFoundException(
+          `Usuario gestor con ID ${managerId} no encontrado`,
+        );
       }
     }
 
@@ -68,7 +70,11 @@ export class UpdateLoanWithFilesHandler
 
     // 1. Reemplazar documentos existentes
     if (replaceDocumentIds?.length > 0 && replaceFiles?.length > 0) {
-      await this.replaceExistingDocuments(loanId, replaceDocumentIds, replaceFiles);
+      await this.replaceExistingDocuments(
+        loanId,
+        replaceDocumentIds,
+        replaceFiles,
+      );
     }
 
     // 2. Agregar documentos nuevos
@@ -96,13 +102,18 @@ export class UpdateLoanWithFilesHandler
 
       // Obtener documento existente
       const existingDoc = await this.loanDocumentRepository.findOne(documentId);
-      
+
       // Extraer key del archivo viejo para eliminarlo de MinIO
       const oldKey = this.extractKeyFromUrl(existingDoc.url);
 
       // Subir nuevo archivo
-      const uploadResult = await this.storageService.uploadFile(file, `loans/${loanId}`);
-      this.logger.log(`Archivo reemplazado: ${file.originalname} -> ${uploadResult.url}`);
+      const uploadResult = await this.storageService.uploadFile(
+        file,
+        `loans/${loanId}`,
+      );
+      this.logger.log(
+        `Archivo reemplazado: ${file.originalname} -> ${uploadResult.url}`,
+      );
 
       // Actualizar URL en BD
       await this.loanDocumentRepository.update(documentId, uploadResult.url);
@@ -113,7 +124,9 @@ export class UpdateLoanWithFilesHandler
           await this.storageService.deleteFile(oldKey);
           this.logger.log(`Archivo viejo eliminado de MinIO: ${oldKey}`);
         } catch (error) {
-          this.logger.warn(`No se pudo eliminar archivo viejo: ${oldKey} - ${error.message}`);
+          this.logger.warn(
+            `No se pudo eliminar archivo viejo: ${oldKey} - ${error.message}`,
+          );
         }
       }
     }
@@ -131,20 +144,30 @@ export class UpdateLoanWithFilesHandler
     }
 
     // Validar tipos de documento
-    const documentTypes = await this.documentTypeRepository.findByCodes(documentTypeCodes);
+    const documentTypes =
+      await this.documentTypeRepository.findByCodes(documentTypeCodes);
     const codeToIdMap = new Map(documentTypes.map(dt => [dt.code, dt.id]));
 
-    const invalidCodes = documentTypeCodes.filter(code => !codeToIdMap.has(code));
+    const invalidCodes = documentTypeCodes.filter(
+      code => !codeToIdMap.has(code),
+    );
     if (invalidCodes.length > 0) {
-      throw new BadRequestException(`Tipos de documento no encontrados: ${invalidCodes.join(', ')}`);
+      throw new BadRequestException(
+        `Tipos de documento no encontrados: ${invalidCodes.join(', ')}`,
+      );
     }
 
     // Subir archivos y crear registros
     const uploadedDocuments = await Promise.all(
       files.map(async (file, index) => {
         const documentTypeId = codeToIdMap.get(documentTypeCodes[index]);
-        const uploadResult = await this.storageService.uploadFile(file, `loans/${loanId}`);
-        this.logger.log(`Nuevo archivo subido: ${file.originalname} -> ${uploadResult.url}`);
+        const uploadResult = await this.storageService.uploadFile(
+          file,
+          `loans/${loanId}`,
+        );
+        this.logger.log(
+          `Nuevo archivo subido: ${file.originalname} -> ${uploadResult.url}`,
+        );
         return { documentTypeId, url: uploadResult.url };
       }),
     );

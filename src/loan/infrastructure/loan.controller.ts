@@ -56,9 +56,11 @@ export class LoansController {
   @Post('/')
   @ApiOperation({ summary: 'Create new loan (JSON - without files)' })
   async create(@Body() body: CreateLoanDto, @Req() req: any) {
-    return this.commandBus.execute(new CreateLoanCommand({
-      ...body,
-    }));
+    return this.commandBus.execute(
+      new CreateLoanCommand({
+        ...body,
+      }),
+    );
   }
 
   @Post('/with-documents')
@@ -102,7 +104,10 @@ export class LoansController {
   ) {
     // Validar que si hay archivos, haya códigos de documento correspondientes
     if (files?.length > 0) {
-      if (!body.documentTypeCodes || body.documentTypeCodes.length !== files.length) {
+      if (
+        !body.documentTypeCodes ||
+        body.documentTypeCodes.length !== files.length
+      ) {
         throw new BadRequestException(
           `Debe proporcionar ${files.length} códigos de tipo de documento (uno por cada archivo)`,
         );
@@ -118,7 +123,9 @@ export class LoansController {
   }
 
   @Get('/')
-  @ApiOperation({ summary: 'Search loans with optional filters and pagination' })
+  @ApiOperation({
+    summary: 'Search loans with optional filters and pagination',
+  })
   async searchLoans(@Query() query: GetLoansDto) {
     return this.queryBus.execute(new GetLoansQuery(query));
   }
@@ -137,10 +144,10 @@ export class LoansController {
     @Req() req: any,
   ) {
     return this.commandBus.execute(
-      new UpdateLoanCommand({ 
-        id, 
-        ...body, 
-        updatedBy: req.user.id 
+      new UpdateLoanCommand({
+        id,
+        ...body,
+        updatedBy: req.user.id,
       }),
     );
   }
@@ -160,8 +167,14 @@ export class LoansController {
     schema: {
       type: 'object',
       properties: {
-        status: { type: 'string', enum: ['pendiente', 'aprobado', 'rechazado', 'desembolsado'] },
-        rejectionReason: { type: 'string', example: 'Documentación incompleta' },
+        status: {
+          type: 'string',
+          enum: ['pendiente', 'aprobado', 'rechazado', 'desembolsado'],
+        },
+        rejectionReason: {
+          type: 'string',
+          example: 'Documentación incompleta',
+        },
         managerId: { type: 'string', format: 'uuid' },
         newDocumentTypeCodes: {
           type: 'string',
@@ -241,8 +254,6 @@ export class LoansController {
   @Delete('/:id')
   @ApiOperation({ summary: 'Soft delete loan' })
   async remove(@Param('id') id: string, @Req() req: any) {
-    return this.commandBus.execute(
-      new SoftDeleteLoanCommand(id, req.user.id)
-    );
+    return this.commandBus.execute(new SoftDeleteLoanCommand(id, req.user.id));
   }
 }
