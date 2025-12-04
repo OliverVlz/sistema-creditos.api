@@ -24,6 +24,7 @@ export class GetLoansHandler implements IQueryHandler<GetLoansQuery> {
         loanNumber: loan.loanNumber,
         status: loan.status,
         amountRequested: loan.amountRequested,
+        termMonths: loan.termMonths,
         monthlyRate,
         annualRate,
         createdAt: loan.createdAt,
