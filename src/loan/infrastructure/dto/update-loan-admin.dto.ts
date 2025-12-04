@@ -1,10 +1,4 @@
-import {
-  IsUUID,
-  IsString,
-  IsEnum,
-  IsOptional,
-  IsArray,
-} from 'class-validator';
+import { IsUUID, IsString, IsEnum, IsOptional, IsArray } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { LoanStatus } from '../entity/loan.entity';

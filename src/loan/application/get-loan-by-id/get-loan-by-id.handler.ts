@@ -27,7 +27,8 @@ export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
 
     // Calcular tasa efectiva mensual usando servicio centralizado
     const annualRate = Number(loan.appliedInterestRate);
-    const monthlyRate = this.loanCalculatorService.getEffectiveMonthlyRate(annualRate);
+    const monthlyRate =
+      this.loanCalculatorService.getEffectiveMonthlyRate(annualRate);
 
     return {
       id: loan.id,

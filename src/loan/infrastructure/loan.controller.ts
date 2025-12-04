@@ -278,10 +278,7 @@ export class LoansController {
     @Req() req: any,
   ) {
     // Validar que solo admin/asesor pueden usar este endpoint
-    if (
-      req.user.role !== UserRole.ADMIN &&
-      req.user.role !== UserRole.ASESOR
-    ) {
+    if (req.user.role !== UserRole.ADMIN && req.user.role !== UserRole.ASESOR) {
       throw new BadRequestException(
         'Solo administradores o asesores pueden usar este endpoint',
       );
