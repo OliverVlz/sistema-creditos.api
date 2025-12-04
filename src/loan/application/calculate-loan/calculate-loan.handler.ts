@@ -60,4 +60,3 @@ export class CalculateLoanHandler implements IQueryHandler<CalculateLoanQuery> {
     };
   }
 }
-

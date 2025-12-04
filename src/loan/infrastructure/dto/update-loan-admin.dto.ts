@@ -4,13 +4,16 @@ import {
   IsEnum,
   IsOptional,
   IsArray,
-  IsNotEmpty,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { LoanStatus } from '../entity/loan.entity';
 
-export class UpdateLoanMultipartDto {
+/**
+ * DTO para actualización de préstamo por ADMIN/ASESOR
+ * Puede modificar: status, rejectionReason, managerId, y documentos
+ */
+export class UpdateLoanAdminDto {
   @ApiPropertyOptional({
     description: 'Estado del préstamo',
     enum: LoanStatus,
@@ -37,8 +40,8 @@ export class UpdateLoanMultipartDto {
 
   @ApiPropertyOptional({
     description:
-      'Códigos de tipos de documento para archivos NUEVOS (en el mismo orden que los archivos nuevos)',
-    example: '["CEDULA", "CONSTANCIA_TIEMPO"]',
+      'Códigos de tipos de documento para archivos NUEVOS (en el mismo orden que los archivos)',
+    example: '["CEDULA", "NOMINA"]',
   })
   @IsOptional()
   @Transform(({ value }) => {
@@ -47,7 +50,7 @@ export class UpdateLoanMultipartDto {
       try {
         return JSON.parse(value);
       } catch {
-        return value.split(',').map(s => s.trim());
+        return value.split(',').map((s: string) => s.trim());
       }
     }
     return value;
@@ -58,7 +61,7 @@ export class UpdateLoanMultipartDto {
 
   @ApiPropertyOptional({
     description:
-      'IDs de documentos existentes a REEMPLAZAR con nuevos archivos (mismo orden que replaceFiles)',
+      'IDs de documentos existentes a REEMPLAZAR con nuevos archivos',
     example: '["uuid-doc-1", "uuid-doc-2"]',
   })
   @IsOptional()
@@ -68,7 +71,7 @@ export class UpdateLoanMultipartDto {
       try {
         return JSON.parse(value);
       } catch {
-        return value.split(',').map(s => s.trim());
+        return value.split(',').map((s: string) => s.trim());
       }
     }
     return value;

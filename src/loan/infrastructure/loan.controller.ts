@@ -24,19 +24,19 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { CreateLoanMultipartDto } from './dto/create-loan-multipart.dto';
-import { UpdateLoanDto } from './dto/update-loan.dto';
-import { UpdateLoanMultipartDto } from './dto/update-loan-multipart.dto';
+import { UpdateLoanClientDto } from './dto/update-loan-client.dto';
+import { UpdateLoanAdminDto } from './dto/update-loan-admin.dto';
 import { GetLoansDto } from './dto/get-loans.dto';
 import { CalculateLoanDto } from './dto/calculate-loan.dto';
 
 import { CreateLoanCommand } from '../application/create-loan/create-loan.command';
 import { CreateLoanWithFilesCommand } from '../application/create-loan-with-files/create-loan-with-files.command';
 import { GetLoansQuery } from '../application/get-loans/get-loans.query';
-import { UpdateLoanCommand } from '../application/update-loan/update-loan.command';
 import { UpdateLoanWithFilesCommand } from '../application/update-loan-with-files/update-loan-with-files.command';
 import { SoftDeleteLoanCommand } from '../application/soft-delete-loan/soft-delete-loan.command';
 import { GetLoanByIdQuery } from '../application/get-loan-by-id/get-loan-by-id.query';
 import { CalculateLoanQuery } from '../application/calculate-loan/calculate-loan.query';
+import { UserRole } from 'src/shared/enums';
 
 @ApiTags('Loans')
 @Controller('loans')
@@ -85,7 +85,11 @@ export class LoansController {
     schema: {
       type: 'object',
       properties: {
-        clientId: { type: 'string', format: 'uuid', description: 'ID del cliente' },
+        clientId: {
+          type: 'string',
+          format: 'uuid',
+          description: 'ID del cliente',
+        },
         loanTypeName: {
           type: 'string',
           description: 'Nombre del tipo de préstamo (único)',
@@ -155,37 +159,86 @@ export class LoansController {
   }
 
   @Get('/:id')
-  @ApiOperation({ summary: 'Get loan by ID' })
-  async getLoanById(@Param('id') id: string) {
-    return this.queryBus.execute(new GetLoanByIdQuery(id));
+  @ApiOperation({ summary: 'Get loan detail by ID' })
+  async getLoanById(@Param('id') id: string, @Req() req: any) {
+    return this.queryBus.execute(
+      new GetLoanByIdQuery(id, req.user.id, req.user.role),
+    );
   }
 
-  @Patch('/:id')
-  @ApiOperation({ summary: 'Update loan (JSON - without files)' })
-  async update(
+  // ============================================
+  // ENDPOINTS DE ACTUALIZACIÓN POR ROL
+  // ============================================
+
+  @Patch('/:id/documents')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Update loan documents (Client)',
+    description:
+      'Endpoint para CLIENTES. Permite:\n' +
+      '- Agregar nuevos documentos\n' +
+      '- Reemplazar documentos existentes\n\n' +
+      'NO permite cambiar status, rejectionReason ni managerId.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        newDocumentTypeCodes: {
+          type: 'string',
+          description: 'JSON array de códigos para archivos NUEVOS',
+          example: '["CEDULA", "NOMINA"]',
+        },
+        replaceDocumentIds: {
+          type: 'string',
+          description: 'JSON array de IDs de documentos a REEMPLAZAR',
+          example: '["uuid-doc-1", "uuid-doc-2"]',
+        },
+        files: {
+          type: 'array',
+          description: 'Archivos: primero los nuevos, luego los de reemplazo',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  async updateLoanDocuments(
     @Param('id') id: string,
-    @Body() body: UpdateLoanDto,
+    @Body() body: UpdateLoanClientDto,
+    @UploadedFiles() files: Express.Multer.File[],
     @Req() req: any,
   ) {
+    const { newFiles, replaceFiles } = this.splitFiles(
+      files,
+      body.newDocumentTypeCodes?.length || 0,
+      body.replaceDocumentIds?.length || 0,
+    );
+
     return this.commandBus.execute(
-      new UpdateLoanCommand({
-        id,
-        ...body,
+      new UpdateLoanWithFilesCommand({
+        loanId: id,
         updatedBy: req.user.id,
+        updatedByRole: req.user.role,
+        newDocumentTypeCodes: body.newDocumentTypeCodes,
+        newFiles,
+        replaceDocumentIds: body.replaceDocumentIds,
+        replaceFiles,
       }),
     );
   }
 
-  @Patch('/:id/with-documents')
-  @UseInterceptors(FilesInterceptor('files', 20)) // Máximo 20 archivos (nuevos + reemplazos)
+  @Patch('/:id/manage')
+  @UseInterceptors(FilesInterceptor('files', 20))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Update loan with document files (multipart)',
+    summary: 'Manage loan (Admin/Advisor only)',
     description:
-      'Actualiza un préstamo y permite:\n' +
-      '1. Agregar nuevos documentos (newFiles + newDocumentTypeCodes)\n' +
-      '2. Reemplazar documentos existentes (replaceFiles + replaceDocumentIds)\n\n' +
-      'Los archivos se envían todos en "files", primero los nuevos y luego los de reemplazo.',
+      'Endpoint para ADMIN/ASESOR. Permite:\n' +
+      '- Cambiar status del préstamo\n' +
+      '- Agregar razón de rechazo\n' +
+      '- Asignar manager\n' +
+      '- Agregar/reemplazar documentos',
   })
   @ApiBody({
     schema: {
@@ -203,7 +256,7 @@ export class LoansController {
         newDocumentTypeCodes: {
           type: 'string',
           description: 'JSON array de códigos para archivos NUEVOS',
-          example: '["CEDULA", "COMPROBANTE_INGRESOS"]',
+          example: '["CEDULA", "NOMINA"]',
         },
         replaceDocumentIds: {
           type: 'string',
@@ -218,47 +271,27 @@ export class LoansController {
       },
     },
   })
-  async updateWithDocuments(
+  async manageLoan(
     @Param('id') id: string,
-    @Body() body: UpdateLoanMultipartDto,
+    @Body() body: UpdateLoanAdminDto,
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: any,
   ) {
-    const newCodesCount = body.newDocumentTypeCodes?.length || 0;
-    const replaceIdsCount = body.replaceDocumentIds?.length || 0;
-    const filesCount = files?.length || 0;
-
-    // Determinar cuántos archivos van para cada operación
-    let newFiles: Express.Multer.File[] = [];
-    let replaceFiles: Express.Multer.File[] = [];
-
-    if (newCodesCount > 0 && replaceIdsCount > 0) {
-      // Caso: Ambas operaciones - archivos divididos
-      if (filesCount !== newCodesCount + replaceIdsCount) {
-        throw new BadRequestException(
-          `Se esperaban ${newCodesCount + replaceIdsCount} archivos (${newCodesCount} nuevos + ${replaceIdsCount} reemplazos), pero se recibieron ${filesCount}`,
-        );
-      }
-      newFiles = files.slice(0, newCodesCount);
-      replaceFiles = files.slice(newCodesCount);
-    } else if (newCodesCount > 0) {
-      // Caso: Solo archivos nuevos
-      if (filesCount !== newCodesCount) {
-        throw new BadRequestException(
-          `Se esperaban ${newCodesCount} archivos nuevos, pero se recibieron ${filesCount}`,
-        );
-      }
-      newFiles = files;
-    } else if (replaceIdsCount > 0) {
-      // Caso: Solo reemplazos
-      if (filesCount !== replaceIdsCount) {
-        throw new BadRequestException(
-          `Se esperaban ${replaceIdsCount} archivos de reemplazo, pero se recibieron ${filesCount}`,
-        );
-      }
-      replaceFiles = files;
+    // Validar que solo admin/asesor pueden usar este endpoint
+    if (
+      req.user.role !== UserRole.ADMIN &&
+      req.user.role !== UserRole.ASESOR
+    ) {
+      throw new BadRequestException(
+        'Solo administradores o asesores pueden usar este endpoint',
+      );
     }
-    // Caso: Sin archivos - solo actualizar datos del préstamo (status, etc.)
+
+    const { newFiles, replaceFiles } = this.splitFiles(
+      files,
+      body.newDocumentTypeCodes?.length || 0,
+      body.replaceDocumentIds?.length || 0,
+    );
 
     return this.commandBus.execute(
       new UpdateLoanWithFilesCommand({
@@ -267,12 +300,52 @@ export class LoansController {
         rejectionReason: body.rejectionReason,
         managerId: body.managerId,
         updatedBy: req.user.id,
+        updatedByRole: req.user.role,
         newDocumentTypeCodes: body.newDocumentTypeCodes,
         newFiles,
         replaceDocumentIds: body.replaceDocumentIds,
         replaceFiles,
       }),
     );
+  }
+
+  /**
+   * Helper para dividir archivos entre nuevos y reemplazos
+   */
+  private splitFiles(
+    files: Express.Multer.File[] | undefined,
+    newCodesCount: number,
+    replaceIdsCount: number,
+  ): { newFiles: Express.Multer.File[]; replaceFiles: Express.Multer.File[] } {
+    const filesCount = files?.length || 0;
+    let newFiles: Express.Multer.File[] = [];
+    let replaceFiles: Express.Multer.File[] = [];
+
+    if (newCodesCount > 0 && replaceIdsCount > 0) {
+      if (filesCount !== newCodesCount + replaceIdsCount) {
+        throw new BadRequestException(
+          `Se esperaban ${newCodesCount + replaceIdsCount} archivos (${newCodesCount} nuevos + ${replaceIdsCount} reemplazos), pero se recibieron ${filesCount}`,
+        );
+      }
+      newFiles = files!.slice(0, newCodesCount);
+      replaceFiles = files!.slice(newCodesCount);
+    } else if (newCodesCount > 0) {
+      if (filesCount !== newCodesCount) {
+        throw new BadRequestException(
+          `Se esperaban ${newCodesCount} archivos nuevos, pero se recibieron ${filesCount}`,
+        );
+      }
+      newFiles = files || [];
+    } else if (replaceIdsCount > 0) {
+      if (filesCount !== replaceIdsCount) {
+        throw new BadRequestException(
+          `Se esperaban ${replaceIdsCount} archivos de reemplazo, pero se recibieron ${filesCount}`,
+        );
+      }
+      replaceFiles = files || [];
+    }
+
+    return { newFiles, replaceFiles };
   }
 
   @Delete('/:id')

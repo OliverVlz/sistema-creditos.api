@@ -5,8 +5,14 @@ import { LoanDocumentRepository } from 'src/loan-document/infrastructure/reposit
 import { DocumentTypeRepository } from 'src/document-type/infrastructure/repositories/document-type.repository';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
 import { StorageService } from 'src/storage/infrastructure/storage.service';
-import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
+import { UserRole } from 'src/shared/enums';
 
 @CommandHandler(UpdateLoanWithFilesCommand)
 export class UpdateLoanWithFilesHandler
@@ -28,6 +34,8 @@ export class UpdateLoanWithFilesHandler
       status,
       rejectionReason,
       managerId,
+      updatedBy,
+      updatedByRole,
       newDocumentTypeCodes,
       newFiles,
       replaceDocumentIds,
@@ -38,6 +46,34 @@ export class UpdateLoanWithFilesHandler
     const existingLoan = await this.loanRepository.findOne(loanId);
     if (!existingLoan) {
       throw new NotFoundException(`Préstamo con ID ${loanId} no encontrado`);
+    }
+
+    // Validar permisos según rol
+    const isClient = updatedByRole === UserRole.CLIENTE;
+    const isAdminOrAdvisor =
+      updatedByRole === UserRole.ADMIN || updatedByRole === UserRole.ASESOR;
+
+    if (isClient) {
+      // Cliente solo puede modificar SUS préstamos
+      if (existingLoan.client?.user?.id !== updatedBy) {
+        throw new ForbiddenException(
+          'No tienes permiso para modificar este préstamo',
+        );
+      }
+
+      // Cliente NO puede cambiar status, rejectionReason ni managerId
+      if (status || rejectionReason || managerId) {
+        throw new ForbiddenException(
+          'No tienes permiso para modificar el estado del préstamo',
+        );
+      }
+    }
+
+    // Solo Admin/Asesor pueden cambiar status
+    if ((status || rejectionReason || managerId) && !isAdminOrAdvisor) {
+      throw new ForbiddenException(
+        'Solo administradores o asesores pueden modificar el estado del préstamo',
+      );
     }
 
     // Validaciones de negocio
@@ -56,45 +92,89 @@ export class UpdateLoanWithFilesHandler
       }
     }
 
-    // Actualizar datos del préstamo
-    const updateData = {
-      ...(status && { status }),
-      ...(rejectionReason && { rejectionReason }),
-      ...(managerId && { manager: { id: managerId } }),
-      ...(status && { managedAt: new Date() }),
-    };
+    // Objeto para trackear los cambios realizados
+    const changes: {
+      loan?: {
+        status?: { from: string; to: string };
+        rejectionReason?: { from: string | null; to: string };
+        managerId?: { from: string | null; to: string };
+      };
+      documentsAdded?: { documentTypeCode: string; url: string }[];
+      documentsReplaced?: { documentId: string; newUrl: string }[];
+    } = {};
 
-    if (Object.keys(updateData).length > 0) {
-      await this.loanRepository.updateLoan(loanId, updateData);
+    // Actualizar datos del préstamo (solo si hay campos permitidos)
+    if (isAdminOrAdvisor) {
+      const loanChanges: any = {};
+
+      if (status && status !== existingLoan.status) {
+        loanChanges.status = { from: existingLoan.status, to: status };
+      }
+      if (rejectionReason && rejectionReason !== existingLoan.rejectionReason) {
+        loanChanges.rejectionReason = {
+          from: existingLoan.rejectionReason || null,
+          to: rejectionReason,
+        };
+      }
+      if (managerId) {
+        loanChanges.managerId = {
+          from: existingLoan.manager?.id || null,
+          to: managerId,
+        };
+      }
+
+      if (Object.keys(loanChanges).length > 0) {
+        changes.loan = loanChanges;
+
+        const updateData = {
+          ...(status && { status }),
+          ...(rejectionReason && { rejectionReason }),
+          ...(managerId && { manager: { id: managerId } }),
+          ...(status && { managedAt: new Date() }),
+        };
+        await this.loanRepository.updateLoan(loanId, updateData);
+      }
     }
 
     // 1. Reemplazar documentos existentes
     if (replaceDocumentIds?.length > 0 && replaceFiles?.length > 0) {
-      await this.replaceExistingDocuments(
+      const replacedDocs = await this.replaceExistingDocuments(
         loanId,
         replaceDocumentIds,
         replaceFiles,
       );
+      changes.documentsReplaced = replacedDocs;
     }
 
     // 2. Agregar documentos nuevos
     if (newDocumentTypeCodes?.length > 0 && newFiles?.length > 0) {
-      await this.addNewDocuments(loanId, newDocumentTypeCodes, newFiles);
+      const addedDocs = await this.addNewDocuments(
+        loanId,
+        newDocumentTypeCodes,
+        newFiles,
+      );
+      changes.documentsAdded = addedDocs;
     }
 
-    return { loanId, message: 'Préstamo actualizado correctamente' };
+    return {
+      loanId,
+      message: 'Préstamo actualizado correctamente',
+      changes,
+    };
   }
 
   private async replaceExistingDocuments(
     loanId: string,
     documentIds: string[],
     files: Express.Multer.File[],
-  ): Promise<void> {
+  ): Promise<{ documentId: string; newUrl: string }[]> {
     if (documentIds.length !== files.length) {
       throw new BadRequestException(
         `Cantidad de documentos a reemplazar (${documentIds.length}) no coincide con archivos (${files.length})`,
       );
     }
+
+    const replacedDocuments: { documentId: string; newUrl: string }[] = [];
 
     for (let i = 0; i < documentIds.length; i++) {
       const documentId = documentIds[i];
@@ -118,6 +198,8 @@ export class UpdateLoanWithFilesHandler
       // Actualizar URL en BD
       await this.loanDocumentRepository.update(documentId, uploadResult.url);
 
+      replacedDocuments.push({ documentId, newUrl: uploadResult.url });
+
       // Eliminar archivo viejo de MinIO (después de confirmar el update)
       if (oldKey) {
         try {
@@ -130,13 +212,15 @@ export class UpdateLoanWithFilesHandler
         }
       }
     }
+
+    return replacedDocuments;
   }
 
   private async addNewDocuments(
     loanId: string,
     documentTypeCodes: string[],
     files: Express.Multer.File[],
-  ): Promise<void> {
+  ): Promise<{ documentTypeCode: string; url: string }[]> {
     if (documentTypeCodes.length !== files.length) {
       throw new BadRequestException(
         `Cantidad de códigos (${documentTypeCodes.length}) no coincide con archivos nuevos (${files.length})`,
@@ -160,7 +244,8 @@ export class UpdateLoanWithFilesHandler
     // Subir archivos y crear registros
     const uploadedDocuments = await Promise.all(
       files.map(async (file, index) => {
-        const documentTypeId = codeToIdMap.get(documentTypeCodes[index]);
+        const documentTypeCode = documentTypeCodes[index];
+        const documentTypeId = codeToIdMap.get(documentTypeCode);
         const uploadResult = await this.storageService.uploadFile(
           file,
           `loans/${loanId}`,
@@ -168,11 +253,22 @@ export class UpdateLoanWithFilesHandler
         this.logger.log(
           `Nuevo archivo subido: ${file.originalname} -> ${uploadResult.url}`,
         );
-        return { documentTypeId, url: uploadResult.url };
+        return { documentTypeId, documentTypeCode, url: uploadResult.url };
       }),
     );
 
-    await this.loanDocumentRepository.createBatch(loanId, uploadedDocuments);
+    await this.loanDocumentRepository.createBatch(
+      loanId,
+      uploadedDocuments.map(d => ({
+        documentTypeId: d.documentTypeId,
+        url: d.url,
+      })),
+    );
+
+    return uploadedDocuments.map(d => ({
+      documentTypeCode: d.documentTypeCode,
+      url: d.url,
+    }));
   }
 
   private extractKeyFromUrl(url: string): string | null {

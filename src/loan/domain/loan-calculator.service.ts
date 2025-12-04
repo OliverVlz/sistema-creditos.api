@@ -110,6 +110,14 @@ export class LoanCalculatorService {
     return calculated;
   }
 
+  /**
+   * Calcula la tasa efectiva mensual a partir de la tasa anual
+   * Fórmula: (1 + tasaAnual/100)^(1/12) - 1
+   */
+  getEffectiveMonthlyRate(annualRate: number): number {
+    return this.calculateEffectiveMonthlyRate(annualRate);
+  }
+
   private calculateEffectiveMonthlyRate(annualRate: number): number {
     if (annualRate === 0) return 0;
     const rate = Math.pow(1 + annualRate / 100, 1 / 12) - 1;

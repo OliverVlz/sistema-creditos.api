@@ -10,7 +10,9 @@ type CreateOrganizationData = {
   description?: string;
 };
 
-type UpdateOrganizationData = Partial<Pick<Organization, 'name' | 'description' | 'isActive'>>;
+type UpdateOrganizationData = Partial<
+  Pick<Organization, 'name' | 'description' | 'isActive'>
+>;
 
 type OrganizationSearchData = {
   terms?: string;
@@ -27,7 +29,8 @@ export class OrganizationRepository {
   ) {}
 
   async create(organization: CreateOrganizationData) {
-    const createdOrganization = this.organizationRepository.create(organization);
+    const createdOrganization =
+      this.organizationRepository.create(organization);
     return this.organizationRepository.save(createdOrganization);
   }
 
@@ -67,13 +70,13 @@ export class OrganizationRepository {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
         `(LOWER(organization.name) LIKE :term OR LOWER(organization.description) LIKE :term)`,
-        { term: `%${term}%` }
+        { term: `%${term}%` },
       );
     }
 
     if (searchData.isActive !== undefined) {
-      queryBuilder.andWhere('organization.isActive = :isActive', { 
-        isActive: searchData.isActive 
+      queryBuilder.andWhere('organization.isActive = :isActive', {
+        isActive: searchData.isActive,
       });
     }
 
@@ -84,9 +87,7 @@ export class OrganizationRepository {
       searchData.limit,
     );
 
-    queryBuilder
-      .skip(paginationOptions.offset)
-      .take(paginationOptions.limit);
+    queryBuilder.skip(paginationOptions.offset).take(paginationOptions.limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
 

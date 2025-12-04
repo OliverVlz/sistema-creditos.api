@@ -7,6 +7,3 @@ export class CalculateLoanQuery {
     Object.assign(this, params);
   }
 }
-
-
-

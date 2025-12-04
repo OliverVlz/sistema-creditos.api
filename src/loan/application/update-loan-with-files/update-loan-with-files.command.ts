@@ -6,6 +6,7 @@ export class UpdateLoanWithFilesCommand {
   public readonly rejectionReason?: string;
   public readonly managerId?: string;
   public readonly updatedBy: string;
+  public readonly updatedByRole: string;
 
   // Archivos nuevos a agregar
   public readonly newDocumentTypeCodes?: string[];
@@ -21,6 +22,7 @@ export class UpdateLoanWithFilesCommand {
     rejectionReason?: string;
     managerId?: string;
     updatedBy: string;
+    updatedByRole: string;
     newDocumentTypeCodes?: string[];
     newFiles?: Express.Multer.File[];
     replaceDocumentIds?: string[];
@@ -31,6 +33,7 @@ export class UpdateLoanWithFilesCommand {
     this.rejectionReason = data.rejectionReason;
     this.managerId = data.managerId;
     this.updatedBy = data.updatedBy;
+    this.updatedByRole = data.updatedByRole;
     this.newDocumentTypeCodes = data.newDocumentTypeCodes;
     this.newFiles = data.newFiles || [];
     this.replaceDocumentIds = data.replaceDocumentIds;

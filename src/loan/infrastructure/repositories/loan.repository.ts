@@ -72,6 +72,7 @@ export class LoanRepository {
       where: { id },
       relations: [
         'client',
+        'client.user',
         'loanType',
         'organization',
         'manager',
@@ -89,6 +90,7 @@ export class LoanRepository {
     const queryBuilder = this.loansRepository
       .createQueryBuilder('loan')
       .leftJoinAndSelect('loan.client', 'client')
+      .leftJoinAndSelect('client.user', 'clientUser')
       .leftJoinAndSelect('loan.loanType', 'loanType')
       .leftJoinAndSelect('loan.organization', 'organization')
       .leftJoinAndSelect('loan.manager', 'manager');

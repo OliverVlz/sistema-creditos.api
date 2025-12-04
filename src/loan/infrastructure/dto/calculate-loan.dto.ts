@@ -23,6 +23,3 @@ export class CalculateLoanDto {
   @Min(1)
   termMonths: number;
 }
-
-
-

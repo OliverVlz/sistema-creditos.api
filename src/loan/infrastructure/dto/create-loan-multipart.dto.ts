@@ -76,7 +76,7 @@ export class CreateLoanMultipartDto {
   @ApiProperty({
     description:
       'Códigos de tipos de documento para cada archivo (en el mismo orden que los archivos). JSON array string.',
-    example: '["CEDULA", "COMPROBANTE_INGRESOS", "RECIBO_SERVICIO"]',
+    example: '["CEDULA", "CONSTANCIA_TIEMPO", "RECIBO_SERVICIO"]',
     required: false,
   })
   @IsOptional()
