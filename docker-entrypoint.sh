@@ -11,6 +11,16 @@ done
 
 echo "✅ PostgreSQL está disponible"
 
+echo "🗄️  Verificando/Creando base de datos '$DB_DATABASE'..."
+DB_EXISTS=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$DB_DATABASE'" | xargs)
+if [ "$DB_EXISTS" != "1" ]; then
+  echo "   Creando base de datos '$DB_DATABASE'..."
+  PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d postgres -c "CREATE DATABASE $DB_DATABASE;" > /dev/null 2>&1
+  echo "   ✅ Base de datos '$DB_DATABASE' creada"
+else
+  echo "   ✅ Base de datos '$DB_DATABASE' ya existe"
+fi
+
 echo "🔨 Construyendo la aplicación..."
 pnpm build
 
