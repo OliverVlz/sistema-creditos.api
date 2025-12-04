@@ -13,11 +13,12 @@ import { UpdateLoanTypeCommand } from '../application/update-loan-type/update-lo
 import { DeleteLoanTypeCommand } from '../application/delete-loan-type/delete-loan-type.command';
 
 import { AdminGuard } from 'src/shared/guards';
+import { Public } from 'src/shared/validation';
 
 @ApiTags('Loan Types')
 @Controller('loan-types')
 @ApiBearerAuth()
-@UseGuards(AdminGuard) // Todos los endpoints de LoanType serán solo para ADMIN
+
 export class LoanTypesController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -25,24 +26,28 @@ export class LoanTypesController {
   ) {}
 
   @Post('/')
+  @UseGuards(AdminGuard) 
   @ApiOperation({ summary: 'Create a new loan type - ADMIN only' })
   async create(@Body() body: CreateLoanTypeDto) {
     return this.commandBus.execute(new CreateLoanTypeCommand(body));
   }
 
   @Get('/')
+  @Public()
   @ApiOperation({ summary: 'Search loan types with optional filters and pagination - ADMIN only' })
   async searchLoanTypes(@Query() query: GetLoanTypesDto) {
     return this.queryBus.execute(new GetLoanTypesQuery(query));
   }
 
   @Get('/:id')
+  @Public()
   @ApiOperation({ summary: 'Get loan type by ID - ADMIN only' })
   async getLoanTypeById(@Param('id') id: string) {
     return this.queryBus.execute(new GetLoanTypeByIdQuery(id));
   }
 
   @Patch('/:id')
+  @UseGuards(AdminGuard) 
   @ApiOperation({ summary: 'Update loan type - ADMIN only' })
   async update(@Param('id') id: string, @Body() body: UpdateLoanTypeDto) {
     return this.commandBus.execute(
@@ -54,6 +59,7 @@ export class LoanTypesController {
   }
 
   @Delete('/:id')
+  @UseGuards(AdminGuard) 
   @ApiOperation({ summary: 'Soft delete loan type - ADMIN only' })
   async remove(@Param('id') id: string, @Req() req: any) {
     return this.commandBus.execute(
