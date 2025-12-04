@@ -136,6 +136,12 @@ export class UpdateLoanWithFilesHandler
       }
     }
 
+    // Verificar si el cliente está haciendo cambios en documentos
+    const clientMakingDocumentChanges =
+      isClient &&
+      ((replaceDocumentIds?.length > 0 && replaceFiles?.length > 0) ||
+        (newDocumentTypeCodes?.length > 0 && newFiles?.length > 0));
+
     // 1. Reemplazar documentos existentes
     if (replaceDocumentIds?.length > 0 && replaceFiles?.length > 0) {
       const replacedDocs = await this.replaceExistingDocuments(
@@ -154,6 +160,23 @@ export class UpdateLoanWithFilesHandler
         newFiles,
       );
       changes.documentsAdded = addedDocs;
+    }
+
+    // 3. Si el cliente modificó documentos, volver estado a PENDIENTE
+    if (
+      clientMakingDocumentChanges &&
+      existingLoan.status !== LoanStatus.PENDIENTE
+    ) {
+      changes.loan = {
+        ...changes.loan,
+        status: { from: existingLoan.status, to: LoanStatus.PENDIENTE },
+      };
+      await this.loanRepository.updateLoan(loanId, {
+        status: LoanStatus.PENDIENTE,
+      });
+      this.logger.log(
+        `Estado del préstamo ${loanId} cambiado a PENDIENTE por modificación de documentos del cliente`,
+      );
     }
 
     return {
