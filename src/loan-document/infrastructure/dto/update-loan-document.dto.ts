@@ -10,3 +10,4 @@ export class UpdateLoanDocumentDto {
   @IsString()
   url: string;
 }
+

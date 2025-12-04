@@ -6,3 +6,4 @@ export class CreateLoanDocumentsBatchCommand {
     Object.assign(this, params);
   }
 }
+

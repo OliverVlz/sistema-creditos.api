@@ -38,3 +38,4 @@ export class CreateLoanDocumentsBatchDto {
   @Type(() => DocumentItemDto)
   documents: DocumentItemDto[];
 }
+

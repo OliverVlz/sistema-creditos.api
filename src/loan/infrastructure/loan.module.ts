@@ -8,9 +8,11 @@ import { LoanRepository } from './repositories/loan.repository';
 import { LoanCalculatorService } from '../domain/loan-calculator.service';
 
 import { CreateLoanHandler } from '../application/create-loan/create-loan.handler';
+import { CreateLoanWithFilesHandler } from '../application/create-loan-with-files/create-loan-with-files.handler';
 import { GetLoansHandler } from '../application/get-loans/get-loans.handler';
 import { GetLoanByIdHandler } from '../application/get-loan-by-id/get-loan-by-id.handler';
 import { UpdateLoanHandler } from '../application/update-loan/update-loan.handler';
+import { UpdateLoanWithFilesHandler } from '../application/update-loan-with-files/update-loan-with-files.handler';
 import { SoftDeleteLoanHandler } from '../application/soft-delete-loan/soft-delete-loan.handler';
 import { CalculateLoanHandler } from '../application/calculate-loan/calculate-loan.handler';
 
@@ -23,7 +25,9 @@ import { DocumentTypeModule } from 'src/document-type/infrastructure/document-ty
 
 const CommandHandlers = [
   CreateLoanHandler,
+  CreateLoanWithFilesHandler,
   UpdateLoanHandler,
+  UpdateLoanWithFilesHandler,
   SoftDeleteLoanHandler,
 ];
 

@@ -3,7 +3,7 @@ services:
     image: postgres:16
     container_name: sistema_creditos_postgres_dev
     environment:
-      POSTGRES_DB: sistema_creditos
+      POSTGRES_DB: sistema_creditos_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -16,6 +16,27 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - sistema_creditos_network
+
+  minio:
+    image: minio/minio
+    container_name: sistema_creditos_minio_dev
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - sistema_creditos_minio_data:/data
+    command: server --console-address ":9001" /data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
     networks:
       - sistema_creditos_network
 
@@ -34,12 +55,20 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: sistema_creditos
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_USE_SSL: 'false'
+      MINIO_BUCKET: loan-documents
       FORCE_SEED: ${FORCE_SEED:-false}
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: 2000
       WATCHPACK_POLLING: 'true'
     depends_on:
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     restart: unless-stopped
     volumes:
@@ -50,6 +79,7 @@ services:
 
 volumes:
   sistema_creditos_postgres_data:
+  sistema_creditos_minio_data:
 
 networks:
   sistema_creditos_network:
