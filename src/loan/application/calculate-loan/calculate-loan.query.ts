@@ -1,5 +1,5 @@
 export class CalculateLoanQuery {
-  readonly loanTypeId: string;
+  readonly loanTypeName: string;
   readonly amountRequested: number;
   readonly termMonths: number;
 

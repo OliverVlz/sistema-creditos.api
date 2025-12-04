@@ -29,13 +29,19 @@ export class CreateLoanWithFilesHandler
   ) {}
 
   async execute(command: CreateLoanWithFilesCommand): Promise<any> {
-    const { clientId, loanTypeId, organizationId, files, documentTypeCodes } =
-      command;
+    const {
+      clientId,
+      loanTypeName,
+      organizationName,
+      files,
+      documentTypeCodes,
+    } = command;
 
-    // Validaciones
-    await this.validateEntities(clientId, organizationId);
+    // Validaciones - ahora busca por nombre
+    const client = await this.validateClient(clientId);
+    const organization = await this.validateOrganization(organizationName);
     const loanType = await this.validateLoanType(
-      loanTypeId,
+      loanTypeName,
       command.amountRequested,
       command.termMonths,
     );
@@ -52,13 +58,13 @@ export class CreateLoanWithFilesHandler
         frontendTotalPayable: command.totalPayable,
       });
 
-    // Crear préstamo
+    // Crear préstamo usando los IDs resueltos
     const loanNumber = await this.loanRepository.generateLoanNumber();
     const newLoan = await this.loanRepository.createLoan({
       loanNumber,
-      client: { id: clientId },
-      loanType: { id: loanTypeId },
-      organization: { id: organizationId },
+      client: { id: client.id },
+      loanType: { id: loanType.id },
+      organization: { id: organization.id },
       amountRequested: command.amountRequested,
       termMonths: command.termMonths,
       appliedInterestRate,
@@ -76,33 +82,34 @@ export class CreateLoanWithFilesHandler
     return { loanId: newLoan.id, loanNumber: newLoan.loanNumber };
   }
 
-  private async validateEntities(
-    clientId: string,
-    organizationId: string,
-  ): Promise<void> {
+  private async validateClient(clientId: string) {
     const client = await this.clientRepository.findOne(clientId);
     if (!client) {
       throw new NotFoundException(`Cliente con ID ${clientId} no encontrado`);
     }
+    return client;
+  }
 
+  private async validateOrganization(organizationName: string) {
     const organization =
-      await this.organizationRepository.findOne(organizationId);
+      await this.organizationRepository.findByName(organizationName);
     if (!organization) {
       throw new NotFoundException(
-        `Organización con ID ${organizationId} no encontrada`,
+        `Organización "${organizationName}" no encontrada`,
       );
     }
+    return organization;
   }
 
   private async validateLoanType(
-    loanTypeId: string,
+    loanTypeName: string,
     amount: number,
     term: number,
   ) {
-    const loanType = await this.loanTypeRepository.findOne(loanTypeId);
+    const loanType = await this.loanTypeRepository.findByName(loanTypeName);
     if (!loanType) {
       throw new NotFoundException(
-        `Tipo de préstamo con ID ${loanTypeId} no encontrado`,
+        `Tipo de préstamo "${loanTypeName}" no encontrado`,
       );
     }
 

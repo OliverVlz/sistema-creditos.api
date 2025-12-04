@@ -17,7 +17,8 @@ export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
     });
 
     const transformedData = result.data.map(client => ({
-      id: client.user.id,
+      clientId: client.id,
+      userId: client.user.id,
       isActive: client.user.isActive,
       firstName: client.user.firstName,
       lastName: client.user.lastName,

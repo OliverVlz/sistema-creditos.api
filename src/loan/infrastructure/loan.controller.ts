@@ -58,7 +58,15 @@ export class LoansController {
   async create(@Body() body: CreateLoanDto, @Req() req: any) {
     return this.commandBus.execute(
       new CreateLoanCommand({
-        ...body,
+        clientId: body.clientId,
+        loanTypeName: body.loanTypeName,
+        organizationName: body.organizationName,
+        amountRequested: body.amountRequested,
+        termMonths: body.termMonths,
+        monthlyPayment: body.monthlyPayment,
+        totalInterest: body.totalInterest,
+        totalPayable: body.totalPayable,
+        documents: body.documents,
       }),
     );
   }
@@ -77,9 +85,17 @@ export class LoansController {
     schema: {
       type: 'object',
       properties: {
-        clientId: { type: 'string', format: 'uuid' },
-        loanTypeId: { type: 'string', format: 'uuid' },
-        organizationId: { type: 'string', format: 'uuid' },
+        clientId: { type: 'string', format: 'uuid', description: 'ID del cliente' },
+        loanTypeName: {
+          type: 'string',
+          description: 'Nombre del tipo de préstamo (único)',
+          example: 'Libranza',
+        },
+        organizationName: {
+          type: 'string',
+          description: 'Nombre de la organización (único)',
+          example: 'Policía Nacional',
+        },
         amountRequested: { type: 'number', example: 2000000 },
         termMonths: { type: 'number', example: 24 },
         monthlyPayment: { type: 'number', example: 104273.38 },
@@ -87,8 +103,8 @@ export class LoansController {
         totalPayable: { type: 'number', example: 2502561 },
         documentTypeCodes: {
           type: 'string',
-          description: 'JSON array de códigos',
-          example: '["CEDULA", "COMPROBANTE_INGRESOS"]',
+          description: 'JSON array de códigos de tipo de documento',
+          example: '["CEDULA", "NOMINA"]',
         },
         files: {
           type: 'array',
@@ -116,7 +132,15 @@ export class LoansController {
 
     return this.commandBus.execute(
       new CreateLoanWithFilesCommand({
-        ...body,
+        clientId: body.clientId,
+        loanTypeName: body.loanTypeName,
+        organizationName: body.organizationName,
+        amountRequested: body.amountRequested,
+        termMonths: body.termMonths,
+        monthlyPayment: body.monthlyPayment,
+        totalInterest: body.totalInterest,
+        totalPayable: body.totalPayable,
+        documentTypeCodes: body.documentTypeCodes,
         files: files || [],
       }),
     );

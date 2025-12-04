@@ -8,20 +8,28 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 
 export class CreateLoanMultipartDto {
   @ApiProperty({ description: 'ID del cliente' })
   @IsUUID()
   clientId: string;
 
-  @ApiProperty({ description: 'ID del tipo de préstamo' })
-  @IsUUID()
-  loanTypeId: string;
+  @ApiProperty({
+    description: 'Nombre del tipo de préstamo (único)',
+    example: 'Libranza',
+  })
+  @IsNotEmpty()
+  @IsString()
+  loanTypeName: string;
 
-  @ApiProperty({ description: 'ID de la organización' })
-  @IsUUID()
-  organizationId: string;
+  @ApiProperty({
+    description: 'Nombre de la organización (único)',
+    example: 'Policía Nacional',
+  })
+  @IsNotEmpty()
+  @IsString()
+  organizationName: string;
 
   @ApiProperty({
     description: 'Monto solicitado del préstamo',

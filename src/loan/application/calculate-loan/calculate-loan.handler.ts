@@ -12,12 +12,12 @@ export class CalculateLoanHandler implements IQueryHandler<CalculateLoanQuery> {
   ) {}
 
   async execute(query: CalculateLoanQuery) {
-    const { loanTypeId, amountRequested, termMonths } = query;
+    const { loanTypeName, amountRequested, termMonths } = query;
 
-    const loanType = await this.loanTypeRepository.findOne(loanTypeId);
+    const loanType = await this.loanTypeRepository.findByName(loanTypeName);
     if (!loanType) {
       throw new NotFoundException(
-        `Tipo de préstamo con ID ${loanTypeId} no encontrado`,
+        `Tipo de préstamo "${loanTypeName}" no encontrado`,
       );
     }
 

@@ -95,4 +95,8 @@ export class OrganizationRepository {
       paginationOptions,
     );
   }
+
+  async findByName(name: string): Promise<Organization | null> {
+    return this.organizationRepository.findOne({ where: { name } });
+  }
 }

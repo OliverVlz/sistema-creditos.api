@@ -1,7 +1,7 @@
 export class CreateLoanCommand {
   readonly clientId: string;
-  readonly loanTypeId: string;
-  readonly organizationId: string;
+  readonly loanTypeName: string;
+  readonly organizationName: string;
   readonly amountRequested: number;
   readonly termMonths: number;
   readonly monthlyPayment: number;

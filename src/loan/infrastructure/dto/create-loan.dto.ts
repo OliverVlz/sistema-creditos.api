@@ -34,13 +34,21 @@ export class CreateLoanDto {
   @IsUUID()
   clientId: string;
 
-  @ApiProperty({ description: 'ID del tipo de préstamo' })
-  @IsUUID()
-  loanTypeId: string;
+  @ApiProperty({
+    description: 'Nombre del tipo de préstamo (único)',
+    example: 'Libranza',
+  })
+  @IsNotEmpty()
+  @IsString()
+  loanTypeName: string;
 
-  @ApiProperty({ description: 'ID de la organización' })
-  @IsUUID()
-  organizationId: string;
+  @ApiProperty({
+    description: 'Nombre de la organización (único)',
+    example: 'Policía Nacional',
+  })
+  @IsNotEmpty()
+  @IsString()
+  organizationName: string;
 
   @ApiProperty({
     description: 'Monto solicitado del préstamo',

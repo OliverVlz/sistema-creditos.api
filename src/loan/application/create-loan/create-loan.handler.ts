@@ -25,8 +25,8 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
   async execute(command: CreateLoanCommand): Promise<any> {
     const {
       clientId,
-      loanTypeId,
-      organizationId,
+      loanTypeName,
+      organizationName,
       amountRequested,
       termMonths,
       monthlyPayment: frontendMonthlyPayment,
@@ -35,23 +35,26 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
       documents,
     } = command;
 
+    // Validar cliente por ID (viene del token)
     const client = await this.clientRepository.findOne(clientId);
     if (!client) {
       throw new NotFoundException(`Cliente con ID ${clientId} no encontrado`);
     }
 
+    // Buscar organización por nombre
     const organization =
-      await this.organizationRepository.findOne(organizationId);
+      await this.organizationRepository.findByName(organizationName);
     if (!organization) {
       throw new NotFoundException(
-        `Organización con ID ${organizationId} no encontrada`,
+        `Organización "${organizationName}" no encontrada`,
       );
     }
 
-    const loanType = await this.loanTypeRepository.findOne(loanTypeId);
+    // Buscar tipo de préstamo por nombre
+    const loanType = await this.loanTypeRepository.findByName(loanTypeName);
     if (!loanType) {
       throw new NotFoundException(
-        `Tipo de préstamo con ID ${loanTypeId} no encontrado`,
+        `Tipo de préstamo "${loanTypeName}" no encontrado`,
       );
     }
 
@@ -84,11 +87,12 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
 
     const loanNumber = await this.loanRepository.generateLoanNumber();
 
+    // Usar los IDs resueltos de las entidades encontradas
     const newLoan = await this.loanRepository.createLoan({
       loanNumber,
-      client: { id: clientId },
-      loanType: { id: loanTypeId },
-      organization: { id: organizationId },
+      client: { id: client.id },
+      loanType: { id: loanType.id },
+      organization: { id: organization.id },
       amountRequested,
       termMonths,
       appliedInterestRate,

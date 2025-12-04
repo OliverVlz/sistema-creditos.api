@@ -1,10 +1,14 @@
-import { IsUUID, IsNumber, Min } from 'class-validator';
+import { IsString, IsNumber, Min, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CalculateLoanDto {
-  @ApiProperty({ description: 'ID del tipo de préstamo' })
-  @IsUUID()
-  loanTypeId: string;
+  @ApiProperty({
+    description: 'Nombre del tipo de préstamo (único)',
+    example: 'Libranza',
+  })
+  @IsNotEmpty()
+  @IsString()
+  loanTypeName: string;
 
   @ApiProperty({
     description: 'Monto solicitado del préstamo',

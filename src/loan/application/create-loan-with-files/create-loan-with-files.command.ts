@@ -1,7 +1,7 @@
 export class CreateLoanWithFilesCommand {
   public readonly clientId: string;
-  public readonly loanTypeId: string;
-  public readonly organizationId: string;
+  public readonly loanTypeName: string;
+  public readonly organizationName: string;
   public readonly amountRequested: number;
   public readonly termMonths: number;
   public readonly monthlyPayment: number;
@@ -12,8 +12,8 @@ export class CreateLoanWithFilesCommand {
 
   constructor(data: {
     clientId: string;
-    loanTypeId: string;
-    organizationId: string;
+    loanTypeName: string;
+    organizationName: string;
     amountRequested: number;
     termMonths: number;
     monthlyPayment: number;
@@ -23,8 +23,8 @@ export class CreateLoanWithFilesCommand {
     files: Express.Multer.File[];
   }) {
     this.clientId = data.clientId;
-    this.loanTypeId = data.loanTypeId;
-    this.organizationId = data.organizationId;
+    this.loanTypeName = data.loanTypeName;
+    this.organizationName = data.organizationName;
     this.amountRequested = data.amountRequested;
     this.termMonths = data.termMonths;
     this.monthlyPayment = data.monthlyPayment;
