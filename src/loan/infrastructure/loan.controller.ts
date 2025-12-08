@@ -37,6 +37,7 @@ import { SoftDeleteLoanCommand } from '../application/soft-delete-loan/soft-dele
 import { GetLoanByIdQuery } from '../application/get-loan-by-id/get-loan-by-id.query';
 import { CalculateLoanQuery } from '../application/calculate-loan/calculate-loan.query';
 import { UserRole } from 'src/shared/enums';
+import { Public } from 'src/shared/validation/public.decorator';
 
 @ApiTags('Loans')
 @Controller('loans')
@@ -48,6 +49,7 @@ export class LoansController {
   ) {}
 
   @Post('/calculate')
+  @Public()
   @ApiOperation({ summary: 'Calculate loan without creating it' })
   async calculate(@Body() body: CalculateLoanDto) {
     return this.queryBus.execute(new CalculateLoanQuery(body));
