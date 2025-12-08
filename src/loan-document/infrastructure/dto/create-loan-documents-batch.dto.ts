@@ -39,3 +39,4 @@ export class CreateLoanDocumentsBatchDto {
   documents: DocumentItemDto[];
 }
 
+

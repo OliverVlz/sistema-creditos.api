@@ -5,3 +5,4 @@ export class GetMeQuery implements IQuery {
   constructor(public readonly user: User) {}
 }
 
+

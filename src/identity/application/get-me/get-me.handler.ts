@@ -31,3 +31,4 @@ export class GetMeHandler implements IQueryHandler<GetMeQuery> {
     return userInfo;
   }
 }
+
