@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
+import { NotificationsService } from 'src/notifications/infrastructure/notifications.service';
 import { UserRole } from 'src/shared/enums';
 
 @CommandHandler(UpdateLoanCommand)
@@ -17,6 +18,7 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
     private readonly loanRepository: LoanRepository,
     private readonly loanDocumentRepository: LoanDocumentRepository,
     private readonly userRepository: UserRepository,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async execute(command: UpdateLoanCommand): Promise<any> {
@@ -78,6 +80,15 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
       }
     }
 
+    // Obtener datos del manager si existe
+    let managerData = null;
+    if (managerId) {
+      const manager = await this.userRepository.findById(managerId);
+      managerData = manager;
+    } else if (existingLoan.manager) {
+      managerData = existingLoan.manager;
+    }
+
     // Solo actualizar datos del préstamo si es admin/asesor
     let updatedLoan = existingLoan;
     if (isAdminOrAdvisor) {
@@ -97,6 +108,51 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
     if (documents && documents.length > 0) {
       for (const doc of documents) {
         await this.loanDocumentRepository.update(doc.id, doc.url);
+      }
+    }
+
+    // Send notifications based on action and role
+    const clientName =
+      existingLoan.client?.user?.firstName &&
+      existingLoan.client?.user?.lastName
+        ? `${existingLoan.client.user.firstName} ${existingLoan.client.user.lastName}`
+        : 'Cliente';
+    const clientUserId = existingLoan.client?.user?.id;
+
+    if (isClient && documents && documents.length > 0) {
+      // Client modified their loan after rejection
+      this.notificationsService.notifyLoanModifiedByClient({
+        loanId: updatedLoan.id,
+        loanNumber: updatedLoan.loanNumber,
+        clientId: existingLoan.client.user?.id || '',
+        clientName,
+        status: updatedLoan.status,
+        amountRequested: updatedLoan.amountRequested,
+        timestamp: new Date(),
+      });
+    } else if (isAdminOrAdvisor && status) {
+      // Admin/Advisor changed the status
+      const notificationData = {
+        loanId: updatedLoan.id,
+        loanNumber: updatedLoan.loanNumber,
+        clientId: existingLoan.client.user?.id || '',
+        clientName,
+        status: updatedLoan.status,
+        amountRequested: updatedLoan.amountRequested,
+        rejectionReason: updatedLoan.rejectionReason,
+        managerId: managerData?.id,
+        managerName: managerData
+          ? `${managerData.firstName} ${managerData.lastName}`
+          : undefined,
+        timestamp: new Date(),
+      };
+
+      if (status === LoanStatus.APROBADO) {
+        this.notificationsService.notifyLoanApproved(notificationData);
+      } else if (status === LoanStatus.RECHAZADO) {
+        this.notificationsService.notifyLoanRejected(notificationData);
+      } else {
+        this.notificationsService.notifyLoanUpdated(notificationData);
       }
     }
 

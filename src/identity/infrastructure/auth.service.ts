@@ -51,7 +51,7 @@ export class AuthService {
 
     return {
       token: generateToken
-        ? await this.generateToken({ userId: user.id })
+        ? await this.generateToken({ userId: user.id, role: user.role })
         : undefined,
       user: User.fromModel(user).getUserInfo(),
     };

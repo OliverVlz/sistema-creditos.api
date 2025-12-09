@@ -8,6 +8,7 @@ import { LoanDocumentRepository } from 'src/loan-document/infrastructure/reposit
 import { DocumentTypeRepository } from 'src/document-type/infrastructure/repositories/document-type.repository';
 import { StorageService } from 'src/storage/infrastructure/storage.service';
 import { LoanCalculatorService } from '../../domain/loan-calculator.service';
+import { NotificationsService } from 'src/notifications/infrastructure/notifications.service';
 import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 
@@ -26,6 +27,7 @@ export class CreateLoanWithFilesHandler
     private readonly documentTypeRepository: DocumentTypeRepository,
     private readonly storageService: StorageService,
     private readonly loanCalculatorService: LoanCalculatorService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async execute(command: CreateLoanWithFilesCommand): Promise<any> {
@@ -78,6 +80,17 @@ export class CreateLoanWithFilesHandler
     if (files?.length > 0 && documentTypeCodes?.length > 0) {
       await this.processDocuments(newLoan.id, files, documentTypeCodes);
     }
+
+    // Send notification to admins/advisors
+    this.notificationsService.notifyLoanCreated({
+      loanId: newLoan.id,
+      loanNumber: newLoan.loanNumber,
+      clientId: client.user?.id || '',
+      clientName: client.user ? `${client.user.firstName} ${client.user.lastName}` : 'Cliente',
+      status: newLoan.status,
+      amountRequested: newLoan.amountRequested,
+      timestamp: new Date(),
+    });
 
     return { loanId: newLoan.id, loanNumber: newLoan.loanNumber };
   }

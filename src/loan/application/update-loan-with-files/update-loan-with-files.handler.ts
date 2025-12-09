@@ -5,6 +5,7 @@ import { LoanDocumentRepository } from 'src/loan-document/infrastructure/reposit
 import { DocumentTypeRepository } from 'src/document-type/infrastructure/repositories/document-type.repository';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
 import { StorageService } from 'src/storage/infrastructure/storage.service';
+import { NotificationsService } from 'src/notifications/infrastructure/notifications.service';
 import {
   NotFoundException,
   BadRequestException,
@@ -26,6 +27,7 @@ export class UpdateLoanWithFilesHandler
     private readonly documentTypeRepository: DocumentTypeRepository,
     private readonly userRepository: UserRepository,
     private readonly storageService: StorageService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async execute(command: UpdateLoanWithFilesCommand): Promise<any> {
@@ -90,6 +92,14 @@ export class UpdateLoanWithFilesHandler
           `Usuario gestor con ID ${managerId} no encontrado`,
         );
       }
+    }
+
+    // Obtener datos del manager para las notificaciones
+    let managerData = null;
+    if (managerId) {
+      managerData = await this.userRepository.findById(managerId);
+    } else if (existingLoan.manager) {
+      managerData = existingLoan.manager;
     }
 
     // Objeto para trackear los cambios realizados
@@ -177,6 +187,47 @@ export class UpdateLoanWithFilesHandler
       this.logger.log(
         `Estado del préstamo ${loanId} cambiado a PENDIENTE por modificación de documentos del cliente`,
       );
+    }
+
+    // Send notifications based on action and role
+    const updatedLoan = await this.loanRepository.findOne(loanId);
+    const clientName = existingLoan.client?.user?.firstName && existingLoan.client?.user?.lastName
+      ? `${existingLoan.client.user.firstName} ${existingLoan.client.user.lastName}`
+      : 'Cliente';
+
+    if (clientMakingDocumentChanges) {
+      // Client modified their loan documents
+      this.notificationsService.notifyLoanModifiedByClient({
+        loanId: updatedLoan.id,
+        loanNumber: updatedLoan.loanNumber,
+        clientId: existingLoan.client.user?.id || '',
+        clientName,
+        status: updatedLoan.status,
+        amountRequested: updatedLoan.amountRequested,
+        timestamp: new Date(),
+      });
+    } else if (isAdminOrAdvisor && changes.loan?.status) {
+      // Admin/Advisor changed the status
+      const notificationData = {
+        loanId: updatedLoan.id,
+        loanNumber: updatedLoan.loanNumber,
+        clientId: existingLoan.client.user?.id || '',
+        clientName,
+        status: updatedLoan.status,
+        amountRequested: updatedLoan.amountRequested,
+        rejectionReason: updatedLoan.rejectionReason,
+        managerId: managerData?.id,
+        managerName: managerData ? `${managerData.firstName} ${managerData.lastName}` : undefined,
+        timestamp: new Date(),
+      };
+
+      if (updatedLoan.status === LoanStatus.APROBADO) {
+        this.notificationsService.notifyLoanApproved(notificationData);
+      } else if (updatedLoan.status === LoanStatus.RECHAZADO) {
+        this.notificationsService.notifyLoanRejected(notificationData);
+      } else {
+        this.notificationsService.notifyLoanUpdated(notificationData);
+      }
     }
 
     return {

@@ -99,6 +99,17 @@ export class UserRepository {
     return this.userRepository.findOne({ where: { id: userId } });
   }
 
+  async findAdminsAndAdvisors() {
+    return this.userRepository.find({
+      where: [
+        { role: UserRole.ADMIN },
+        { role: UserRole.ASESOR }
+      ],
+      select: ['id']
+    });
+  }
+
+  // Update user password
   async updatePassword(userId: string, password: string) {
     return this.userRepository.update(userId, { password });
   }

@@ -22,6 +22,7 @@ import { IdentityModule } from 'src/identity/infrastructure/identity.module';
 import { LoanTypeModule } from 'src/loan-type/infrastructure/loan-type.module';
 import { LoanDocumentModule } from 'src/loan-document/infrastructure/loan-document.module';
 import { DocumentTypeModule } from 'src/document-type/infrastructure/document-type.module';
+import { NotificationsModule } from 'src/notifications/infrastructure/notifications.module';
 
 const CommandHandlers = [
   CreateLoanHandler,
@@ -50,6 +51,7 @@ const Services = [LoanCalculatorService];
     IdentityModule,
     LoanTypeModule,
     DocumentTypeModule,
+    NotificationsModule,
     forwardRef(() => LoanDocumentModule),
   ],
   controllers: [LoansController],
