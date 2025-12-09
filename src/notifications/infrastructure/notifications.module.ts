@@ -24,7 +24,11 @@ import { IdentityModule } from 'src/identity/infrastructure/identity.module';
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsGateway, NotificationsService, NotificationRepository],
+  providers: [
+    NotificationsGateway,
+    NotificationsService,
+    NotificationRepository,
+  ],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

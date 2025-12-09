@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGINS 
+    origin: process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(',')
       : ['http://localhost:5173'],
     credentials: true,
@@ -74,7 +74,10 @@ export class NotificationsGateway
         `Client ${client.id} connected (User: ${userId}, Role: ${payload.role})`,
       );
     } catch (error) {
-      this.logger.error(`Authentication failed for client ${client.id}:`, error.message);
+      this.logger.error(
+        `Authentication failed for client ${client.id}:`,
+        error.message,
+      );
       client.disconnect();
     }
   }
@@ -101,10 +104,14 @@ export class NotificationsGateway
   // Send notification to specific user
   sendToUser(userId: string, event: string, data: any) {
     const roomName = `user:${userId}`;
-    this.logger.log(`Sending notification to room: ${roomName}, event: ${event}`);
-    this.logger.log(`Connected users: ${Array.from(this.userConnections.keys()).join(', ')}`);
+    this.logger.log(
+      `Sending notification to room: ${roomName}, event: ${event}`,
+    );
+    this.logger.log(
+      `Connected users: ${Array.from(this.userConnections.keys()).join(', ')}`,
+    );
     this.logger.log(`User ${userId} is online: ${this.isUserOnline(userId)}`);
-    
+
     this.server.to(roomName).emit(event, data);
     this.logger.log(`Notification sent to user ${userId}: ${event}`);
   }
@@ -124,6 +131,9 @@ export class NotificationsGateway
 
   // Check if user is online
   isUserOnline(userId: string): boolean {
-    return this.userConnections.has(userId) && this.userConnections.get(userId).size > 0;
+    return (
+      this.userConnections.has(userId) &&
+      this.userConnections.get(userId).size > 0
+    );
   }
 }

@@ -35,7 +35,13 @@ export class NotificationsService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  private async saveNotification(userId: string, type: string, title: string, message: string, data: any) {
+  private async saveNotification(
+    userId: string,
+    type: string,
+    title: string,
+    message: string,
+    data: any,
+  ) {
     try {
       await this.notificationRepository.create({
         userId,
@@ -45,11 +51,19 @@ export class NotificationsService {
         data,
       });
     } catch (error) {
-      this.logger.error(`Failed to save notification for user ${userId}`, error.stack);
+      this.logger.error(
+        `Failed to save notification for user ${userId}`,
+        error.stack,
+      );
     }
   }
 
-  private async saveNotificationForAdmins(type: string, title: string, message: string, data: any) {
+  private async saveNotificationForAdmins(
+    type: string,
+    title: string,
+    message: string,
+    data: any,
+  ) {
     try {
       const admins = await this.userRepository.findAdminsAndAdvisors();
       for (const admin of admins) {
@@ -70,8 +84,19 @@ export class NotificationsService {
     const userMsg = `Tu solicitud de crédito ${data.loanNumber} ha sido creada exitosamente`;
 
     // Save to DB
-    await this.saveNotificationForAdmins(NotificationType.LOAN_CREATED, 'Nueva Solicitud', adminMsg, data);
-    await this.saveNotification(data.clientId, NotificationType.LOAN_CREATED, 'Solicitud Creada', userMsg, data);
+    await this.saveNotificationForAdmins(
+      NotificationType.LOAN_CREATED,
+      'Nueva Solicitud',
+      adminMsg,
+      data,
+    );
+    await this.saveNotification(
+      data.clientId,
+      NotificationType.LOAN_CREATED,
+      'Solicitud Creada',
+      userMsg,
+      data,
+    );
 
     // Notify admins and advisors
     this.notificationsGateway.sendToAdmins(NotificationType.LOAN_CREATED, {
@@ -81,11 +106,15 @@ export class NotificationsService {
     });
 
     // Also notify the client who created it
-    this.notificationsGateway.sendToUser(data.clientId, NotificationType.LOAN_CREATED, {
-      type: NotificationType.LOAN_CREATED,
-      message: userMsg,
-      data,
-    });
+    this.notificationsGateway.sendToUser(
+      data.clientId,
+      NotificationType.LOAN_CREATED,
+      {
+        type: NotificationType.LOAN_CREATED,
+        message: userMsg,
+        data,
+      },
+    );
   }
 
   /**
@@ -93,20 +122,35 @@ export class NotificationsService {
    */
   async notifyLoanApproved(data: LoanNotificationData) {
     this.logger.log(`Notifying loan approved: ${data.loanNumber}`);
-    
+
     const userMsg = `¡Felicitaciones! Tu solicitud de crédito ${data.loanNumber} ha sido aprobada`;
     const adminMsg = `Crédito ${data.loanNumber} aprobado por ${data.managerName}`;
 
     // Save to DB
-    await this.saveNotification(data.clientId, NotificationType.LOAN_APPROVED, 'Solicitud Aprobada', userMsg, data);
-    await this.saveNotificationForAdmins(NotificationType.LOAN_APPROVED, 'Solicitud Aprobada', adminMsg, data);
+    await this.saveNotification(
+      data.clientId,
+      NotificationType.LOAN_APPROVED,
+      'Solicitud Aprobada',
+      userMsg,
+      data,
+    );
+    await this.saveNotificationForAdmins(
+      NotificationType.LOAN_APPROVED,
+      'Solicitud Aprobada',
+      adminMsg,
+      data,
+    );
 
     // Notify the client
-    this.notificationsGateway.sendToUser(data.clientId, NotificationType.LOAN_APPROVED, {
-      type: NotificationType.LOAN_APPROVED,
-      message: userMsg,
-      data,
-    });
+    this.notificationsGateway.sendToUser(
+      data.clientId,
+      NotificationType.LOAN_APPROVED,
+      {
+        type: NotificationType.LOAN_APPROVED,
+        message: userMsg,
+        data,
+      },
+    );
 
     // Also notify admins
     this.notificationsGateway.sendToAdmins(NotificationType.LOAN_APPROVED, {
@@ -126,15 +170,30 @@ export class NotificationsService {
     const adminMsg = `Crédito ${data.loanNumber} rechazado por ${data.managerName}`;
 
     // Save to DB
-    await this.saveNotification(data.clientId, NotificationType.LOAN_REJECTED, 'Solicitud Rechazada', userMsg, data);
-    await this.saveNotificationForAdmins(NotificationType.LOAN_REJECTED, 'Solicitud Rechazada', adminMsg, data);
+    await this.saveNotification(
+      data.clientId,
+      NotificationType.LOAN_REJECTED,
+      'Solicitud Rechazada',
+      userMsg,
+      data,
+    );
+    await this.saveNotificationForAdmins(
+      NotificationType.LOAN_REJECTED,
+      'Solicitud Rechazada',
+      adminMsg,
+      data,
+    );
 
     // Notify the client
-    this.notificationsGateway.sendToUser(data.clientId, NotificationType.LOAN_REJECTED, {
-      type: NotificationType.LOAN_REJECTED,
-      message: userMsg,
-      data,
-    });
+    this.notificationsGateway.sendToUser(
+      data.clientId,
+      NotificationType.LOAN_REJECTED,
+      {
+        type: NotificationType.LOAN_REJECTED,
+        message: userMsg,
+        data,
+      },
+    );
 
     // Also notify admins
     this.notificationsGateway.sendToAdmins(NotificationType.LOAN_REJECTED, {
@@ -154,22 +213,40 @@ export class NotificationsService {
     const userMsg = `Tu solicitud de crédito ${data.loanNumber} ha sido modificada exitosamente`;
 
     // Save to DB
-    await this.saveNotificationForAdmins(NotificationType.LOAN_MODIFIED_BY_CLIENT, 'Solicitud Modificada', adminMsg, data);
-    await this.saveNotification(data.clientId, NotificationType.LOAN_MODIFIED_BY_CLIENT, 'Solicitud Modificada', userMsg, data);
+    await this.saveNotificationForAdmins(
+      NotificationType.LOAN_MODIFIED_BY_CLIENT,
+      'Solicitud Modificada',
+      adminMsg,
+      data,
+    );
+    await this.saveNotification(
+      data.clientId,
+      NotificationType.LOAN_MODIFIED_BY_CLIENT,
+      'Solicitud Modificada',
+      userMsg,
+      data,
+    );
 
     // Notify admins and advisors
-    this.notificationsGateway.sendToAdmins(NotificationType.LOAN_MODIFIED_BY_CLIENT, {
-      type: NotificationType.LOAN_MODIFIED_BY_CLIENT,
-      message: adminMsg,
-      data,
-    });
+    this.notificationsGateway.sendToAdmins(
+      NotificationType.LOAN_MODIFIED_BY_CLIENT,
+      {
+        type: NotificationType.LOAN_MODIFIED_BY_CLIENT,
+        message: adminMsg,
+        data,
+      },
+    );
 
     // Also notify the client
-    this.notificationsGateway.sendToUser(data.clientId, NotificationType.LOAN_MODIFIED_BY_CLIENT, {
-      type: NotificationType.LOAN_MODIFIED_BY_CLIENT,
-      message: userMsg,
-      data,
-    });
+    this.notificationsGateway.sendToUser(
+      data.clientId,
+      NotificationType.LOAN_MODIFIED_BY_CLIENT,
+      {
+        type: NotificationType.LOAN_MODIFIED_BY_CLIENT,
+        message: userMsg,
+        data,
+      },
+    );
   }
 
   /**
@@ -181,13 +258,23 @@ export class NotificationsService {
     const userMsg = `Tu solicitud de crédito ${data.loanNumber} ha sido actualizada`;
 
     // Save to DB
-    await this.saveNotification(data.clientId, NotificationType.LOAN_UPDATED, 'Solicitud Actualizada', userMsg, data);
+    await this.saveNotification(
+      data.clientId,
+      NotificationType.LOAN_UPDATED,
+      'Solicitud Actualizada',
+      userMsg,
+      data,
+    );
 
     // Notify the client
-    this.notificationsGateway.sendToUser(data.clientId, NotificationType.LOAN_UPDATED, {
-      type: NotificationType.LOAN_UPDATED,
-      message: userMsg,
-      data,
-    });
+    this.notificationsGateway.sendToUser(
+      data.clientId,
+      NotificationType.LOAN_UPDATED,
+      {
+        type: NotificationType.LOAN_UPDATED,
+        message: userMsg,
+        data,
+      },
+    );
   }
 }

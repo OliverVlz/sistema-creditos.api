@@ -1,4 +1,11 @@
-import { Controller, Get, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { NotificationRepository } from './repositories/notification.repository';
 import { JwtAuthGuard } from 'src/shared/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -8,12 +15,15 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-  constructor(private readonly notificationRepository: NotificationRepository) {}
+  constructor(
+    private readonly notificationRepository: NotificationRepository,
+  ) {}
 
   @Get()
   async getMyNotifications(@Request() req) {
     const userId = req.user.id;
-    const notifications = await this.notificationRepository.findByUserId(userId);
+    const notifications =
+      await this.notificationRepository.findByUserId(userId);
     const unreadCount = await this.notificationRepository.countUnread(userId);
     return { notifications, unreadCount };
   }

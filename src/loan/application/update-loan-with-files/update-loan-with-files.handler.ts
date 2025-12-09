@@ -191,9 +191,11 @@ export class UpdateLoanWithFilesHandler
 
     // Send notifications based on action and role
     const updatedLoan = await this.loanRepository.findOne(loanId);
-    const clientName = existingLoan.client?.user?.firstName && existingLoan.client?.user?.lastName
-      ? `${existingLoan.client.user.firstName} ${existingLoan.client.user.lastName}`
-      : 'Cliente';
+    const clientName =
+      existingLoan.client?.user?.firstName &&
+      existingLoan.client?.user?.lastName
+        ? `${existingLoan.client.user.firstName} ${existingLoan.client.user.lastName}`
+        : 'Cliente';
 
     if (clientMakingDocumentChanges) {
       // Client modified their loan documents
@@ -217,7 +219,9 @@ export class UpdateLoanWithFilesHandler
         amountRequested: updatedLoan.amountRequested,
         rejectionReason: updatedLoan.rejectionReason,
         managerId: managerData?.id,
-        managerName: managerData ? `${managerData.firstName} ${managerData.lastName}` : undefined,
+        managerName: managerData
+          ? `${managerData.firstName} ${managerData.lastName}`
+          : undefined,
         timestamp: new Date(),
       };
 

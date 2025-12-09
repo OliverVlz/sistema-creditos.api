@@ -101,11 +101,8 @@ export class UserRepository {
 
   async findAdminsAndAdvisors() {
     return this.userRepository.find({
-      where: [
-        { role: UserRole.ADMIN },
-        { role: UserRole.ASESOR }
-      ],
-      select: ['id']
+      where: [{ role: UserRole.ADMIN }, { role: UserRole.ASESOR }],
+      select: ['id'],
     });
   }
 

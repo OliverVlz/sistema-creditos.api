@@ -86,7 +86,9 @@ export class CreateLoanWithFilesHandler
       loanId: newLoan.id,
       loanNumber: newLoan.loanNumber,
       clientId: client.user?.id || '',
-      clientName: client.user ? `${client.user.firstName} ${client.user.lastName}` : 'Cliente',
+      clientName: client.user
+        ? `${client.user.firstName} ${client.user.lastName}`
+        : 'Cliente',
       status: newLoan.status,
       amountRequested: newLoan.amountRequested,
       timestamp: new Date(),
