@@ -15,7 +15,7 @@ export default registerAs(
       __dirname + '/../db/migrations/*{.ts,.js}',
       'dist/db/migrations/*.js',
     ],
-    synchronize: true,
+    synchronize: process.env.NODE_ENV === 'development',
     logging: process.env.NODE_ENV === 'development',
     ssl: false,
   }),

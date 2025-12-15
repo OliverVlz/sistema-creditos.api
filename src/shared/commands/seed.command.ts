@@ -17,13 +17,13 @@ import { DocumentTypeSeeder } from '../seed/document-type.seeder';
 async function checkTablesExist(dataSource: DataSource): Promise<boolean> {
   try {
     const result = await dataSource.query(
-      `SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'users'
-      );`,
+      `SELECT COUNT(*) as count
+       FROM information_schema.tables 
+       WHERE table_schema = 'public' 
+       AND table_name IN ('users', 'clients', 'organizations');`,
     );
-    return result[0]?.exists === true;
+    const count = parseInt(result[0]?.count || '0', 10);
+    return count >= 3;
   } catch {
     return false;
   }
@@ -45,6 +45,9 @@ async function bootstrap() {
     console.log('✅ Conexión a base de datos establecida\n');
 
     const tablesExist = await checkTablesExist(tempDataSource);
+    console.log(
+      `🔍 Verificación: tablas de aplicación ${tablesExist ? 'existen' : 'NO existen'}\n`,
+    );
 
     if (!tablesExist) {
       console.log('📦 Tablas no encontradas - creando esquema inicial...\n');
@@ -98,34 +101,43 @@ async function bootstrap() {
       console.log('✅ Migraciones ejecutadas\n');
     }
 
-    const userRepository = finalDataSource.getRepository(User);
-    const organizationRepository = finalDataSource.getRepository(Organization);
-    const clientRepository = finalDataSource.getRepository(Client);
-    const loanTypeRepository = finalDataSource.getRepository(LoanType);
-    const documentTypeRepository = finalDataSource.getRepository(DocumentType);
+    const skipSeeders = process.env.SKIP_SEEDERS === 'true';
 
-    const hashService = new HashService();
+    if (skipSeeders) {
+      console.log('⏭️  SKIP_SEEDERS activado - omitiendo seeders\n');
+      console.log('✅ Esquema de base de datos listo');
+    } else {
+      const userRepository = finalDataSource.getRepository(User);
+      const organizationRepository =
+        finalDataSource.getRepository(Organization);
+      const clientRepository = finalDataSource.getRepository(Client);
+      const loanTypeRepository = finalDataSource.getRepository(LoanType);
+      const documentTypeRepository =
+        finalDataSource.getRepository(DocumentType);
 
-    console.log('1️⃣ Sembrando usuarios...');
-    await new UserSeeder(hashService).seed(userRepository);
+      const hashService = new HashService();
 
-    console.log('\n2️⃣ Sembrando organizaciones...');
-    await new OrganizationSeeder().seed(organizationRepository);
+      console.log('1️⃣ Sembrando usuarios...');
+      await new UserSeeder(hashService).seed(userRepository);
 
-    console.log('\n3️⃣ Sembrando tipos de préstamo...');
-    await new LoanTypeSeeder().seed(loanTypeRepository);
+      console.log('\n2️⃣ Sembrando organizaciones...');
+      await new OrganizationSeeder().seed(organizationRepository);
 
-    console.log('\n4️⃣ Sembrando clientes...');
-    await new ClientSeeder(hashService).seed(
-      clientRepository,
-      userRepository,
-      organizationRepository,
-    );
+      console.log('\n3️⃣ Sembrando tipos de préstamo...');
+      await new LoanTypeSeeder().seed(loanTypeRepository);
 
-    console.log('\n5️⃣ Sembrando tipos de documento...');
-    await new DocumentTypeSeeder().seed(documentTypeRepository);
+      console.log('\n4️⃣ Sembrando clientes...');
+      await new ClientSeeder(hashService).seed(
+        clientRepository,
+        userRepository,
+        organizationRepository,
+      );
 
-    console.log('\n🎉 Todos los seeders ejecutados correctamente!');
+      console.log('\n5️⃣ Sembrando tipos de documento...');
+      await new DocumentTypeSeeder().seed(documentTypeRepository);
+
+      console.log('\n🎉 Todos los seeders ejecutados correctamente!');
+    }
   } catch (error) {
     console.error('\n❌ Error ejecutando seeders:', error);
     process.exit(1);

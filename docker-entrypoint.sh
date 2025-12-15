@@ -31,7 +31,7 @@ fi
 if [ "$FORCE_SEED" = "true" ]; then
   echo "🌱 FORCE_SEED activado - ejecutando seeders..."
   node dist/shared/commands/seed.command.js
-else
+elif [ "$NODE_ENV" != "production" ]; then
   echo "🔍 Verificando si la base de datos necesita seeders..."
   
   USER_COUNT=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_DATABASE" -t -c "SELECT COUNT(*) FROM \"user\";" 2>/dev/null || echo "0")
@@ -42,6 +42,18 @@ else
     node dist/shared/commands/seed.command.js
   else
     echo "✅ Base de datos ya tiene datos ($USER_COUNT usuarios) - omitiendo seeders"
+  fi
+else
+  echo "🔍 Verificando si la base de datos necesita esquema inicial..."
+  
+  TABLE_COUNT=$(PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_DATABASE" -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'clients', 'organizations');" 2>/dev/null || echo "0")
+  TABLE_COUNT=$(echo $TABLE_COUNT | xargs)
+
+  if [ "$TABLE_COUNT" -lt "3" ]; then
+    echo "📦 Base de datos vacía - creando esquema inicial (sin seeders)..."
+    SKIP_SEEDERS=true node dist/shared/commands/seed.command.js
+  else
+    echo "✅ Esquema de base de datos ya existe"
   fi
 fi
 
