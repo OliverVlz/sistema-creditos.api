@@ -21,8 +21,12 @@ else
   echo "   ✅ Base de datos '$DB_DATABASE' ya existe"
 fi
 
-echo "🔨 Construyendo la aplicación..."
-pnpm build
+if [ "$NODE_ENV" != "production" ] || [ ! -d "dist" ]; then
+  echo "🔨 Construyendo la aplicación..."
+  pnpm build
+else
+  echo "✅ Aplicación ya compilada (producción)"
+fi
 
 if [ "$FORCE_SEED" = "true" ]; then
   echo "🌱 FORCE_SEED activado - ejecutando seeders..."

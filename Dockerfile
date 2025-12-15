@@ -7,43 +7,26 @@
   COPY package.json pnpm-lock.yaml ./
   
   # ---------------------------------------
-  # 2. Development (Para desarrollo con hot-reload)
-  # ---------------------------------------
-  FROM base AS development
-  # Instalamos TODO (dev + prod) para desarrollo
-  RUN pnpm install --frozen-lockfile
-  # Herramientas necesarias
-  RUN apk add --no-cache postgresql-client bash
-  # Entrypoint
-  COPY docker-entrypoint.sh /usr/local/bin/
-  RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-  # El código se monta como volumen en docker-compose
-  ENV NODE_ENV=development
-  EXPOSE 3000
-  ENTRYPOINT ["docker-entrypoint.sh"]
-  CMD ["pnpm", "start"]
-  
-  # ---------------------------------------
-  # 3. Builder (Compilar el código)
+  # 2. Builder (Compilar el código)
+  # AQUÍ ESTA LA MAGIA: Instalamos TODO (incluido nest cli)
   # ---------------------------------------
   FROM base AS builder
-  # Instalamos TODO (dev + prod) para poder compilar
   RUN pnpm install --frozen-lockfile
   COPY . .
   RUN pnpm build
   
   # ---------------------------------------
-  # 4. Production (Imagen final ligera)
+  # 3. Production (Imagen final limpia)
   # ---------------------------------------
   FROM base AS production
   
-  # Instalamos SOLO dependencias de producción (ahorra espacio y memoria)
+  # Instalamos SOLO lo necesario para correr (ahorra espacio)
   RUN pnpm install --prod --frozen-lockfile
   
-  # Copiamos la carpeta 'dist' que creamos en la etapa 'builder'
+  # Copiamos la carpeta 'dist' compilada desde la etapa anterior
   COPY --from=builder /app/dist ./dist
   
-  # Herramientas extra que pediste
+  # Herramientas extra
   RUN apk add --no-cache postgresql-client bash
   
   # Entrypoint
