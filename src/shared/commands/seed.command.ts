@@ -48,28 +48,54 @@ async function bootstrap() {
 
     if (!tablesExist) {
       console.log('📦 Tablas no encontradas - creando esquema inicial...\n');
-      const syncDataSource = new DataSource({
+      await tempDataSource.destroy();
+
+      finalDataSource = new DataSource({
         ...dataSource.options,
         synchronize: true,
         migrationsRun: false,
       });
-      await syncDataSource.initialize();
-      await syncDataSource.destroy();
+      await finalDataSource.initialize();
+
+      await finalDataSource.query(`
+        CREATE TABLE IF NOT EXISTS migrations (
+          id SERIAL PRIMARY KEY,
+          timestamp BIGINT NOT NULL,
+          name VARCHAR NOT NULL
+        );
+      `);
+
+      const migrations = finalDataSource.migrations || [];
+      for (const migration of migrations) {
+        const timestampMatch = migration.name.match(/^(\d+)/);
+        if (timestampMatch) {
+          const timestamp = parseInt(timestampMatch[1], 10);
+          try {
+            await finalDataSource.query(
+              `INSERT INTO migrations (timestamp, name) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+              [timestamp, migration.name],
+            );
+          } catch {}
+        }
+      }
+      console.log(
+        `✅ ${migrations.length} migraciones marcadas como ejecutadas\n`,
+      );
       console.log('✅ Esquema inicial creado\n');
-    }
+    } else {
+      await tempDataSource.destroy();
 
-    await tempDataSource.destroy();
+      finalDataSource = new DataSource({
+        ...dataSource.options,
+        synchronize: false,
+        migrationsRun: false,
+      });
 
-    finalDataSource = new DataSource({
-      ...dataSource.options,
-      synchronize: false,
-      migrationsRun: tablesExist,
-    });
+      await finalDataSource.initialize();
 
-    await finalDataSource.initialize();
-
-    if (tablesExist) {
-      console.log('🔄 Migraciones ejecutadas automáticamente\n');
+      console.log('🔄 Ejecutando migraciones pendientes...\n');
+      await finalDataSource.runMigrations();
+      console.log('✅ Migraciones ejecutadas\n');
     }
 
     const userRepository = finalDataSource.getRepository(User);
