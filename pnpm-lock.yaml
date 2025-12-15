@@ -80,6 +80,9 @@ importers:
       form-data:
         specifier: ^4.0.3
         version: 4.0.3
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       minio:
         specifier: ^8.0.6
         version: 8.0.6
