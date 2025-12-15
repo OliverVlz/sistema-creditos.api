@@ -1,3 +1,4 @@
+import { DataSource } from 'typeorm';
 import dataSource from 'src/db/data-source';
 
 import { User } from 'src/identity/infrastructure/entity/user.entity';
@@ -13,18 +14,69 @@ import { ClientSeeder } from '../seed/client.seeder';
 import { LoanTypeSeeder } from '../seed/loan-type.seeder';
 import { DocumentTypeSeeder } from '../seed/document-type.seeder';
 
+async function checkTablesExist(dataSource: DataSource): Promise<boolean> {
+  try {
+    const result = await dataSource.query(
+      `SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );`,
+    );
+    return result[0]?.exists === true;
+  } catch {
+    return false;
+  }
+}
+
 async function bootstrap() {
   console.log('🌱 Iniciando seeders...\n');
 
+  let finalDataSource: DataSource | null = null;
+
   try {
-    await dataSource.initialize();
+    const tempDataSource = new DataSource({
+      ...dataSource.options,
+      synchronize: false,
+      migrationsRun: false,
+    });
+
+    await tempDataSource.initialize();
     console.log('✅ Conexión a base de datos establecida\n');
 
-    const userRepository = dataSource.getRepository(User);
-    const organizationRepository = dataSource.getRepository(Organization);
-    const clientRepository = dataSource.getRepository(Client);
-    const loanTypeRepository = dataSource.getRepository(LoanType);
-    const documentTypeRepository = dataSource.getRepository(DocumentType);
+    const tablesExist = await checkTablesExist(tempDataSource);
+
+    if (!tablesExist) {
+      console.log('📦 Tablas no encontradas - creando esquema inicial...\n');
+      const syncDataSource = new DataSource({
+        ...dataSource.options,
+        synchronize: true,
+        migrationsRun: false,
+      });
+      await syncDataSource.initialize();
+      await syncDataSource.destroy();
+      console.log('✅ Esquema inicial creado\n');
+    }
+
+    await tempDataSource.destroy();
+
+    finalDataSource = new DataSource({
+      ...dataSource.options,
+      synchronize: false,
+      migrationsRun: tablesExist,
+    });
+
+    await finalDataSource.initialize();
+
+    if (tablesExist) {
+      console.log('🔄 Migraciones ejecutadas automáticamente\n');
+    }
+
+    const userRepository = finalDataSource.getRepository(User);
+    const organizationRepository = finalDataSource.getRepository(Organization);
+    const clientRepository = finalDataSource.getRepository(Client);
+    const loanTypeRepository = finalDataSource.getRepository(LoanType);
+    const documentTypeRepository = finalDataSource.getRepository(DocumentType);
 
     const hashService = new HashService();
 
@@ -52,8 +104,8 @@ async function bootstrap() {
     console.error('\n❌ Error ejecutando seeders:', error);
     process.exit(1);
   } finally {
-    if (dataSource.isInitialized) {
-      await dataSource.destroy();
+    if (finalDataSource?.isInitialized) {
+      await finalDataSource.destroy();
       console.log('\n🔌 Conexión a base de datos cerrada');
     }
   }
