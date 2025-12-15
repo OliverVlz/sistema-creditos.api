@@ -15,10 +15,7 @@ const dataSource = new DataSource({
   synchronize: process.env.NODE_ENV === 'development',
   migrationsRun: process.env.NODE_ENV === 'production',
   logging: process.env.NODE_ENV === 'development',
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: false,
 });
 
 export default dataSource;
