@@ -82,9 +82,15 @@ export class AuthService {
 
   async verifyToken(token: string) {
     try {
-      return this.jwtService.verify(token);
+      return await this.jwtService.verifyAsync(token, {
+        secret: this.jwtOptions.secret,
+      });
     } catch (e) {
-      throw new NotAcceptableException('Invalid or expired token');
+      if (e?.name === 'TokenExpiredError') {
+        throw new NotAcceptableException('Token expired');
+      }
+
+      throw new NotAcceptableException('Invalid token');
     }
   }
 

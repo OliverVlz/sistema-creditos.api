@@ -1,5 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -30,7 +30,14 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
   imports: [
     ConfigModule,
     CqrsModule,
-    JwtModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('jwt.secret'),
+        signOptions: { expiresIn: '12h' },
+      }),
+    }),
     TypeOrmModule.forFeature([User, Client]),
     forwardRef(() => ClientsModule),
   ],
