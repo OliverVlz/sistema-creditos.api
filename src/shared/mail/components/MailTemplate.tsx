@@ -1,10 +1,24 @@
+import type { ReactNode } from 'react';
+
 import { Html } from './Html';
 import { colors, sizes } from './theme';
 import { Paragraph } from './Paragraph';
 import { NestedTable } from './NestedTable';
 import { LineSeparator } from './LineSeparator';
 
-export function MailTemplate({ title, children }) {
+type MailTemplateProps = {
+  title: string;
+  children: ReactNode;
+  logoUrl?: string;
+  logoAlt?: string;
+};
+
+export function MailTemplate({
+  title,
+  children,
+  logoUrl = '/assets/logo-color.png',
+  logoAlt = 'Sistema de Créditos',
+}: MailTemplateProps) {
   return (
     <Html title={title}>
       <table
@@ -37,10 +51,10 @@ export function MailTemplate({ title, children }) {
               }}
             >
               <img
-                src="https://files-digheon-public.s3.us-east-1.amazonaws.com/mail-ehr-logo-horizontal.png"
-                alt="Digheontech EHR"
-                width="40%"
-                height="auto"
+                src={logoUrl}
+                alt={logoAlt}
+                width="55"
+                height="55"
               />
             </div>
           </td>

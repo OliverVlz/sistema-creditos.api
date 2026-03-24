@@ -20,6 +20,8 @@ import { UpdatePasswordCommand } from '../application/update-password/update-pas
 import { UpdatePasswordAdminCommand } from '../application/update-password-admin/update-password-admin.command';
 import { UpdateUserProfileCommand } from '../application/update-user-profile/update-user-profile.command';
 import { UpdateUserAdminCommand } from '../application/update-user-admin/update-user-admin.command';
+import { RecoverPasswordCommand } from '../application/recover-password/recover-password.command';
+import { ResetPasswordCommand } from '../application/reset-password/reset-password.command';
 import { LoginQuery } from '../application/login/login.query';
 import { GetUsersQuery } from '../application/get-users/get-users.query';
 import { GetUserByIdQuery } from '../application/get-user-by-id/get-user-by-id.query';
@@ -32,6 +34,8 @@ import { UpdatePasswordAdminDto } from './dto/update-password-admin.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { GetUsersDto } from './dto/get-users.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User } from '../domain/user.model';
 
 @ApiTags('Users')
@@ -65,6 +69,29 @@ export class UsersController {
   @ApiOperation({ summary: 'Inicio de sesión' })
   async login(@Body() body: LoginDto) {
     return this.queryBus.execute(new LoginQuery(body));
+  }
+
+  @Post('/forgot-password')
+  @Public()
+  @ApiOperation({ summary: 'Solicitar recuperación de contraseña' })
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    await this.commandBus.execute(new RecoverPasswordCommand(body.email));
+    return {
+      message:
+        'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.',
+    };
+  }
+
+  @Post('/reset-password')
+  @Public()
+  @ApiOperation({ summary: 'Restablecer contraseña con token' })
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.commandBus.execute(
+      new ResetPasswordCommand({
+        token: body.token,
+        newPassword: body.newPassword,
+      }),
+    );
   }
 
   @Get('/me')

@@ -9,7 +9,7 @@ export function ButtonLink({ href = '#', children }) {
             fontFamily: fontFamilies.sans,
             fontSize: fontSizes.base,
             verticalAlign: 'top',
-            backgroundColor: colors.darkBlue,
+            backgroundColor: '#FF8546',
             borderRadius: 5,
             textAlign: 'center',
           }}
@@ -21,15 +21,15 @@ export function ButtonLink({ href = '#', children }) {
             style={{
               display: 'inline-block',
               color: '#ffffff',
-              backgroundColor: colors.darkBlue,
+              backgroundColor: '#FF8546',
               borderRadius: 5,
               boxSizing: 'border-box',
               cursor: 'pointer',
               textDecoration: 'none',
-              fontSize: fontSizes.base,
+              fontSize: 14,
               fontWeight: 'bold',
               margin: 0,
-              padding: '15px 32px',
+              padding: '11px 24px',
             }}
           >
             {children}

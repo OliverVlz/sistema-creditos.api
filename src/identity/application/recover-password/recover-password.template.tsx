@@ -10,7 +10,7 @@ import {
 export function RecoverPasswordTemplate({
   data,
 }: TemplateComponentProps) {
-  const { firstName, recoveryLink } = data;
+  const { firstName, recoveryLink, logoUrl } = data;
   const t = {
     subject: 'Restablecer contraseña',
     title: 'Restablecer Contraseña',
@@ -23,12 +23,12 @@ export function RecoverPasswordTemplate({
     alternateInstructions:
       'Si no deseas restablecer tu contraseña, ignora este correo electrónico, tu contraseña no se modificará.',
     regardsTop: 'Gracias,',
-    regardsBottom: 'Equipo de PR Ready',
+    regardsBottom: 'Equipo de Sistema de Créditos',
     receivedReason:
-      'Ha recibido este correo porque tiene una cuenta de PR Ready.',
+      'Has recibido este correo porque tienes una cuenta en Sistema de Créditos.',
   };
   return (
-    <MailTemplate title={t.title}>
+    <MailTemplate title={t.title} logoUrl={logoUrl} logoAlt="Sistema de Créditos">
       <Paragraph paddingTop={16}>{t.greeting(firstName)}</Paragraph>
       <Paragraph paddingTop={16}>{t.explanation}</Paragraph>
       <Paragraph paddingTop={16}>{t.instructions}</Paragraph>

@@ -6,6 +6,7 @@ export type ApiConfig = {
   env: string;
   port: number;
   webBaseUrl: string;
+  mailLogoUrl: string;
   passwordRecoveryTime: string;
   logger: {
     lokiEnabled: boolean;
@@ -17,11 +18,13 @@ export type ApiConfig = {
 export default registerAs('api', (): ApiConfig => {
   const lokiEnabled = process.env.LOKI_ENABLED === 'true';
   const lokiSuffixApp = process.env.LOKI_SUFFIX_APP || '';
+  const webBaseUrl = ensureEnvVar('WEB_BASE_URL');
 
   return {
     env: process.env.NODE_ENV || 'development',
     port: validateNumberEnvVar('PORT', 3001) as number,
-    webBaseUrl: ensureEnvVar('WEB_BASE_URL'),
+    webBaseUrl,
+    mailLogoUrl: process.env.MAIL_LOGO_URL || `${webBaseUrl}/assets/logo-color.png`,
     passwordRecoveryTime: process.env.PASSWORD_RECOVERY_EXPIRATION || '15min',
     logger: {
       lokiEnabled,

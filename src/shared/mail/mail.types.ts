@@ -27,6 +27,11 @@ export interface MailModuleOptions {
       password: string;
     };
   };
+  resendConfig: {
+    apiKey: string;
+    from: string;
+    replyTo: string;
+  };
 }
 
 export interface MailModuleRootAsyncOptions
