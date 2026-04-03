@@ -14,9 +14,29 @@
   RUN pnpm install --frozen-lockfile
   COPY . .
   RUN pnpm build
+
+  # ---------------------------------------
+  # 3. Development (con hot reload)
+  # ---------------------------------------
+  FROM base AS development
+
+  # En desarrollo necesitamos dependencias de dev (Nest CLI, etc.)
+  RUN pnpm install --frozen-lockfile
+
+  # Herramientas extra para entrypoint y checks de PostgreSQL
+  RUN apk add --no-cache postgresql-client bash
+
+  COPY docker-entrypoint.sh /usr/local/bin/
+  RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+  ENV NODE_ENV=development
+  EXPOSE 3000
+
+  ENTRYPOINT ["docker-entrypoint.sh"]
+  CMD ["pnpm", "start"]
   
   # ---------------------------------------
-  # 3. Production (Imagen final limpia)
+  # 4. Production (Imagen final limpia)
   # ---------------------------------------
   FROM base AS production
   

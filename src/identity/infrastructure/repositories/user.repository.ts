@@ -122,9 +122,12 @@ export class UserRepository {
     isActive?: boolean;
   }) {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
+    const staffRoles = [UserRole.ADMIN, UserRole.ASESOR];
+
+    queryBuilder.where('user.role IN (:...staffRoles)', { staffRoles });
 
     if (filters.role) {
-      queryBuilder.where('user.role = :role', { role: filters.role });
+      queryBuilder.andWhere('user.role = :role', { role: filters.role });
     }
 
     if (filters.isActive !== undefined) {

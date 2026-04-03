@@ -17,7 +17,11 @@ export class User {
     Object.assign(this, partial);
   }
 
-  static fromModel(entity: UserEntity): User {
+  static fromModel(entity: UserEntity | null): User {
+    if (!entity) {
+      throw new Error('Cannot build user model from null entity');
+    }
+
     return new User({
       id: entity.id,
       firstName: entity.firstName,

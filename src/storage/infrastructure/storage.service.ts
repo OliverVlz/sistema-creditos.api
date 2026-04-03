@@ -12,6 +12,13 @@ export interface UploadedFile {
   size: number;
 }
 
+interface StorageInputFile {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
@@ -20,6 +27,7 @@ export class StorageService implements OnModuleInit {
   private readonly endpoint: string;
   private readonly port: number;
   private readonly useSSL: boolean;
+  private readonly bucketPublicRead: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.endpoint = this.configService.get<string>(
@@ -29,6 +37,9 @@ export class StorageService implements OnModuleInit {
     this.port = this.configService.get<number>('MINIO_PORT', 9000);
     this.useSSL =
       this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+    this.bucketPublicRead =
+      this.configService.get<string>('MINIO_BUCKET_PUBLIC_READ', 'false') ===
+      'true';
     this.bucket = this.configService.get<string>(
       'MINIO_BUCKET',
       'loan-documents',
@@ -64,32 +75,39 @@ export class StorageService implements OnModuleInit {
       await this.minioClient.makeBucket(this.bucket);
       this.logger.log(`Bucket "${this.bucket}" creado exitosamente`);
 
-      // Configurar política pública de lectura
-      const policy = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Allow',
-            Principal: { AWS: ['*'] },
-            Action: ['s3:GetObject'],
-            Resource: [`arn:aws:s3:::${this.bucket}/*`],
-          },
-        ],
-      };
-      await this.minioClient.setBucketPolicy(
-        this.bucket,
-        JSON.stringify(policy),
-      );
-      this.logger.log(
-        `Política de lectura pública configurada para "${this.bucket}"`,
-      );
-    } catch (error) {
-      this.logger.error(`Error al verificar/crear bucket: ${error.message}`);
+      if (this.bucketPublicRead) {
+        const policy = {
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: { AWS: ['*'] },
+              Action: ['s3:GetObject'],
+              Resource: [`arn:aws:s3:::${this.bucket}/*`],
+            },
+          ],
+        };
+        await this.minioClient.setBucketPolicy(
+          this.bucket,
+          JSON.stringify(policy),
+        );
+        this.logger.log(
+          `Política de lectura pública configurada para "${this.bucket}"`,
+        );
+      } else {
+        this.logger.log(
+          `Bucket "${this.bucket}" configurado como privado (sin política pública)`,
+        );
+      }
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Error desconocido';
+      this.logger.error(`Error al verificar/crear bucket: ${message}`);
     }
   }
 
   async uploadFile(
-    file: Express.Multer.File,
+    file: StorageInputFile,
     folder: string = 'documents',
   ): Promise<UploadedFile> {
     const fileExtension = file.originalname.split('.').pop();
@@ -112,7 +130,7 @@ export class StorageService implements OnModuleInit {
   }
 
   async uploadMultipleFiles(
-    files: Express.Multer.File[],
+    files: StorageInputFile[],
     folder: string = 'documents',
   ): Promise<UploadedFile[]> {
     const uploadPromises = files.map(file => this.uploadFile(file, folder));
@@ -142,5 +160,24 @@ export class StorageService implements OnModuleInit {
     expirySeconds: number = 3600,
   ): Promise<string> {
     return this.minioClient.presignedGetObject(this.bucket, key, expirySeconds);
+  }
+
+  extractObjectKeyFromUrl(urlOrKey: string): string {
+    if (!urlOrKey) {
+      return '';
+    }
+
+    try {
+      const parsed = new URL(urlOrKey);
+      const pathParts = parsed.pathname.split('/').filter(Boolean);
+
+      if (pathParts[0] === this.bucket) {
+        return pathParts.slice(1).join('/');
+      }
+
+      return pathParts.join('/');
+    } catch {
+      return urlOrKey.replace(/^\/+/, '');
+    }
   }
 }

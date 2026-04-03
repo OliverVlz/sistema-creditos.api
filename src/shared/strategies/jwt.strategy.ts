@@ -23,6 +23,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     this.validateExpiration(payload.exp);
 
     const user = await this.userRepository.findById(payload.userId);
+    if (!user) {
+      throw new UnauthorizedException('INVALID_SESSION_USER');
+    }
+
     return User.fromModel(user);
   }
 

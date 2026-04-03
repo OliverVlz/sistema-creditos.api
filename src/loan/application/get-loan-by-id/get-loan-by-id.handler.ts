@@ -4,12 +4,14 @@ import { GetLoanByIdQuery } from './get-loan-by-id.query';
 import { ForbiddenException } from '@nestjs/common';
 import { UserRole } from 'src/shared/enums';
 import { LoanCalculatorService } from '../../domain/loan-calculator.service';
+import { StorageService } from 'src/storage/infrastructure/storage.service';
 
 @QueryHandler(GetLoanByIdQuery)
 export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
   constructor(
     private readonly loanRepository: LoanRepository,
     private readonly loanCalculatorService: LoanCalculatorService,
+    private readonly storageService: StorageService,
   ) {}
 
   async execute(query: GetLoanByIdQuery) {
@@ -29,6 +31,28 @@ export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
     const annualRate = Number(loan.appliedInterestRate);
     const monthlyRate =
       this.loanCalculatorService.getEffectiveMonthlyRate(annualRate);
+
+    const documents = await Promise.all(
+      (loan.documents || []).map(async doc => {
+        const key = this.storageService.extractObjectKeyFromUrl(doc.url);
+        const signedUrl = key
+          ? await this.storageService.getPresignedUrl(key)
+          : doc.url;
+
+        return {
+          id: doc.id,
+          url: signedUrl,
+          uploadedAt: doc.uploadedAt,
+          documentType: doc.documentType
+            ? {
+                id: doc.documentType.id,
+                code: doc.documentType.code,
+                name: doc.documentType.name,
+              }
+            : null,
+        };
+      }),
+    );
 
     return {
       id: loan.id,
@@ -87,19 +111,7 @@ export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
             email: loan.manager.email,
           }
         : null,
-      documents:
-        loan.documents?.map(doc => ({
-          id: doc.id,
-          url: doc.url,
-          uploadedAt: doc.uploadedAt,
-          documentType: doc.documentType
-            ? {
-                id: doc.documentType.id,
-                code: doc.documentType.code,
-                name: doc.documentType.name,
-              }
-            : null,
-        })) || [],
+      documents,
     };
   }
 }
