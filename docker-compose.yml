@@ -61,6 +61,7 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_USE_SSL: 'false'
       MINIO_BUCKET: loan-documents
+      MINIO_PUBLIC_BUCKET: public
       FORCE_SEED: ${FORCE_SEED:-false}
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: 2000
