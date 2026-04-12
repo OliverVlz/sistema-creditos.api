@@ -40,6 +40,7 @@
     "migration:generate": "pnpm build && npx typeorm migration:generate -d dist/db/data-source.js -p",
     "migration:create": "npx typeorm migration:create",
     "migration:run": "pnpm build && npx typeorm migration:run -d dist/db/data-source.js",
+    "migration:run:prod": "npx typeorm migration:run -d dist/db/data-source.js",
     "migration:revert": "pnpm build && npx typeorm migration:revert -d dist/db/data-source.js",
     "migration:show": "pnpm build && npx typeorm migration:show -d dist/db/data-source.js",
     "// ==================== TESTING ====================": "",
