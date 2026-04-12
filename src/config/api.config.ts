@@ -7,6 +7,7 @@ export type ApiConfig = {
   port: number;
   webBaseUrl: string;
   mailLogoUrl: string;
+  massiveImportTemplateUrl: string;
   passwordRecoveryTime: string;
   logger: {
     lokiEnabled: boolean;
@@ -25,6 +26,9 @@ export default registerAs('api', (): ApiConfig => {
     port: validateNumberEnvVar('PORT', 3001) as number,
     webBaseUrl,
     mailLogoUrl: process.env.MAIL_LOGO_URL || `${webBaseUrl}/assets/logo-color.png`,
+    massiveImportTemplateUrl:
+      process.env.MASSIVE_IMPORT_TEMPLATE_URL ||
+      `${webBaseUrl}/assets/Plantilla-subida-masiva.xlsx`,
     passwordRecoveryTime: process.env.PASSWORD_RECOVERY_EXPIRATION || '15min',
     logger: {
       lokiEnabled,

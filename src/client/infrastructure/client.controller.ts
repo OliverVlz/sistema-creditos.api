@@ -5,21 +5,35 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Query,
   Req,
+  Res,
   UseGuards,
-  ForbiddenException,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { Response } from 'express';
+import { ApiConfig } from 'src/config/api.config';
 
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { UpdateClientAdminDto } from './dto/update-client-admin.dto';
 import { GetClientsDto } from './dto/get-clients.dto';
 import { CreateClientDto } from './dto/create-client.dto';
+import { BulkImportClientsLoansDto } from './dto/bulk-import-clients-loans.dto';
 
 import { CreateClientCommand } from '../application/create-client/create-client.command';
+import { ImportClientsLoansCommand } from '../application/import-clients-loans/import-clients-loans.command';
+import { buildClientsLoansTemplateBuffer } from '../application/import-clients-loans/import-clients-loans.excel';
 
 import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
 import { UpdateClientAdminCommand } from '../application/update-client-admin/update-client-admin.command';
@@ -36,6 +50,7 @@ export class ClientsController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('/register')
@@ -53,6 +68,68 @@ export class ClientsController {
       new CreateClientCommand({
         ...body,
         role: UserRole.CLIENTE,
+      }),
+    );
+  }
+
+  @Get('/import/clients-loans/template')
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({
+    summary: 'Descargar plantilla de carga masiva de clientes y solicitudes',
+  })
+  async downloadClientsLoansTemplate(@Res({ passthrough: true }) res: Response) {
+    const apiConfig = this.configService.get<ApiConfig>('api');
+    const templateUrl = apiConfig?.massiveImportTemplateUrl;
+
+    if (templateUrl) {
+      return res.redirect(templateUrl);
+    }
+
+    const fileBuffer = buildClientsLoansTemplateBuffer();
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="plantilla-clientes-solicitudes.xlsx"',
+    );
+    return fileBuffer;
+  }
+
+  @Post('/import/clients-loans')
+  @UseGuards(AdminOrAdvisorGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Archivo Excel (.xlsx) con clientes y solicitudes',
+        },
+        chunkSize: {
+          type: 'number',
+          description: 'Cantidad de filas por lote',
+          default: 20,
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({
+    summary: 'Importar clientes nuevos y sus solicitudes desde Excel',
+  })
+  async importClientsLoans(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: BulkImportClientsLoansDto,
+  ) {
+    return this.commandBus.execute(
+      new ImportClientsLoansCommand({
+        file,
+        chunkSize: body.chunkSize,
       }),
     );
   }

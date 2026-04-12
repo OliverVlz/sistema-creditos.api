@@ -46,7 +46,7 @@ const Services = [LoanCalculatorService];
   imports: [
     TypeOrmModule.forFeature([Loan]),
     CqrsModule,
-    ClientsModule,
+    forwardRef(() => ClientsModule),
     OrganizationModule,
     IdentityModule,
     LoanTypeModule,
