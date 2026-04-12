@@ -32,6 +32,7 @@ export interface MailModuleOptions {
     from: string;
     replyTo: string;
   };
+  contactNotificationEmail: string;
 }
 
 export interface MailModuleRootAsyncOptions

@@ -38,5 +38,6 @@ export default registerAs('mail', (): MailModuleOptions => {
       from: resendFrom,
       replyTo: resendReplyTo,
     },
+    contactNotificationEmail: process.env.CONTACT_NOTIFICATION_EMAIL || '',
   };
 });

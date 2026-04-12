@@ -26,6 +26,7 @@ import { DocumentTypeModule } from './document-type/infrastructure/document-type
 import { LoanDocumentModule } from './loan-document/infrastructure/loan-document.module';
 import { StorageModule } from './storage/infrastructure/storage.module';
 import { NotificationsModule } from './notifications/infrastructure/notifications.module';
+import { ContactModule } from './contact/contact.module';
 import { JwtStrategy } from './shared/strategies/jwt.strategy';
 
 @Module({
@@ -54,6 +55,7 @@ import { JwtStrategy } from './shared/strategies/jwt.strategy';
     LoanDocumentModule,
     StorageModule,
     NotificationsModule,
+    ContactModule,
     MailModule.forRootAsync({
       imports: [ConfigModule, HttpModule],
       inject: [ConfigService],

@@ -130,7 +130,8 @@ export class MailService {
       text: content.text ? String(content.text) : undefined,
       cc: cc.length ? cc : undefined,
       bcc: bcc.length ? bcc : undefined,
-      reply_to: this.resendConfig.replyTo,
+      reply_to:
+        this.resolveReplyToForResend(content) || this.resendConfig.replyTo,
     };
 
     const request = this.httpService.post('https://api.resend.com/emails', payload, {
@@ -143,6 +144,29 @@ export class MailService {
     return firstValueFrom(request)
       .then(response => response.data)
       .catch(e => this.handleError(e));
+  }
+
+  private resolveReplyToForResend(content: SendMailOptions): string | undefined {
+    const r = content.replyTo;
+    if (!r) {
+      return undefined;
+    }
+    if (typeof r === 'string') {
+      return r;
+    }
+    if (Array.isArray(r)) {
+      const first = r[0];
+      if (typeof first === 'string') {
+        return first;
+      }
+      if (first && typeof first === 'object' && 'address' in first) {
+        return first.address;
+      }
+    }
+    if (typeof r === 'object' && r !== null && 'address' in r) {
+      return (r as { address: string }).address;
+    }
+    return undefined;
   }
 
   private normalizeRecipients(to: SendMailOptions['to']) {
