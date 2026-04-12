@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Param,
@@ -32,6 +33,7 @@ import { CreateAdvertisementCommand } from '../application/create-advertisement/
 import { UpdateAdvertisementCommand } from '../application/update-advertisement/update-advertisement.command';
 import { SetAdvertisementStatusCommand } from '../application/set-advertisement-status/set-advertisement-status.command';
 import { ReorderAdvertisementsCommand } from '../application/reorder-advertisements/reorder-advertisements.command';
+import { DeleteAdvertisementCommand } from '../application/delete-advertisement/delete-advertisement.command';
 import { GetAdvertisementsQuery } from '../application/get-advertisements/get-advertisements.query';
 import { GetPublicAdvertisementsQuery } from '../application/get-public-advertisements/get-public-advertisements.query';
 
@@ -173,6 +175,13 @@ export class AdvertisingController {
     return this.commandBus.execute(
       new SetAdvertisementStatusCommand(id, false, req.user?.id),
     );
+  }
+
+  @Delete('/:id')
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({ summary: 'Eliminar publicidad' })
+  async delete(@Param('id') id: string) {
+    return this.commandBus.execute(new DeleteAdvertisementCommand(id));
   }
 
 }

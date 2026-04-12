@@ -87,6 +87,13 @@ export class AdvertisementRepository {
     return this.updateAdvertisement(id, { isActive, updatedBy });
   }
 
+  async deleteAdvertisement(id: string): Promise<void> {
+    const result = await this.advertisementRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException(`Publicidad con ID ${id} no encontrada`);
+    }
+  }
+
   async reorderAdvertisements(
     items: { id: string; sortOrder: number }[],
     updatedBy?: string,
