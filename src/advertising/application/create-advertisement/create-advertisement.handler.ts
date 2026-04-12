@@ -27,7 +27,6 @@ export class CreateAdvertisementHandler
     const advertisement =
       await this.advertisementRepository.createAdvertisement({
         title: command.title,
-        imageUrl: uploadResult.url,
         imageKey: uploadResult.key,
         targetUrl: command.targetUrl,
         isRedirectEnabled: command.isRedirectEnabled,

@@ -2,12 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
+import { StorageService } from 'src/storage/infrastructure/storage.service';
 import { Advertisement } from '../entity/advertisement.entity';
 import { AdvertisementHistory } from '../entity/advertisement-history.entity';
 
 type CreateAdvertisementData = {
   title: string;
-  imageUrl: string;
   imageKey: string;
   targetUrl?: string;
   isRedirectEnabled: boolean;
@@ -41,7 +41,17 @@ export class AdvertisementRepository {
     private readonly advertisementRepository: Repository<Advertisement>,
     @InjectRepository(AdvertisementHistory)
     private readonly advertisementHistoryRepository: Repository<AdvertisementHistory>,
+    private readonly storageService: StorageService,
   ) {}
+
+  private resolveImageUrl<T extends { imageKey: string; imageUrl?: string }>(
+    row: T,
+  ): void {
+    row.imageUrl = this.storageService.getPublicUrl(
+      row.imageKey,
+      this.storageService.getPublicBucketName(),
+    );
+  }
 
   async createAdvertisement(data: CreateAdvertisementData): Promise<Advertisement> {
     const entity = this.advertisementRepository.create({
@@ -50,6 +60,7 @@ export class AdvertisementRepository {
     });
     const advertisement = await this.advertisementRepository.save(entity);
     await this.createHistorySnapshot(advertisement, 'created', data.createdBy);
+    this.resolveImageUrl(advertisement);
     return advertisement;
   }
 
@@ -60,6 +71,7 @@ export class AdvertisementRepository {
     if (!advertisement) {
       throw new NotFoundException(`Publicidad con ID ${id} no encontrada`);
     }
+    this.resolveImageUrl(advertisement);
     return advertisement;
   }
 
@@ -72,6 +84,7 @@ export class AdvertisementRepository {
     const merged = this.advertisementRepository.merge(advertisement, data);
     const updated = await this.advertisementRepository.save(merged);
     await this.createHistorySnapshot(updated, action, data.updatedBy);
+    this.resolveImageUrl(updated);
     return updated;
   }
 
@@ -142,6 +155,7 @@ export class AdvertisementRepository {
     queryBuilder.skip(paginationOptions.offset).take(paginationOptions.limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
+    data.forEach(row => this.resolveImageUrl(row));
 
     return PaginationUtils.createPaginatedResult(
       { data, total },
@@ -164,14 +178,20 @@ export class AdvertisementRepository {
       .orderBy('advertisement.sortOrder', 'ASC')
       .addOrderBy('advertisement.createdAt', 'DESC')
       .take(limit)
-      .getMany();
+      .getMany()
+      .then(rows => {
+        rows.forEach(row => this.resolveImageUrl(row));
+        return rows;
+      });
   }
 
   async getHistory(advertisementId: string): Promise<AdvertisementHistory[]> {
-    return this.advertisementHistoryRepository.find({
+    const rows = await this.advertisementHistoryRepository.find({
       where: { advertisementId },
       order: { createdAt: 'DESC' },
     });
+    rows.forEach(row => this.resolveImageUrl(row));
+    return rows;
   }
 
   async getHistoryById(historyId: string): Promise<AdvertisementHistory> {
@@ -181,6 +201,7 @@ export class AdvertisementRepository {
     if (!history) {
       throw new NotFoundException(`Histórico con ID ${historyId} no encontrado`);
     }
+    this.resolveImageUrl(history);
     return history;
   }
 
@@ -200,7 +221,6 @@ export class AdvertisementRepository {
       advertisementId,
       {
         title: history.title,
-        imageUrl: history.imageUrl,
         imageKey: history.imageKey,
         targetUrl: history.targetUrl,
         isRedirectEnabled: history.isRedirectEnabled,
@@ -223,7 +243,6 @@ export class AdvertisementRepository {
       advertisementId: advertisement.id,
       action,
       title: advertisement.title,
-      imageUrl: advertisement.imageUrl,
       imageKey: advertisement.imageKey,
       targetUrl: advertisement.targetUrl,
       isRedirectEnabled: advertisement.isRedirectEnabled,

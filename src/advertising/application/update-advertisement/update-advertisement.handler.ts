@@ -17,7 +17,6 @@ export class UpdateAdvertisementHandler
       command.id,
     );
 
-    let imageUrl = existingAdvertisement.imageUrl;
     let imageKey = existingAdvertisement.imageKey;
     let oldImageKey = '';
 
@@ -27,7 +26,6 @@ export class UpdateAdvertisementHandler
         'advertisements',
         this.storageService.getPublicBucketName(),
       );
-      imageUrl = uploadResult.url;
       imageKey = uploadResult.key;
       oldImageKey = existingAdvertisement.imageKey;
     }
@@ -42,16 +40,13 @@ export class UpdateAdvertisementHandler
         sortOrder: command.sortOrder,
         startsAt: command.startsAt,
         endsAt: command.endsAt,
-        imageUrl,
         imageKey,
         updatedBy: command.updatedBy,
       },
     );
 
     if (oldImageKey) {
-      const oldBucket = this.storageService.extractBucketFromUrl(
-        existingAdvertisement.imageUrl,
-      );
+      const oldBucket = this.storageService.getPublicBucketName();
       await this.storageService.deleteFile(oldImageKey, oldBucket);
     }
 

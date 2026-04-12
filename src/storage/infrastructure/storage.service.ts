@@ -189,13 +189,15 @@ export class StorageService implements OnModuleInit {
   }
 
   getPublicUrl(key: string, bucketName: string = this.bucket): string {
+    const publicBase = this.configService
+      .get<string>('MINIO_PUBLIC_BASE_URL', '')
+      .trim()
+      .replace(/\/+$/, '');
+    if (publicBase) {
+      return `${publicBase}/${bucketName}/${key}`;
+    }
     const protocol = this.useSSL ? 'https' : 'http';
-    // Para desarrollo local, usar localhost en lugar del hostname interno de docker
-    const publicEndpoint = this.configService.get<string>(
-      'MINIO_PUBLIC_ENDPOINT',
-      `localhost:${this.port}`,
-    );
-    return `${protocol}://${publicEndpoint}/${bucketName}/${key}`;
+    return `${protocol}://${this.endpoint}:${this.port}/${bucketName}/${key}`;
   }
 
   async getPresignedUrl(

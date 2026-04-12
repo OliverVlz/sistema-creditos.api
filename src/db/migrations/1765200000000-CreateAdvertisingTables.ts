@@ -10,7 +10,6 @@ export class CreateAdvertisingTables1765200000000
       CREATE TABLE IF NOT EXISTS "advertisements" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "title" character varying(120) NOT NULL,
-        "image_url" character varying NOT NULL,
         "image_key" character varying NOT NULL,
         "target_url" character varying,
         "is_redirect_enabled" boolean NOT NULL DEFAULT false,
@@ -32,7 +31,6 @@ export class CreateAdvertisingTables1765200000000
         "advertisement_id" uuid,
         "action" character varying(40) NOT NULL,
         "title" character varying(120) NOT NULL,
-        "image_url" character varying NOT NULL,
         "image_key" character varying NOT NULL,
         "target_url" character varying,
         "is_redirect_enabled" boolean NOT NULL DEFAULT false,

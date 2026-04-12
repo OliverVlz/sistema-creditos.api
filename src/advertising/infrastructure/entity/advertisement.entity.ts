@@ -16,7 +16,6 @@ export class Advertisement {
   @Column({ length: 120 })
   title: string;
 
-  @Column({ name: 'image_url' })
   imageUrl: string;
 
   @Column({ name: 'image_key' })

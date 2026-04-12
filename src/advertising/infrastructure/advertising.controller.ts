@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
   Param,
+  ParseFilePipeBuilder,
   Patch,
   Post,
   Query,
@@ -36,6 +38,9 @@ import { GetAdvertisementsQuery } from '../application/get-advertisements/get-ad
 import { GetPublicAdvertisementsQuery } from '../application/get-public-advertisements/get-public-advertisements.query';
 import { GetAdvertisementHistoryQuery } from '../application/get-advertisement-history/get-advertisement-history.query';
 
+const MAX_ADVERTISEMENT_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+const ADVERTISEMENT_IMAGE_FILE_TYPE = /image\/(jpeg|jpg|png|webp)/;
+
 @ApiTags('Advertisements')
 @Controller('advertisements')
 @ApiBearerAuth()
@@ -47,7 +52,11 @@ export class AdvertisingController {
 
   @Post('/')
   @UseGuards(AdminOrAdvisorGuard)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: { fileSize: MAX_ADVERTISEMENT_IMAGE_SIZE_BYTES },
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -68,7 +77,13 @@ export class AdvertisingController {
   @ApiOperation({ summary: 'Crear publicidad con imagen' })
   async create(
     @Body() body: CreateAdvertisementDto,
-    @UploadedFile() image: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: ADVERTISEMENT_IMAGE_FILE_TYPE })
+        .addMaxSizeValidator({ maxSize: MAX_ADVERTISEMENT_IMAGE_SIZE_BYTES })
+        .build({ errorHttpStatusCode: HttpStatus.BAD_REQUEST }),
+    )
+    image: Express.Multer.File,
     @Req() req: any,
   ) {
     return this.commandBus.execute(
@@ -110,7 +125,11 @@ export class AdvertisingController {
 
   @Patch('/:id')
   @UseGuards(AdminOrAdvisorGuard)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: { fileSize: MAX_ADVERTISEMENT_IMAGE_SIZE_BYTES },
+    }),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -131,7 +150,16 @@ export class AdvertisingController {
   async update(
     @Param('id') id: string,
     @Body() body: UpdateAdvertisementDto,
-    @UploadedFile() image: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({ fileType: ADVERTISEMENT_IMAGE_FILE_TYPE })
+        .addMaxSizeValidator({ maxSize: MAX_ADVERTISEMENT_IMAGE_SIZE_BYTES })
+        .build({
+          fileIsRequired: false,
+          errorHttpStatusCode: HttpStatus.BAD_REQUEST,
+        }),
+    )
+    image: Express.Multer.File,
     @Req() req: any,
   ) {
     return this.commandBus.execute(
