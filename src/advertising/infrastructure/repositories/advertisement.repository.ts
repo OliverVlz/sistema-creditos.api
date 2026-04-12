@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 import { StorageService } from 'src/storage/infrastructure/storage.service';
 import { Advertisement } from '../entity/advertisement.entity';
-import { AdvertisementHistory } from '../entity/advertisement-history.entity';
 
 type CreateAdvertisementData = {
   title: string;
@@ -19,10 +18,7 @@ type CreateAdvertisementData = {
 };
 
 type UpdateAdvertisementData = Partial<
-  Omit<
-    Advertisement,
-    'id' | 'createdAt' | 'updatedAt' | 'history' | 'createdBy' | 'updatedBy'
-  >
+  Omit<Advertisement, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'>
 > & {
   updatedBy?: string;
 };
@@ -39,8 +35,6 @@ export class AdvertisementRepository {
   constructor(
     @InjectRepository(Advertisement)
     private readonly advertisementRepository: Repository<Advertisement>,
-    @InjectRepository(AdvertisementHistory)
-    private readonly advertisementHistoryRepository: Repository<AdvertisementHistory>,
     private readonly storageService: StorageService,
   ) {}
 
@@ -59,7 +53,6 @@ export class AdvertisementRepository {
       updatedBy: data.createdBy,
     });
     const advertisement = await this.advertisementRepository.save(entity);
-    await this.createHistorySnapshot(advertisement, 'created', data.createdBy);
     this.resolveImageUrl(advertisement);
     return advertisement;
   }
@@ -78,12 +71,10 @@ export class AdvertisementRepository {
   async updateAdvertisement(
     id: string,
     data: UpdateAdvertisementData,
-    action: string = 'updated',
   ): Promise<Advertisement> {
     const advertisement = await this.findOne(id);
     const merged = this.advertisementRepository.merge(advertisement, data);
     const updated = await this.advertisementRepository.save(merged);
-    await this.createHistorySnapshot(updated, action, data.updatedBy);
     this.resolveImageUrl(updated);
     return updated;
   }
@@ -93,8 +84,7 @@ export class AdvertisementRepository {
     isActive: boolean,
     updatedBy?: string,
   ): Promise<Advertisement> {
-    const action = isActive ? 'activated' : 'deactivated';
-    return this.updateAdvertisement(id, { isActive, updatedBy }, action);
+    return this.updateAdvertisement(id, { isActive, updatedBy });
   }
 
   async reorderAdvertisements(
@@ -118,12 +108,7 @@ export class AdvertisementRepository {
     const advertisements = await this.advertisementRepository.find({
       where: ids.map(id => ({ id })),
     });
-
-    await Promise.all(
-      advertisements.map(advertisement =>
-        this.createHistorySnapshot(advertisement, 'reordered', updatedBy),
-      ),
-    );
+    advertisements.forEach(row => this.resolveImageUrl(row));
   }
 
   async searchWithPagination(searchData: SearchAdvertisementsData) {
@@ -185,73 +170,4 @@ export class AdvertisementRepository {
       });
   }
 
-  async getHistory(advertisementId: string): Promise<AdvertisementHistory[]> {
-    const rows = await this.advertisementHistoryRepository.find({
-      where: { advertisementId },
-      order: { createdAt: 'DESC' },
-    });
-    rows.forEach(row => this.resolveImageUrl(row));
-    return rows;
-  }
-
-  async getHistoryById(historyId: string): Promise<AdvertisementHistory> {
-    const history = await this.advertisementHistoryRepository.findOne({
-      where: { id: historyId },
-    });
-    if (!history) {
-      throw new NotFoundException(`Histórico con ID ${historyId} no encontrado`);
-    }
-    this.resolveImageUrl(history);
-    return history;
-  }
-
-  async recycleFromHistory(
-    advertisementId: string,
-    historyId: string,
-    updatedBy?: string,
-  ): Promise<Advertisement> {
-    const history = await this.getHistoryById(historyId);
-    if (history.advertisementId !== advertisementId) {
-      throw new NotFoundException(
-        `El histórico ${historyId} no pertenece a la publicidad ${advertisementId}`,
-      );
-    }
-
-    return this.updateAdvertisement(
-      advertisementId,
-      {
-        title: history.title,
-        imageKey: history.imageKey,
-        targetUrl: history.targetUrl,
-        isRedirectEnabled: history.isRedirectEnabled,
-        isActive: history.isActive,
-        sortOrder: history.sortOrder,
-        startsAt: history.startsAt,
-        endsAt: history.endsAt,
-        updatedBy,
-      },
-      'recycled',
-    );
-  }
-
-  async createHistorySnapshot(
-    advertisement: Advertisement,
-    action: string,
-    changedBy?: string,
-  ): Promise<AdvertisementHistory> {
-    const history = this.advertisementHistoryRepository.create({
-      advertisementId: advertisement.id,
-      action,
-      title: advertisement.title,
-      imageKey: advertisement.imageKey,
-      targetUrl: advertisement.targetUrl,
-      isRedirectEnabled: advertisement.isRedirectEnabled,
-      isActive: advertisement.isActive,
-      sortOrder: advertisement.sortOrder,
-      startsAt: advertisement.startsAt,
-      endsAt: advertisement.endsAt,
-      changedBy,
-    });
-    return this.advertisementHistoryRepository.save(history);
-  }
 }

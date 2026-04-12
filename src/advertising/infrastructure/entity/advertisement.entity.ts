@@ -2,11 +2,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { AdvertisementHistory } from './advertisement-history.entity';
 
 @Entity('advertisements')
 export class Advertisement {
@@ -50,7 +48,4 @@ export class Advertisement {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-
-  @OneToMany(() => AdvertisementHistory, history => history.advertisement)
-  history: AdvertisementHistory[];
 }
