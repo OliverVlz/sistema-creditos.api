@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -38,6 +39,7 @@ import { GetLoanByIdQuery } from '../application/get-loan-by-id/get-loan-by-id.q
 import { CalculateLoanQuery } from '../application/calculate-loan/calculate-loan.query';
 import { UserRole } from 'src/shared/enums';
 import { Public } from 'src/shared/validation/public.decorator';
+import { AdminGuard } from 'src/shared/guards';
 
 @ApiTags('Loans')
 @Controller('loans')
@@ -348,6 +350,7 @@ export class LoansController {
   }
 
   @Delete('/:id')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Soft delete loan' })
   async remove(@Param('id') id: string, @Req() req: any) {
     return this.commandBus.execute(new SoftDeleteLoanCommand(id, req.user.id));

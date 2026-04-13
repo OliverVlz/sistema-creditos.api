@@ -4,6 +4,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Param,
   Req,
   Query,
@@ -13,7 +14,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { Public } from 'src/shared/validation';
-import { AdminOrAdvisorGuard, AdminGuard } from 'src/shared/guards';
+import { AdminGuard } from 'src/shared/guards';
 
 import { CreateUserCommand } from '../application/create-user/create-user.command';
 import { UpdatePasswordCommand } from '../application/update-password/update-password.command';
@@ -26,6 +27,7 @@ import { LoginQuery } from '../application/login/login.query';
 import { GetUsersQuery } from '../application/get-users/get-users.query';
 import { GetUserByIdQuery } from '../application/get-user-by-id/get-user-by-id.query';
 import { GetMeQuery } from '../application/get-me/get-me.query';
+import { DeleteUserAdminCommand } from '../application/delete-user-admin/delete-user-admin.command';
 
 import { LoginDto } from './dto/login.dto';
 import { CreateStaffUserDto } from './dto/create-staff-user.dto';
@@ -208,6 +210,20 @@ export class UsersController {
       new UpdateUserAdminCommand({
         userId,
         ...body,
+      }),
+    );
+  }
+
+  @Delete('/:userId')
+  @ApiBearerAuth()
+  @UseGuards(AdminGuard)
+  @ApiOperation({
+    summary: 'Eliminar usuario y solicitudes relacionadas - Solo ADMIN',
+  })
+  async deleteUser(@Param('userId') userId: string) {
+    return this.commandBus.execute(
+      new DeleteUserAdminCommand({
+        userId,
       }),
     );
   }

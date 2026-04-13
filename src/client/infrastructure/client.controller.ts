@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Delete,
   Param,
   Query,
   Req,
@@ -37,9 +38,10 @@ import { buildClientsLoansTemplateBuffer } from '../application/import-clients-l
 
 import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
 import { UpdateClientAdminCommand } from '../application/update-client-admin/update-client-admin.command';
+import { DeleteClientAdminCommand } from '../application/delete-client-admin/delete-client-admin.command';
 import { GetClientByIdQuery } from '../application/get-client-by-id/get-client-by-id.query';
 import { GetClientsQuery } from '../application/get-clients/get-clients.query';
-import { AdminOrAdvisorGuard } from 'src/shared/guards';
+import { AdminGuard, AdminOrAdvisorGuard } from 'src/shared/guards';
 import { UserRole } from 'src/shared/enums';
 import { Public } from 'src/shared/validation';
 
@@ -204,6 +206,19 @@ export class ClientsController {
         userId,
         updater: req.user?.id,
         ...body,
+      }),
+    );
+  }
+
+  @Delete('/:userId')
+  @UseGuards(AdminGuard)
+  @ApiOperation({
+    summary: 'Eliminar cliente y solicitudes relacionadas - Solo ADMIN',
+  })
+  async deleteClient(@Param('userId') userId: string) {
+    return this.commandBus.execute(
+      new DeleteClientAdminCommand({
+        userId,
       }),
     );
   }

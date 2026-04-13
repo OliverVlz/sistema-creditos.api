@@ -12,6 +12,7 @@ import { UpdateClientAdminHandler } from '../application/update-client-admin/upd
 import { GetClientsHandler } from '../application/get-clients/get-clients.handler';
 import { GetClientByIdHandler } from '../application/get-client-by-id/get-client-by-id.handler';
 import { ImportClientsLoansHandler } from '../application/import-clients-loans/import-clients-loans.handler';
+import { DeleteClientAdminHandler } from '../application/delete-client-admin/delete-client-admin.handler';
 
 import { IdentityModule } from 'src/identity/infrastructure/identity.module';
 
@@ -31,6 +32,7 @@ import { IdentityModule } from 'src/identity/infrastructure/identity.module';
     GetClientsHandler,
     GetClientByIdHandler,
     ImportClientsLoansHandler,
+    DeleteClientAdminHandler,
   ],
   exports: [ClientRepository, TypeOrmModule],
 })

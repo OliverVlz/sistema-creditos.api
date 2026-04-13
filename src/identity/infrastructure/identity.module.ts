@@ -18,6 +18,7 @@ import { UpdateUserProfileHandler } from '../application/update-user-profile/upd
 import { UpdateUserAdminHandler } from '../application/update-user-admin/update-user-admin.handler';
 import { GetUserByIdHandler } from '../application/get-user-by-id/get-user-by-id.handler';
 import { GetMeHandler } from '../application/get-me/get-me.handler';
+import { DeleteUserAdminHandler } from '../application/delete-user-admin/delete-user-admin.handler';
 
 import { User } from './entity/user.entity';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
@@ -57,6 +58,7 @@ import { ClientsModule } from 'src/client/infrastructure/client.module';
     UpdateUserAdminHandler,
     GetUserByIdHandler,
     GetMeHandler,
+    DeleteUserAdminHandler,
     UserRepository,
   ],
   exports: [UserRepository, HashService],
