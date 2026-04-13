@@ -17,12 +17,26 @@ export class NotificationRepository {
 
   async findByUserId(
     userId: string,
-    limit: number = 20,
+    page: number = 1,
+    limit: number = 30,
   ): Promise<Notification[]> {
+    let safePage = page;
+    if (safePage < 1) {
+      safePage = 1;
+    }
+
+    let safeLimit = limit;
+    if (safeLimit < 1) {
+      safeLimit = 30;
+    }
+
+    const skip = (safePage - 1) * safeLimit;
+
     return this.repository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
-      take: limit,
+      take: safeLimit,
+      skip,
     });
   }
 
@@ -37,6 +51,12 @@ export class NotificationRepository {
   async countUnread(userId: string): Promise<number> {
     return this.repository.count({
       where: { userId, isRead: false },
+    });
+  }
+
+  async countByUserId(userId: string): Promise<number> {
+    return this.repository.count({
+      where: { userId },
     });
   }
 }
