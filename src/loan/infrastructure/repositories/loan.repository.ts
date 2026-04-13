@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Loan, LoanStatus } from '../entity/loan.entity';
@@ -41,21 +45,40 @@ export class LoanRepository {
   ) {}
 
   async generateLoanNumber(): Promise<string> {
-    const lastLoan = await this.loansRepository.find({
-      order: { createdAt: 'DESC' },
-      take: 1,
-      select: ['loanNumber'],
-    });
-    if (lastLoan.length > 0) {
-      const lastNumber = parseInt(lastLoan[0].loanNumber.split('-')[1]);
-      return `LOAN-${(lastNumber + 1).toString().padStart(6, '0')}`;
-    }
-    return 'LOAN-000001';
+    const result = await this.loansRepository.query(`
+      SELECT COALESCE(MAX(CAST(SUBSTRING(loan_number FROM 6) AS INTEGER)), 0) AS "maxNumber"
+      FROM loans
+      WHERE loan_number ~ '^LOAN-[0-9]+$'
+    `);
+    const currentMax = Number(result?.[0]?.maxNumber || 0);
+    return `LOAN-${(currentMax + 1).toString().padStart(6, '0')}`;
   }
 
   async createLoan(loanData: CreateLoanData): Promise<Loan> {
     const newLoan = this.loansRepository.create(loanData);
     return this.loansRepository.save(newLoan);
+  }
+
+  async createLoanWithAutoNumber(
+    loanData: Omit<CreateLoanData, 'loanNumber'>,
+  ): Promise<Loan> {
+    const maxRetries = 5;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const loanNumber = await this.generateLoanNumber();
+      try {
+        return await this.createLoan({ ...loanData, loanNumber });
+      } catch (error: any) {
+        if (this.isDuplicateLoanNumberError(error)) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new InternalServerErrorException(
+      'No se pudo generar un número de préstamo único',
+    );
   }
 
   async updateLoan(id: string, updateData: UpdateLoanData): Promise<Loan> {
@@ -153,5 +176,13 @@ export class LoanRepository {
       { data, total },
       paginationOptions,
     );
+  }
+
+  private isDuplicateLoanNumberError(error: any): boolean {
+    const duplicateCode = error?.code === '23505';
+    const duplicateConstraint =
+      error?.constraint === 'UQ_2c3924c4f76a8318dabc7f23d8b';
+    const duplicateDetail = String(error?.detail || '').includes('(loan_number)');
+    return duplicateCode && (duplicateConstraint || duplicateDetail);
   }
 }

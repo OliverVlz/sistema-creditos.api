@@ -8,6 +8,7 @@ export type ApiConfig = {
   webBaseUrl: string;
   mailLogoUrl: string;
   massiveImportTemplateUrl: string;
+  loanContractTemplateUrl: string;
   passwordRecoveryTime: string;
   logger: {
     lokiEnabled: boolean;
@@ -55,6 +56,9 @@ export default registerAs('api', (): ApiConfig => {
   const massiveImportTemplateObjectKey =
     process.env.MASSIVE_IMPORT_TEMPLATE_OBJECT_KEY ||
     'branding/Plantilla-subida-masiva.xlsx';
+  const loanContractTemplateObjectKey =
+    process.env.LOAN_CONTRACT_TEMPLATE_OBJECT_KEY ||
+    'branding/Formato-contrato-firma.pdf';
 
   return {
     env: process.env.NODE_ENV || 'development',
@@ -68,6 +72,11 @@ export default registerAs('api', (): ApiConfig => {
     massiveImportTemplateUrl: resolvePublicObjectUrl(
       process.env.MASSIVE_IMPORT_TEMPLATE_URL,
       massiveImportTemplateObjectKey,
+      webBaseUrl,
+    ),
+    loanContractTemplateUrl: resolvePublicObjectUrl(
+      process.env.LOAN_CONTRACT_TEMPLATE_URL,
+      loanContractTemplateObjectKey,
       webBaseUrl,
     ),
     passwordRecoveryTime: process.env.PASSWORD_RECOVERY_EXPIRATION || '15min',

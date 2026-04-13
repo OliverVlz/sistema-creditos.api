@@ -61,9 +61,7 @@ export class CreateLoanWithFilesHandler
       });
 
     // Crear préstamo usando los IDs resueltos
-    const loanNumber = await this.loanRepository.generateLoanNumber();
-    const newLoan = await this.loanRepository.createLoan({
-      loanNumber,
+    const newLoan = await this.loanRepository.createLoanWithAutoNumber({
       client: { id: client.id },
       loanType: { id: loanType.id },
       organization: { id: organization.id },

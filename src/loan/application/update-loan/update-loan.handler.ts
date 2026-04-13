@@ -11,6 +11,7 @@ import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 import { UserRepository } from 'src/identity/infrastructure/repositories/user.repository';
 import { NotificationsService } from 'src/notifications/infrastructure/notifications.service';
 import { UserRole } from 'src/shared/enums';
+import { LoanStatusEmailService } from '../shared/loan-status-email.service';
 
 @CommandHandler(UpdateLoanCommand)
 export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
@@ -19,6 +20,7 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
     private readonly loanDocumentRepository: LoanDocumentRepository,
     private readonly userRepository: UserRepository,
     private readonly notificationsService: NotificationsService,
+    private readonly loanStatusEmailService: LoanStatusEmailService,
   ) {}
 
   async execute(command: UpdateLoanCommand): Promise<any> {
@@ -71,6 +73,16 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
       );
     }
 
+    if (
+      status === LoanStatus.APROBADO &&
+      existingLoan.status !== LoanStatus.PREAPROBADO &&
+      existingLoan.status !== LoanStatus.APROBADO
+    ) {
+      throw new BadRequestException(
+        'Solo se puede aprobar una solicitud que ya esté preaprobada',
+      );
+    }
+
     if (managerId) {
       const manager = await this.userRepository.findById(managerId);
       if (!manager) {
@@ -91,6 +103,7 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
 
     // Solo actualizar datos del préstamo si es admin/asesor
     let updatedLoan = existingLoan;
+    const previousStatus = existingLoan.status;
     if (isAdminOrAdvisor) {
       const updateData = {
         ...(status && { status }),
@@ -117,7 +130,7 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
       existingLoan.client?.user?.lastName
         ? `${existingLoan.client.user.firstName} ${existingLoan.client.user.lastName}`
         : 'Cliente';
-    const clientUserId = existingLoan.client?.user?.id;
+    const clientEmail = existingLoan.client?.user?.email;
 
     if (isClient && documents && documents.length > 0) {
       // Client modified their loan after rejection
@@ -147,10 +160,36 @@ export class UpdateLoanHandler implements ICommandHandler<UpdateLoanCommand> {
         timestamp: new Date(),
       };
 
-      if (status === LoanStatus.APROBADO) {
+      if (status === LoanStatus.PREAPROBADO && previousStatus !== status) {
+        this.notificationsService.notifyLoanPreapproved(notificationData);
+        if (clientEmail) {
+          await this.loanStatusEmailService.sendPreapprovedEmail({
+            email: clientEmail,
+            firstName: existingLoan.client?.user?.firstName,
+            loanNumber: updatedLoan.loanNumber,
+            details: updatedLoan.rejectionReason || undefined,
+          });
+        }
+      } else if (status === LoanStatus.APROBADO && previousStatus !== status) {
         this.notificationsService.notifyLoanApproved(notificationData);
-      } else if (status === LoanStatus.RECHAZADO) {
+        if (clientEmail) {
+          await this.loanStatusEmailService.sendApprovedEmail({
+            email: clientEmail,
+            firstName: existingLoan.client?.user?.firstName,
+            loanNumber: updatedLoan.loanNumber,
+            details: updatedLoan.rejectionReason || undefined,
+          });
+        }
+      } else if (status === LoanStatus.RECHAZADO && previousStatus !== status) {
         this.notificationsService.notifyLoanRejected(notificationData);
+        if (clientEmail) {
+          await this.loanStatusEmailService.sendRejectedEmail({
+            email: clientEmail,
+            firstName: existingLoan.client?.user?.firstName,
+            loanNumber: updatedLoan.loanNumber,
+            details: updatedLoan.rejectionReason || undefined,
+          });
+        }
       } else {
         this.notificationsService.notifyLoanUpdated(notificationData);
       }

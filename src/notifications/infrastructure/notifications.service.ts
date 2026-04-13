@@ -6,6 +6,7 @@ import { UserRepository } from 'src/identity/infrastructure/repositories/user.re
 
 export enum NotificationType {
   LOAN_CREATED = 'loan:created',
+  LOAN_PREAPPROVED = 'loan:preapproved',
   LOAN_APPROVED = 'loan:approved',
   LOAN_REJECTED = 'loan:rejected',
   LOAN_UPDATED = 'loan:updated',
@@ -115,6 +116,46 @@ export class NotificationsService {
         data,
       },
     );
+  }
+
+  /**
+   * Notify when an admin/advisor preapproves a loan
+   */
+  async notifyLoanPreapproved(data: LoanNotificationData) {
+    this.logger.log(`Notifying loan preapproved: ${data.loanNumber}`);
+
+    const userMsg = `Tu solicitud de crédito ${data.loanNumber} fue preaprobada`;
+    const adminMsg = `Crédito ${data.loanNumber} preaprobado por ${data.managerName}`;
+
+    await this.saveNotification(
+      data.clientId,
+      NotificationType.LOAN_PREAPPROVED,
+      'Solicitud Preaprobada',
+      userMsg,
+      data,
+    );
+    await this.saveNotificationForAdmins(
+      NotificationType.LOAN_PREAPPROVED,
+      'Solicitud Preaprobada',
+      adminMsg,
+      data,
+    );
+
+    this.notificationsGateway.sendToUser(
+      data.clientId,
+      NotificationType.LOAN_PREAPPROVED,
+      {
+        type: NotificationType.LOAN_PREAPPROVED,
+        message: userMsg,
+        data,
+      },
+    );
+
+    this.notificationsGateway.sendToAdmins(NotificationType.LOAN_PREAPPROVED, {
+      type: NotificationType.LOAN_PREAPPROVED,
+      message: adminMsg,
+      data,
+    });
   }
 
   /**

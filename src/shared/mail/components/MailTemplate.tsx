@@ -17,7 +17,7 @@ export function MailTemplate({
   title,
   children,
   logoUrl = '/assets/logo-color.png',
-  logoAlt = 'Sistema de Créditos',
+  logoAlt = 'Inversiones Murillo Martinez',
 }: MailTemplateProps) {
   return (
     <Html title={title}>

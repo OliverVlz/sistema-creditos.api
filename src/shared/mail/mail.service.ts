@@ -5,6 +5,9 @@ import { Transporter, SendMailOptions } from 'nodemailer';
 import Mail from 'nodemailer/lib/mailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { firstValueFrom } from 'rxjs';
+import { promises as fs } from 'fs';
+import { basename } from 'path';
+import { Readable } from 'stream';
 
 import { MAIL_OPTIONS } from './mail.constants';
 import { EmailTemplate, MailModuleOptions } from './mail.types';
@@ -122,6 +125,10 @@ export class MailService {
       return;
     }
 
+    const attachments = await this.normalizeAttachmentsForResend(
+      content.attachments,
+    );
+
     const payload = {
       from: String(content.from),
       to,
@@ -132,6 +139,7 @@ export class MailService {
       bcc: bcc.length ? bcc : undefined,
       reply_to:
         this.resolveReplyToForResend(content) || this.resendConfig.replyTo,
+      attachments: attachments.length > 0 ? attachments : undefined,
     };
 
     const request = this.httpService.post('https://api.resend.com/emails', payload, {
@@ -144,6 +152,135 @@ export class MailService {
     return firstValueFrom(request)
       .then(response => response.data)
       .catch(e => this.handleError(e));
+  }
+
+  private async normalizeAttachmentsForResend(
+    attachments: SendMailOptions['attachments'],
+  ) {
+    if (!attachments || attachments.length === 0) {
+      return [];
+    }
+
+    const results: Array<{ filename: string; content: string }> = [];
+
+    for (const attachment of attachments) {
+      const fileName = this.resolveAttachmentFileName(attachment);
+      if (!fileName) {
+        continue;
+      }
+
+      let contentBase64 = '';
+
+      try {
+        if (attachment.content) {
+          contentBase64 = await this.normalizeAttachmentContent(
+            attachment.content,
+            attachment.encoding,
+          );
+        } else if (attachment.path) {
+          contentBase64 = await this.readAttachmentPathAsBase64(
+            String(attachment.path),
+          );
+        }
+      } catch (error) {
+        console.warn(
+          `No se pudo preparar adjunto "${fileName}" para Resend. Se enviará correo sin este adjunto.`,
+          error,
+        );
+        continue;
+      }
+
+      if (!contentBase64) {
+        continue;
+      }
+
+      results.push({
+        filename: fileName,
+        content: contentBase64,
+      });
+    }
+
+    return results;
+  }
+
+  private resolveAttachmentFileName(attachment: Mail.Attachment) {
+    if (attachment.filename) {
+      return String(attachment.filename);
+    }
+
+    if (attachment.path) {
+      return basename(String(attachment.path));
+    }
+
+    return 'adjunto.pdf';
+  }
+
+  private async normalizeAttachmentContent(
+    content: Mail.Attachment['content'],
+    encoding?: string,
+  ) {
+    if (!content) {
+      return '';
+    }
+
+    if (Buffer.isBuffer(content)) {
+      return content.toString('base64');
+    }
+
+    if (typeof content === 'string') {
+      if (encoding === 'base64') {
+        return content;
+      }
+      return Buffer.from(content, encoding as BufferEncoding | undefined).toString(
+        'base64',
+      );
+    }
+
+    if (Array.isArray(content)) {
+      const chunks: Buffer[] = [];
+      for (const item of content) {
+        if (Buffer.isBuffer(item)) {
+          chunks.push(item);
+          continue;
+        }
+        if (typeof item === 'string') {
+          chunks.push(Buffer.from(item));
+        }
+      }
+      return Buffer.concat(chunks).toString('base64');
+    }
+
+    if (this.isReadableStream(content)) {
+      const chunks: Buffer[] = [];
+      await new Promise<void>((resolve, reject) => {
+        content.on('data', chunk => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+        content.on('end', () => resolve());
+        content.on('error', reject);
+      });
+      return Buffer.concat(chunks).toString('base64');
+    }
+
+    return '';
+  }
+
+  private async readAttachmentPathAsBase64(pathOrUrl: string) {
+    const isUrl = /^https?:\/\//i.test(pathOrUrl);
+    if (isUrl) {
+      const request = this.httpService.get(pathOrUrl, {
+        responseType: 'arraybuffer',
+      });
+      const response = await firstValueFrom(request);
+      return Buffer.from(response.data).toString('base64');
+    }
+
+    const fileBuffer = await fs.readFile(pathOrUrl);
+    return fileBuffer.toString('base64');
+  }
+
+  private isReadableStream(value: unknown): value is Readable {
+    return value instanceof Readable;
   }
 
   private resolveReplyToForResend(content: SendMailOptions): string | undefined {

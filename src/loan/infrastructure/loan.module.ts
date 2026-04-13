@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CqrsModule } from '@nestjs/cqrs';
 
@@ -15,6 +16,8 @@ import { UpdateLoanHandler } from '../application/update-loan/update-loan.handle
 import { UpdateLoanWithFilesHandler } from '../application/update-loan-with-files/update-loan-with-files.handler';
 import { SoftDeleteLoanHandler } from '../application/soft-delete-loan/soft-delete-loan.handler';
 import { CalculateLoanHandler } from '../application/calculate-loan/calculate-loan.handler';
+import { SendPreapprovalReminderHandler } from '../application/send-preapproval-reminder/send-preapproval-reminder.handler';
+import { LoanStatusEmailService } from '../application/shared/loan-status-email.service';
 
 import { ClientsModule } from 'src/client/infrastructure/client.module';
 import { OrganizationModule } from 'src/organization/infrastructure/organization.module';
@@ -30,6 +33,7 @@ const CommandHandlers = [
   UpdateLoanHandler,
   UpdateLoanWithFilesHandler,
   SoftDeleteLoanHandler,
+  SendPreapprovalReminderHandler,
 ];
 
 const QueryHandlers = [
@@ -40,10 +44,11 @@ const QueryHandlers = [
 
 const Repositories = [LoanRepository];
 
-const Services = [LoanCalculatorService];
+const Services = [LoanCalculatorService, LoanStatusEmailService];
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([Loan]),
     CqrsModule,
     forwardRef(() => ClientsModule),

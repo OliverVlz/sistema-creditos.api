@@ -87,11 +87,7 @@ export class CreateLoanHandler implements ICommandHandler<CreateLoanCommand> {
         frontendTotalPayable,
       });
 
-    const loanNumber = await this.loanRepository.generateLoanNumber();
-
-    // Usar los IDs resueltos de las entidades encontradas
-    const newLoan = await this.loanRepository.createLoan({
-      loanNumber,
+    const newLoan = await this.loanRepository.createLoanWithAutoNumber({
       client: { id: client.id },
       loanType: { id: loanType.id },
       organization: { id: organization.id },

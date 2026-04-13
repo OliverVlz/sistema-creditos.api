@@ -12,6 +12,7 @@ import {
   UploadedFiles,
   BadRequestException,
   UseGuards,
+  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -22,6 +23,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { CreateLoanMultipartDto } from './dto/create-loan-multipart.dto';
@@ -37,9 +40,11 @@ import { UpdateLoanWithFilesCommand } from '../application/update-loan-with-file
 import { SoftDeleteLoanCommand } from '../application/soft-delete-loan/soft-delete-loan.command';
 import { GetLoanByIdQuery } from '../application/get-loan-by-id/get-loan-by-id.query';
 import { CalculateLoanQuery } from '../application/calculate-loan/calculate-loan.query';
+import { SendPreapprovalReminderCommand } from '../application/send-preapproval-reminder/send-preapproval-reminder.command';
 import { UserRole } from 'src/shared/enums';
 import { Public } from 'src/shared/validation/public.decorator';
-import { AdminGuard } from 'src/shared/guards';
+import { AdminGuard, AdminOrAdvisorGuard } from 'src/shared/guards';
+import { ApiConfig } from 'src/config/api.config';
 
 @ApiTags('Loans')
 @Controller('loans')
@@ -48,6 +53,7 @@ export class LoansController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('/calculate')
@@ -162,6 +168,25 @@ export class LoansController {
     return this.queryBus.execute(new GetLoansQuery(query));
   }
 
+  @Get('/preapproval-contract-template')
+  @ApiOperation({
+    summary: 'Download preapproval contract template',
+  })
+  async getPreapprovalContractTemplate(
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const apiConfig = this.configService.get<ApiConfig>('api');
+    const templateUrl = apiConfig?.loanContractTemplateUrl;
+
+    if (!templateUrl) {
+      throw new BadRequestException(
+        'No hay plantilla de contrato configurada para preaprobación',
+      );
+    }
+
+    return res.redirect(templateUrl);
+  }
+
   @Get('/:id')
   @ApiOperation({ summary: 'Get loan detail by ID' })
   async getLoanById(@Param('id') id: string, @Req() req: any) {
@@ -250,7 +275,7 @@ export class LoansController {
       properties: {
         status: {
           type: 'string',
-          enum: ['pendiente', 'aprobado', 'rechazado', 'desembolsado'],
+          enum: ['pendiente', 'preaprobado', 'aprobado', 'rechazado', 'desembolsado'],
         },
         rejectionReason: {
           type: 'string',
@@ -354,5 +379,14 @@ export class LoansController {
   @ApiOperation({ summary: 'Soft delete loan' })
   async remove(@Param('id') id: string, @Req() req: any) {
     return this.commandBus.execute(new SoftDeleteLoanCommand(id, req.user.id));
+  }
+
+  @Patch('/:id/send-preapproval-reminder')
+  @UseGuards(AdminOrAdvisorGuard)
+  @ApiOperation({ summary: 'Send preapproval reminder email to client' })
+  async sendPreapprovalReminder(@Param('id') id: string, @Req() req: any) {
+    return this.commandBus.execute(
+      new SendPreapprovalReminderCommand(id, req.user.id),
+    );
   }
 }

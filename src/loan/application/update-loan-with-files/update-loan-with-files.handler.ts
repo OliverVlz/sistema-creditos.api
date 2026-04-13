@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { LoanStatus } from '../../infrastructure/entity/loan.entity';
 import { UserRole } from 'src/shared/enums';
+import { LoanStatusEmailService } from '../shared/loan-status-email.service';
 
 @CommandHandler(UpdateLoanWithFilesCommand)
 export class UpdateLoanWithFilesHandler
@@ -28,6 +29,7 @@ export class UpdateLoanWithFilesHandler
     private readonly userRepository: UserRepository,
     private readonly storageService: StorageService,
     private readonly notificationsService: NotificationsService,
+    private readonly loanStatusEmailService: LoanStatusEmailService,
   ) {}
 
   async execute(command: UpdateLoanWithFilesCommand): Promise<any> {
@@ -46,6 +48,7 @@ export class UpdateLoanWithFilesHandler
 
     // Validar préstamo existente
     const existingLoan = await this.loanRepository.findOne(loanId);
+    const previousStatus = existingLoan.status;
     if (!existingLoan) {
       throw new NotFoundException(`Préstamo con ID ${loanId} no encontrado`);
     }
@@ -82,6 +85,16 @@ export class UpdateLoanWithFilesHandler
     if (status === LoanStatus.RECHAZADO && !rejectionReason) {
       throw new BadRequestException(
         'Se requiere una razón de rechazo para rechazar el préstamo',
+      );
+    }
+
+    if (
+      status === LoanStatus.APROBADO &&
+      existingLoan.status !== LoanStatus.PREAPROBADO &&
+      existingLoan.status !== LoanStatus.APROBADO
+    ) {
+      throw new BadRequestException(
+        'Solo se puede aprobar una solicitud que ya esté preaprobada',
       );
     }
 
@@ -196,6 +209,7 @@ export class UpdateLoanWithFilesHandler
       existingLoan.client?.user?.lastName
         ? `${existingLoan.client.user.firstName} ${existingLoan.client.user.lastName}`
         : 'Cliente';
+    const clientEmail = existingLoan.client?.user?.email;
 
     if (clientMakingDocumentChanges) {
       // Client modified their loan documents
@@ -225,10 +239,45 @@ export class UpdateLoanWithFilesHandler
         timestamp: new Date(),
       };
 
-      if (updatedLoan.status === LoanStatus.APROBADO) {
+      if (
+        updatedLoan.status === LoanStatus.PREAPROBADO &&
+        previousStatus !== updatedLoan.status
+      ) {
+        this.notificationsService.notifyLoanPreapproved(notificationData);
+        if (clientEmail) {
+          await this.loanStatusEmailService.sendPreapprovedEmail({
+            email: clientEmail,
+            firstName: existingLoan.client?.user?.firstName,
+            loanNumber: updatedLoan.loanNumber,
+            details: updatedLoan.rejectionReason || undefined,
+          });
+        }
+      } else if (
+        updatedLoan.status === LoanStatus.APROBADO &&
+        previousStatus !== updatedLoan.status
+      ) {
         this.notificationsService.notifyLoanApproved(notificationData);
-      } else if (updatedLoan.status === LoanStatus.RECHAZADO) {
+        if (clientEmail) {
+          await this.loanStatusEmailService.sendApprovedEmail({
+            email: clientEmail,
+            firstName: existingLoan.client?.user?.firstName,
+            loanNumber: updatedLoan.loanNumber,
+            details: updatedLoan.rejectionReason || undefined,
+          });
+        }
+      } else if (
+        updatedLoan.status === LoanStatus.RECHAZADO &&
+        previousStatus !== updatedLoan.status
+      ) {
         this.notificationsService.notifyLoanRejected(notificationData);
+        if (clientEmail) {
+          await this.loanStatusEmailService.sendRejectedEmail({
+            email: clientEmail,
+            firstName: existingLoan.client?.user?.firstName,
+            loanNumber: updatedLoan.loanNumber,
+            details: updatedLoan.rejectionReason || undefined,
+          });
+        }
       } else {
         this.notificationsService.notifyLoanUpdated(notificationData);
       }

@@ -23,12 +23,16 @@ export function RecoverPasswordTemplate({
     alternateInstructions:
       'Si no deseas restablecer tu contraseña, ignora este correo electrónico, tu contraseña no se modificará.',
     regardsTop: 'Gracias,',
-    regardsBottom: 'Equipo de Sistema de Créditos',
+    regardsBottom: 'Equipo de Inversiones Murillo Martinez',
     receivedReason:
-      'Has recibido este correo porque tienes una cuenta en Sistema de Créditos.',
+      'Has recibido este correo porque tienes una cuenta en Inversiones Murillo Martinez.',
   };
   return (
-    <MailTemplate title={t.title} logoUrl={logoUrl} logoAlt="Sistema de Créditos">
+    <MailTemplate
+      title={t.title}
+      logoUrl={logoUrl}
+      logoAlt="Inversiones Murillo Martinez"
+    >
       <Paragraph paddingTop={16}>{t.greeting(firstName)}</Paragraph>
       <Paragraph paddingTop={16}>{t.explanation}</Paragraph>
       <Paragraph paddingTop={16}>{t.instructions}</Paragraph>

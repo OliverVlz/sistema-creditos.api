@@ -17,6 +17,7 @@ import { LoanDocument } from 'src/loan-document/infrastructure/entity/loan-docum
 
 export enum LoanStatus {
   PENDIENTE = 'pendiente',
+  PREAPROBADO = 'preaprobado',
   APROBADO = 'aprobado',
   RECHAZADO = 'rechazado',
   DESEMBOLSADO = 'desembolsado',
