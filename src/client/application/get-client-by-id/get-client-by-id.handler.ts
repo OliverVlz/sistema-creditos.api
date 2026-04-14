@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetClientByIdQuery } from './get-client-by-id.query';
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
 import { User } from 'src/identity/domain/user.model';
+import { formatYmdUtc } from 'src/shared/utils/date-only';
 
 @QueryHandler(GetClientByIdQuery)
 export class GetClientByIdHandler implements IQueryHandler<GetClientByIdQuery> {
@@ -22,7 +23,7 @@ export class GetClientByIdHandler implements IQueryHandler<GetClientByIdQuery> {
         address: client.address,
         birthDate: client.birthDate
           ? client.birthDate instanceof Date
-            ? client.birthDate.toISOString().split('T')[0]
+            ? formatYmdUtc(client.birthDate)
             : String(client.birthDate).split('T')[0]
           : null,
         createdAt: client.createdAt,

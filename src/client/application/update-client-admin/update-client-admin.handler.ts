@@ -7,6 +7,7 @@ import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 import { Client } from '../../infrastructure/entity/client.entity';
 import { User as UserDomainModel } from 'src/identity/domain/user.model';
+import { extractYmdFromDto, formatYmdUtc } from 'src/shared/utils/date-only';
 
 @CommandHandler(UpdateClientAdminCommand)
 export class UpdateClientAdminHandler
@@ -58,8 +59,6 @@ export class UpdateClientAdminHandler
       if (command.employmentStatus !== undefined)
         client.employmentStatus = command.employmentStatus;
       if (command.address !== undefined) client.address = command.address;
-      if (command.birthDate !== undefined)
-        client.birthDate = new Date(command.birthDate);
       if (command.organizationId !== undefined) {
         client.organization = await orgRepo.findOne({
           where: { id: command.organizationId },
@@ -67,6 +66,14 @@ export class UpdateClientAdminHandler
       }
 
       await clientRepo.save(client);
+
+      if (command.birthDate !== undefined) {
+        const ymd = extractYmdFromDto(command.birthDate);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+          throw new BadRequestException('birthDate inválida');
+        }
+        await this.clientRepository.updateBirthDateById(client.id, ymd, manager);
+      }
 
       // Actualizar datos del usuario (tabla users)
       const userUpdateData: any = {};
@@ -114,7 +121,7 @@ export class UpdateClientAdminHandler
           address: updatedClient.address,
           birthDate: updatedClient.birthDate
             ? updatedClient.birthDate instanceof Date
-              ? updatedClient.birthDate.toISOString().split('T')[0]
+              ? formatYmdUtc(updatedClient.birthDate)
               : String(updatedClient.birthDate).split('T')[0]
             : null,
           createdAt: updatedClient.createdAt,

@@ -5,6 +5,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { UserRole } from 'src/shared/enums';
 import { LoanCalculatorService } from '../../domain/loan-calculator.service';
 import { StorageService } from 'src/storage/infrastructure/storage.service';
+import { formatYmdUtc } from 'src/shared/utils/date-only';
 
 @QueryHandler(GetLoanByIdQuery)
 export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
@@ -73,7 +74,9 @@ export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
             id: loan.client.id,
             employmentStatus: loan.client.employmentStatus,
             address: loan.client.address,
-            birthDate: loan.client.birthDate,
+            birthDate: loan.client.birthDate
+              ? formatYmdUtc(loan.client.birthDate)
+              : null,
             user: loan.client.user
               ? {
                   id: loan.client.user.id,

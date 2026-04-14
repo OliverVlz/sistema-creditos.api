@@ -5,6 +5,7 @@ import { Repository, FindOneOptions, FindOptionsSelect } from 'typeorm';
 import { User } from '../entity/user.entity';
 import { UserRole } from 'src/shared/enums';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
+import { formatYmdUtc } from 'src/shared/utils/date-only';
 
 /** Can be used to select only the specified fields from a query result */
 type UserSelect = { [key in keyof User]?: boolean };
@@ -209,7 +210,9 @@ export class UserRepository {
         ? {
             id: user.client.id,
             address: user.client.address,
-            birthDate: user.client.birthDate,
+            birthDate: user.client.birthDate
+              ? formatYmdUtc(user.client.birthDate)
+              : null,
             employmentStatus: user.client.employmentStatus,
             createdAt: user.client.createdAt,
             updatedAt: user.client.updatedAt,

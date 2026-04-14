@@ -5,10 +5,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { MailService } from 'src/shared/mail/mail.service';
+import { ApiConfig } from 'src/config/api.config';
+import { MailService, renderTemplate } from 'src/shared/mail';
 import type { MailModuleOptions } from 'src/shared/mail/mail.types';
 
 import { ContactSubmissionDto } from './dto/contact-submission.dto';
+import { ContactSubmissionTemplate } from './contact-submission.template';
 
 @Injectable()
 export class ContactService {
@@ -19,6 +21,7 @@ export class ContactService {
 
   async submitContact(dto: ContactSubmissionDto): Promise<{ message: string }> {
     const mailOptions = this.configService.get<MailModuleOptions>('mail');
+    const apiConfig = this.configService.get<ApiConfig>('api');
     const to = mailOptions.contactNotificationEmail?.trim();
 
     if (!to) {
@@ -28,19 +31,15 @@ export class ContactService {
     }
 
     const subject = `Mensaje desde la web — ${dto.nombre}`;
-    const safeNombre = this.escapeHtml(dto.nombre);
-    const safeTelefono = this.escapeHtml(dto.telefono);
-    const safeEmail = dto.email ? this.escapeHtml(dto.email) : '';
-    const safeMensaje = dto.mensaje
-      ? this.escapeHtml(dto.mensaje).replace(/\n/g, '<br/>')
-      : '';
-
-    const html = `
-      <p><strong>Nombre:</strong> ${safeNombre}</p>
-      <p><strong>Teléfono:</strong> ${safeTelefono}</p>
-      ${dto.email ? `<p><strong>Correo:</strong> ${safeEmail}</p>` : ''}
-      ${dto.mensaje ? `<p><strong>Mensaje:</strong><br/>${safeMensaje}</p>` : '<p><em>Sin mensaje adicional.</em></p>'}
-    `;
+    const html = renderTemplate(ContactSubmissionTemplate, {
+      data: {
+        nombre: dto.nombre,
+        telefono: dto.telefono,
+        email: dto.email,
+        mensaje: dto.mensaje,
+        logoUrl: apiConfig?.mailLogoUrl,
+      },
+    });
 
     const text = [
       `Nombre: ${dto.nombre}`,
@@ -66,13 +65,5 @@ export class ContactService {
     }
 
     return { message: 'Tu mensaje fue enviado correctamente.' };
-  }
-
-  private escapeHtml(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 }

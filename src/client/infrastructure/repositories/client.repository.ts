@@ -5,6 +5,7 @@ import { Client } from '../entity/client.entity';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
 import { DomainError } from 'src/shared/domain';
+import { formatYmdUtc, parseYmdToUtcDate } from 'src/shared/utils/date-only';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
 import { EmploymentStatus, UserRole } from 'src/shared/enums';
 import { User as UserDomainModel } from 'src/identity/domain/user.model';
@@ -158,7 +159,7 @@ export class ClientRepository {
         client: {
           id: client.id,
           address: client.address,
-          birthDate: client.birthDate?.toISOString().split('T')[0] ?? null,
+          birthDate: client.birthDate ? formatYmdUtc(client.birthDate) : null,
           employmentStatus: client.employmentStatus,
           organization: {
             id: organization.id,
@@ -195,6 +196,18 @@ export class ClientRepository {
   async update(id: string, client: UpdateClientData) {
     await this.clientsRepository.update(id, client);
     return this.findOne(id);
+  }
+
+  async updateBirthDateById(
+    clientId: string,
+    birthDateYmd: string,
+    manager?: EntityManager,
+  ) {
+    const queryRunner = manager ?? this.dataSource.manager;
+    await queryRunner.query(
+      `UPDATE clients SET birth_date = $1::date WHERE id = $2`,
+      [birthDateYmd, clientId],
+    );
   }
 
   async findOneByUserIdWithLoans(userId: string) {

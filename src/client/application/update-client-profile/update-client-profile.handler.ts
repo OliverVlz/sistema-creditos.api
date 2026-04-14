@@ -1,10 +1,17 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import {
+  CommandHandler,
+  ICommandHandler,
+  QueryBus,
+} from '@nestjs/cqrs';
 import { UpdateClientProfileCommand } from './update-client-profile.command';
 import { ClientRepository } from '../../infrastructure/repositories/client.repository';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
+import { Client } from '../../infrastructure/entity/client.entity';
+import { GetClientByIdQuery } from '../get-client-by-id/get-client-by-id.query';
+import { extractYmdFromDto } from 'src/shared/utils/date-only';
 
 @CommandHandler(UpdateClientProfileCommand)
 export class UpdateClientProfileHandler
@@ -13,15 +20,15 @@ export class UpdateClientProfileHandler
   constructor(
     private readonly clientRepository: ClientRepository,
     private readonly dataSource: DataSource,
+    private readonly queryBus: QueryBus,
   ) {}
 
   async execute(command: UpdateClientProfileCommand) {
-    return await this.dataSource.transaction(async manager => {
-      const clientRepo = manager.getRepository('clients');
+    await this.dataSource.transaction(async (manager: EntityManager) => {
+      const clientRepo = manager.getRepository(Client);
       const userRepo = manager.getRepository(User);
       const orgRepo = manager.getRepository(Organization);
 
-      // Buscar cliente por userId
       const client = await this.clientRepository.findOneByUserId(
         command.userId,
       );
@@ -30,7 +37,6 @@ export class UpdateClientProfileHandler
         throw new NotFoundException('Cliente no encontrado');
       }
 
-      // Validar organización si se proporciona
       if (command.organizationId) {
         const orgExists = await orgRepo.exists({
           where: { id: command.organizationId },
@@ -40,23 +46,27 @@ export class UpdateClientProfileHandler
         }
       }
 
-      // Actualizar datos del cliente (tabla clients)
-      const clientUpdateData: any = {};
+      const clientUpdateData: Record<string, unknown> = {};
       if (command.address !== undefined)
         clientUpdateData.address = command.address;
       if (command.employmentStatus !== undefined)
         clientUpdateData.employmentStatus = command.employmentStatus;
-      if (command.birthDate !== undefined)
-        clientUpdateData.birthDate = new Date(command.birthDate);
       if (command.organizationId !== undefined)
         clientUpdateData.organizationId = command.organizationId;
+
+      if (command.birthDate !== undefined) {
+        const ymd = extractYmdFromDto(command.birthDate);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+          throw new BadRequestException('birthDate inválida');
+        }
+        await this.clientRepository.updateBirthDateById(client.id, ymd, manager);
+      }
 
       if (Object.keys(clientUpdateData).length > 0) {
         await clientRepo.update(client.id, clientUpdateData);
       }
 
-      // Actualizar datos del usuario (tabla users)
-      const userUpdateData: any = {};
+      const userUpdateData: Record<string, unknown> = {};
       if (command.phoneNumber !== undefined)
         userUpdateData.phoneNumber = command.phoneNumber;
       if (command.firstName !== undefined)
@@ -69,9 +79,8 @@ export class UpdateClientProfileHandler
       if (Object.keys(userUpdateData).length > 0) {
         await userRepo.save({ ...client.user, ...userUpdateData });
       }
-
-      // Retornar cliente actualizado
-      return this.clientRepository.findOneByUserId(command.userId, manager);
     });
+
+    return this.queryBus.execute(new GetClientByIdQuery(command.userId));
   }
 }
