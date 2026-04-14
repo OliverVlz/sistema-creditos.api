@@ -120,9 +120,12 @@ export class LoanRepository {
 
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
-      queryBuilder.andWhere(`(LOWER(loan.loanNumber) LIKE :term)`, {
+      queryBuilder.andWhere(
+        `(LOWER(loan.loanNumber) LIKE :term OR LOWER(clientUser.documentNumber) LIKE :term OR LOWER(CONCAT_WS(' ', clientUser.firstName, clientUser.lastName)) LIKE :term OR LOWER(CONCAT_WS(' ', clientUser.lastName, clientUser.firstName)) LIKE :term)`,
+        {
         term: `%${term}%`,
-      });
+        },
+      );
     }
 
     if (searchData.clientId) {
@@ -144,9 +147,13 @@ export class LoanRepository {
     }
 
     if (searchData.loanNumber) {
-      queryBuilder.andWhere('LOWER(loan.loanNumber) LIKE :loanNumber', {
-        loanNumber: `%${searchData.loanNumber.toLowerCase()}%`,
-      });
+      const loanNumberTerm = searchData.loanNumber.toLowerCase().trim();
+      queryBuilder.andWhere(
+        `(LOWER(loan.loanNumber) LIKE :loanNumber OR LOWER(clientUser.documentNumber) LIKE :loanNumber OR LOWER(CONCAT_WS(' ', clientUser.firstName, clientUser.lastName)) LIKE :loanNumber OR LOWER(CONCAT_WS(' ', clientUser.lastName, clientUser.firstName)) LIKE :loanNumber)`,
+        {
+          loanNumber: `%${loanNumberTerm}%`,
+        },
+      );
     }
 
     if (searchData.status) {

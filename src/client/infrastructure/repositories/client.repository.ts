@@ -279,7 +279,7 @@ export class ClientRepository {
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term OR LOWER(user.phoneNumber) LIKE :term)`,
+        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(CONCAT_WS(' ', user.firstName, user.lastName)) LIKE :term OR LOWER(CONCAT_WS(' ', user.lastName, user.firstName)) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term OR LOWER(user.phoneNumber) LIKE :term)`,
         { term: `%${term}%` },
       );
     }
@@ -333,7 +333,7 @@ export class ClientRepository {
     if (searchData.terms) {
       const term = searchData.terms.toLowerCase().trim();
       queryBuilder.andWhere(
-        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term)`,
+        `(LOWER(user.firstName) LIKE :term OR LOWER(user.lastName) LIKE :term OR LOWER(CONCAT_WS(' ', user.firstName, user.lastName)) LIKE :term OR LOWER(CONCAT_WS(' ', user.lastName, user.firstName)) LIKE :term OR LOWER(user.documentNumber) LIKE :term OR LOWER(user.email) LIKE :term)`,
         { term: `%${term}%` },
       );
     }
