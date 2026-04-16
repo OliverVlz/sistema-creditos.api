@@ -31,7 +31,7 @@ Se aceptan encabezados en inglés y también aliases en español.
 - `lastName`
 - `documentNumber`
 - `phoneNumber`
-- `birthDate` (`YYYY-MM-DD`)
+- `birthDate` (`DD-MM-YYYY`)
 - `address`
 - `employmentStatus` (`ACTIVO` o `JUBILADO`)
 - `organizationName`

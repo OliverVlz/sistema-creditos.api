@@ -50,7 +50,7 @@ describe('import-clients-loans.excel', () => {
         'Lopez',
         '777001',
         '3001112233',
-        '1992-01-05',
+        '05-01-1992',
         'Calle 1 # 2-3',
         'ACTIVO',
         'Policía Nacional',
@@ -76,7 +76,7 @@ describe('import-clients-loans.excel', () => {
     expect(rows[0].lastName).toBe('Lopez');
     expect(rows[0].documentNumber).toBe('777001');
     expect(rows[0].phoneNumber).toBe('3001112233');
-    expect(rows[0].birthDate).toBe('1992-01-05');
+    expect(rows[0].birthDate).toBe('05-01-1992');
     expect(rows[0].address).toBe('Calle 1 # 2-3');
     expect(rows[0].employmentStatus).toBe('ACTIVO');
     expect(rows[0].organizationName).toBe('Policía Nacional');

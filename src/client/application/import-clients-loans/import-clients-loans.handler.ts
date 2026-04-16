@@ -4,7 +4,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { HashService } from 'src/shared/hash';
 import { EmploymentStatus, UserRole } from 'src/shared/enums';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
@@ -17,10 +17,11 @@ import {
   ClientLoanImportRow,
   parseClientsLoansWorkbook,
 } from './import-clients-loans.excel';
+import { parseYmdToUtcDate } from 'src/shared/utils/date-only';
 
 type ImportRowResult = {
   rowNumber: number;
-  status: 'SUCCESS' | 'ERROR';
+  status: 'SUCCESS' | 'ERROR' | 'VALID';
   email: string;
   documentNumber: string;
   clientId?: string;
@@ -46,6 +47,24 @@ type ParsedRow = {
   termMonths: number;
 };
 
+type ValidatedImportRow = {
+  rowNumber: number;
+  email: string;
+  documentNumber: string;
+  row: ParsedRow;
+  organization: Pick<Organization, 'id' | 'name'>;
+  loanType: Pick<
+    LoanType,
+    | 'id'
+    | 'name'
+    | 'interestRate'
+    | 'minAmount'
+    | 'maxAmount'
+    | 'minTerm'
+    | 'maxTerm'
+  >;
+};
+
 @Injectable()
 @CommandHandler(ImportClientsLoansCommand)
 export class ImportClientsLoansHandler
@@ -69,192 +88,374 @@ export class ImportClientsLoansHandler
       );
     }
 
-    const results: ImportRowResult[] = [];
-    const chunkSize = command.chunkSize;
+    const validation = await this.validateRows(rows);
 
-    for (let index = 0; index < rows.length; index += chunkSize) {
-      const chunk = rows.slice(index, index + chunkSize);
-
-      for (let chunkIndex = 0; chunkIndex < chunk.length; chunkIndex += 1) {
-        const row = chunk[chunkIndex];
-        const rowNumber = index + chunkIndex + 2;
-        const rowEmail = this.normalizeString(row.email);
-        const rowDocumentNumber = this.normalizeString(row.documentNumber);
-
-        try {
-          const result = await this.dataSource.transaction(async manager => {
-            const parsedRow = this.validateAndNormalizeRow(row, rowNumber);
-            return this.processRow(manager, parsedRow);
-          });
-
-          results.push({
-            rowNumber,
-            status: 'SUCCESS',
-            email: rowEmail,
-            documentNumber: rowDocumentNumber,
-            clientId: result.clientId,
-            loanId: result.loanId,
-            loanNumber: result.loanNumber,
-          });
-        } catch (error) {
-          results.push({
-            rowNumber,
-            status: 'ERROR',
-            email: rowEmail,
-            documentNumber: rowDocumentNumber,
-            errorCode: this.getErrorCode(error),
-            errorMessage: this.getErrorMessage(error),
-          });
-        }
-      }
+    if (validation.hasErrors) {
+      return {
+        fileName: command.file.originalname,
+        totalRows: rows.length,
+        processedRows: rows.length,
+        successRows: 0,
+        errorRows: validation.invalidRows,
+        validRows: validation.validRows,
+        uploaded: false,
+        results: validation.results,
+      };
     }
 
-    const successRows = results.filter(result => result.status === 'SUCCESS').length;
-    const errorRows = results.length - successRows;
+    const savedResults = await this.dataSource.transaction(async manager => {
+      const userRepository = manager.getRepository(User);
+      const clientRepository = manager.getRepository(Client);
+      const loanRepository = manager.getRepository(Loan);
+      const results: ImportRowResult[] = [];
+
+      await manager.query('LOCK TABLE loans IN EXCLUSIVE MODE');
+      const lastLoan = await loanRepository
+        .createQueryBuilder('loan')
+        .select('loan.loanNumber', 'loanNumber')
+        .orderBy('loan.createdAt', 'DESC')
+        .limit(1)
+        .getRawOne<{ loanNumber?: string }>();
+
+      let nextLoanNumber = this.getNextLoanNumber(lastLoan?.loanNumber);
+
+      for (const validRow of validation.validRowsData) {
+        const hashedPassword = await this.hashService.hash(
+          validRow.row.password,
+        );
+
+        const user = await userRepository.save(
+          userRepository.create({
+            email: validRow.row.email,
+            password: hashedPassword,
+            firstName: validRow.row.firstName,
+            lastName: validRow.row.lastName,
+            documentNumber: validRow.row.documentNumber,
+            phoneNumber: validRow.row.phoneNumber || null,
+            role: UserRole.CLIENTE,
+          }),
+        );
+
+        const client = await clientRepository.save(
+          clientRepository.create({
+            user,
+            organization: { id: validRow.organization.id },
+            address: validRow.row.address,
+            birthDate: validRow.row.birthDate,
+            employmentStatus: validRow.row.employmentStatus,
+          }),
+        );
+
+        const calculation = this.calculateLoan(
+          validRow.row.amountRequested,
+          validRow.row.termMonths,
+          Number(validRow.loanType.interestRate),
+        );
+
+        const currentLoanNumber = `LOAN-${nextLoanNumber.toString().padStart(6, '0')}`;
+        nextLoanNumber += 1;
+
+        const loan = await loanRepository.save(
+          loanRepository.create({
+            loanNumber: currentLoanNumber,
+            client: { id: client.id },
+            loanType: { id: validRow.loanType.id },
+            organization: { id: validRow.organization.id },
+            amountRequested: validRow.row.amountRequested,
+            termMonths: validRow.row.termMonths,
+            appliedInterestRate: Number(validRow.loanType.interestRate),
+            monthlyPayment: calculation.monthlyPayment,
+            totalInterest: calculation.totalInterest,
+            totalPayable: calculation.totalPayable,
+            status: LoanStatus.PENDIENTE,
+          }),
+        );
+
+        results.push({
+          rowNumber: validRow.rowNumber,
+          status: 'SUCCESS',
+          email: validRow.email,
+          documentNumber: validRow.documentNumber,
+          clientId: client.id,
+          loanId: loan.id,
+          loanNumber: loan.loanNumber,
+        });
+      }
+
+      return results.sort((a, b) => a.rowNumber - b.rowNumber);
+    });
 
     return {
       fileName: command.file.originalname,
       totalRows: rows.length,
-      processedRows: results.length,
-      successRows,
-      errorRows,
-      results,
+      processedRows: rows.length,
+      successRows: savedResults.length,
+      errorRows: 0,
+      validRows: savedResults.length,
+      uploaded: true,
+      results: savedResults,
     };
   }
 
-  private async processRow(manager: EntityManager, row: ParsedRow) {
-    const userRepository = manager.getRepository(User);
-    const clientRepository = manager.getRepository(Client);
-    const organizationRepository = manager.getRepository(Organization);
-    const loanTypeRepository = manager.getRepository(LoanType);
-    const loanRepository = manager.getRepository(Loan);
+  private async validateRows(rows: ClientLoanImportRow[]) {
+    const organizationRepo = this.dataSource.getRepository(Organization);
+    const loanTypeRepo = this.dataSource.getRepository(LoanType);
+    const userRepo = this.dataSource.getRepository(User);
 
-    const organization = await organizationRepository.findOne({
-      where: { name: row.organizationName },
-      select: ['id', 'name'],
-    });
+    const organizationCache = new Map<
+      string,
+      Pick<Organization, 'id' | 'name'> | null
+    >();
+    const loanTypeCache = new Map<
+      string,
+      Pick<
+        LoanType,
+        | 'id'
+        | 'name'
+        | 'interestRate'
+        | 'minAmount'
+        | 'maxAmount'
+        | 'minTerm'
+        | 'maxTerm'
+      > | null
+    >();
+    const resultsByRow = new Map<number, ImportRowResult>();
+    const validRowsData: ValidatedImportRow[] = [];
+    const seenEmails = new Set<string>();
+    const seenDocumentNumbers = new Set<string>();
 
-    if (!organization) {
-      throw new BadRequestException(
-        `La organización "${row.organizationName}" no existe`,
-      );
-    }
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index];
+      const rowNumber = index + 2;
+      const fallbackEmail = this.normalizeString(row.email).toLowerCase();
+      const fallbackDocument = this.normalizeString(row.documentNumber);
 
-    const loanType = await loanTypeRepository.findOne({
-      where: { name: row.loanTypeName },
-      select: ['id', 'name', 'interestRate', 'minAmount', 'maxAmount', 'minTerm', 'maxTerm'],
-    });
+      let parsedRow: ParsedRow;
+      try {
+        parsedRow = this.validateAndNormalizeRow(row, rowNumber);
+      } catch (error) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: fallbackEmail,
+          documentNumber: fallbackDocument,
+          errorCode: this.getErrorCode(error),
+          errorMessage: this.getErrorMessage(error),
+        });
+        continue;
+      }
 
-    if (!loanType) {
-      throw new BadRequestException(
-        `El tipo de préstamo "${row.loanTypeName}" no existe`,
-      );
-    }
+      if (seenEmails.has(parsedRow.email)) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'DUPLICATE_EMAIL_IN_FILE',
+          errorMessage: 'El email está repetido en el archivo',
+        });
+        continue;
+      }
+      seenEmails.add(parsedRow.email);
 
-    if (
-      row.amountRequested < Number(loanType.minAmount) ||
-      row.amountRequested > Number(loanType.maxAmount)
-    ) {
-      throw new BadRequestException(
-        `Monto solicitado fuera de rango para "${row.loanTypeName}"`,
-      );
-    }
+      if (seenDocumentNumbers.has(parsedRow.documentNumber)) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'DUPLICATE_DOCUMENT_IN_FILE',
+          errorMessage: 'El número de documento está repetido en el archivo',
+        });
+        continue;
+      }
+      seenDocumentNumbers.add(parsedRow.documentNumber);
 
-    if (row.termMonths < loanType.minTerm || row.termMonths > loanType.maxTerm) {
-      throw new BadRequestException(
-        `Plazo fuera de rango para "${row.loanTypeName}"`,
-      );
-    }
+      let organization = organizationCache.get(parsedRow.organizationName);
+      if (organization === undefined) {
+        const foundOrganization = await organizationRepo.findOne({
+          where: { name: parsedRow.organizationName },
+          select: ['id', 'name'],
+        });
+        organization = foundOrganization ?? null;
+        organizationCache.set(parsedRow.organizationName, organization);
+      }
 
-    const emailExists = await userRepository.exists({
-      where: { email: row.email },
-    });
+      if (!organization) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'ORGANIZATION_NOT_FOUND',
+          errorMessage: `La organización "${parsedRow.organizationName}" no existe`,
+        });
+        continue;
+      }
 
-    if (emailExists) {
-      throw new BadRequestException('El email ya existe en el sistema');
-    }
+      let loanType = loanTypeCache.get(parsedRow.loanTypeName);
+      if (loanType === undefined) {
+        const foundLoanType = await loanTypeRepo.findOne({
+          where: { name: parsedRow.loanTypeName },
+          select: [
+            'id',
+            'name',
+            'interestRate',
+            'minAmount',
+            'maxAmount',
+            'minTerm',
+            'maxTerm',
+          ],
+        });
+        loanType = foundLoanType ?? null;
+        loanTypeCache.set(parsedRow.loanTypeName, loanType);
+      }
 
-    const documentExists = await userRepository.exists({
-      where: { documentNumber: row.documentNumber },
-    });
+      if (!loanType) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'LOAN_TYPE_NOT_FOUND',
+          errorMessage: `El tipo de préstamo "${parsedRow.loanTypeName}" no existe`,
+        });
+        continue;
+      }
 
-    if (documentExists) {
-      throw new BadRequestException('El número de documento ya existe en el sistema');
-    }
+      if (
+        parsedRow.amountRequested < Number(loanType.minAmount) ||
+        parsedRow.amountRequested > Number(loanType.maxAmount)
+      ) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'AMOUNT_OUT_OF_RANGE',
+          errorMessage: `Monto solicitado fuera de rango para "${parsedRow.loanTypeName}"`,
+        });
+        continue;
+      }
 
-    const hashedPassword = await this.hashService.hash(row.password);
+      if (
+        parsedRow.termMonths < loanType.minTerm ||
+        parsedRow.termMonths > loanType.maxTerm
+      ) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'TERM_OUT_OF_RANGE',
+          errorMessage: `Plazo fuera de rango para "${parsedRow.loanTypeName}"`,
+        });
+        continue;
+      }
 
-    const user = await userRepository.save(
-      userRepository.create({
-        email: row.email,
-        password: hashedPassword,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        documentNumber: row.documentNumber,
-        phoneNumber: row.phoneNumber || null,
-        role: UserRole.CLIENTE,
-      }),
-    );
+      const emailExists = await userRepo.exists({
+        where: { email: parsedRow.email },
+      });
 
-    const client = await clientRepository.save(
-      clientRepository.create({
-        user,
+      if (emailExists) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'EMAIL_ALREADY_EXISTS',
+          errorMessage: 'El email ya existe en el sistema',
+        });
+        continue;
+      }
+
+      const documentExists = await userRepo.exists({
+        where: { documentNumber: parsedRow.documentNumber },
+      });
+
+      if (documentExists) {
+        resultsByRow.set(rowNumber, {
+          rowNumber,
+          status: 'ERROR',
+          email: parsedRow.email,
+          documentNumber: parsedRow.documentNumber,
+          errorCode: 'DOCUMENT_ALREADY_EXISTS',
+          errorMessage: 'El número de documento ya existe en el sistema',
+        });
+        continue;
+      }
+
+      validRowsData.push({
+        rowNumber,
+        email: parsedRow.email,
+        documentNumber: parsedRow.documentNumber,
+        row: parsedRow,
         organization,
-        address: row.address,
-        birthDate: row.birthDate,
-        employmentStatus: row.employmentStatus,
-      }),
+        loanType,
+      });
+    }
+
+    const hasErrors = Array.from(resultsByRow.values()).some(
+      result => result.status === 'ERROR',
     );
 
-    const calculation = this.calculateLoan(
-      row.amountRequested,
-      row.termMonths,
-      Number(loanType.interestRate),
-    );
+    const results: ImportRowResult[] = rows
+      .map<ImportRowResult>((row, index) => {
+        const rowNumber = index + 2;
+        const existing = resultsByRow.get(rowNumber);
+        if (existing) {
+          return existing;
+        }
 
-    const loanNumber = await this.generateLoanNumberWithLock(manager);
+        const validRow = validRowsData.find(
+          item => item.rowNumber === rowNumber,
+        );
+        const email =
+          validRow?.email ?? this.normalizeString(row.email).toLowerCase();
+        const documentNumber =
+          validRow?.documentNumber ?? this.normalizeString(row.documentNumber);
 
-    const loan = await loanRepository.save(
-      loanRepository.create({
-        loanNumber,
-        client: { id: client.id },
-        loanType: { id: loanType.id },
-        organization: { id: organization.id },
-        amountRequested: row.amountRequested,
-        termMonths: row.termMonths,
-        appliedInterestRate: Number(loanType.interestRate),
-        monthlyPayment: calculation.monthlyPayment,
-        totalInterest: calculation.totalInterest,
-        totalPayable: calculation.totalPayable,
-        status: LoanStatus.PENDIENTE,
-      }),
-    );
+        if (hasErrors) {
+          return {
+            rowNumber,
+            status: 'VALID',
+            email,
+            documentNumber,
+            errorCode: 'ROW_VALID',
+            errorMessage:
+              'Fila válida, pero no se cargó porque existen filas con error (modo todo o nada).',
+          };
+        }
+
+        return {
+          rowNumber,
+          status: 'VALID',
+          email,
+          documentNumber,
+        };
+      })
+      .sort((a, b) => a.rowNumber - b.rowNumber);
+
+    const invalidRows = results.filter(item => item.status === 'ERROR').length;
+    const validRows = results.filter(item => item.status !== 'ERROR').length;
 
     return {
-      clientId: client.id,
-      loanId: loan.id,
-      loanNumber: loan.loanNumber,
+      hasErrors,
+      results,
+      validRowsData,
+      validRows,
+      invalidRows,
     };
   }
 
-  private async generateLoanNumberWithLock(manager: EntityManager): Promise<string> {
-    await manager.query('LOCK TABLE loans IN EXCLUSIVE MODE');
-
-    const lastLoan = await manager
-      .getRepository(Loan)
-      .createQueryBuilder('loan')
-      .select('loan.loanNumber', 'loanNumber')
-      .orderBy('loan.createdAt', 'DESC')
-      .limit(1)
-      .getRawOne<{ loanNumber?: string }>();
-
-    if (!lastLoan?.loanNumber) {
-      return 'LOAN-000001';
+  private getNextLoanNumber(lastLoanNumber?: string): number {
+    if (!lastLoanNumber) {
+      return 1;
     }
 
-    const [, numericPart] = lastLoan.loanNumber.split('-');
+    const [, numericPart] = lastLoanNumber.split('-');
     const lastNumber = Number(numericPart || 0);
-    return `LOAN-${(lastNumber + 1).toString().padStart(6, '0')}`;
+    return Number.isFinite(lastNumber) && lastNumber > 0 ? lastNumber + 1 : 1;
   }
 
   private calculateLoan(
@@ -265,8 +466,9 @@ export class ImportClientsLoansHandler
     const monthlyRate =
       annualInterestRate === 0
         ? 0
-        : Math.round((Math.pow(1 + annualInterestRate / 100, 1 / 12) - 1) * 1000000) /
-          1000000;
+        : Math.round(
+            (Math.pow(1 + annualInterestRate / 100, 1 / 12) - 1) * 1000000,
+          ) / 1000000;
 
     const monthlyPayment =
       monthlyRate === 0
@@ -286,7 +488,10 @@ export class ImportClientsLoansHandler
     };
   }
 
-  private validateAndNormalizeRow(row: ClientLoanImportRow, rowNumber: number): ParsedRow {
+  private validateAndNormalizeRow(
+    row: ClientLoanImportRow,
+    rowNumber: number,
+  ): ParsedRow {
     const email = this.normalizeString(row.email).toLowerCase();
     const password = this.normalizeString(row.password);
     const firstName = this.normalizeString(row.firstName);
@@ -294,26 +499,41 @@ export class ImportClientsLoansHandler
     const documentNumber = this.normalizeString(row.documentNumber);
     const phoneNumber = this.normalizeString(row.phoneNumber);
     const address = this.normalizeString(row.address);
-    const employmentStatusRaw = this.normalizeString(row.employmentStatus).toUpperCase();
+    const employmentStatusRaw = this.normalizeString(
+      row.employmentStatus,
+    ).toUpperCase();
     const organizationName = this.normalizeString(row.organizationName);
     const loanTypeName = this.normalizeString(row.loanTypeName);
     const amountRequested = this.toNumber(row.amountRequested);
     const termMonths = this.toNumber(row.termMonths);
     const birthDate = this.parseBirthDate(row.birthDate);
 
-    if (!email) throw new BadRequestException(`Fila ${rowNumber}: email es requerido`);
-    if (!password) throw new BadRequestException(`Fila ${rowNumber}: password es requerido`);
-    if (!firstName) throw new BadRequestException(`Fila ${rowNumber}: firstName es requerido`);
-    if (!lastName) throw new BadRequestException(`Fila ${rowNumber}: lastName es requerido`);
+    if (!email)
+      throw new BadRequestException(`Fila ${rowNumber}: email es requerido`);
+    if (!password)
+      throw new BadRequestException(`Fila ${rowNumber}: password es requerido`);
+    if (!firstName)
+      throw new BadRequestException(
+        `Fila ${rowNumber}: firstName es requerido`,
+      );
+    if (!lastName)
+      throw new BadRequestException(`Fila ${rowNumber}: lastName es requerido`);
     if (!documentNumber) {
-      throw new BadRequestException(`Fila ${rowNumber}: documentNumber es requerido`);
+      throw new BadRequestException(
+        `Fila ${rowNumber}: documentNumber es requerido`,
+      );
     }
-    if (!address) throw new BadRequestException(`Fila ${rowNumber}: address es requerido`);
+    if (!address)
+      throw new BadRequestException(`Fila ${rowNumber}: address es requerido`);
     if (!organizationName) {
-      throw new BadRequestException(`Fila ${rowNumber}: organizationName es requerido`);
+      throw new BadRequestException(
+        `Fila ${rowNumber}: organizationName es requerido`,
+      );
     }
     if (!loanTypeName) {
-      throw new BadRequestException(`Fila ${rowNumber}: loanTypeName es requerido`);
+      throw new BadRequestException(
+        `Fila ${rowNumber}: loanTypeName es requerido`,
+      );
     }
     if (!Number.isFinite(amountRequested) || amountRequested <= 0) {
       throw new BadRequestException(
@@ -327,7 +547,7 @@ export class ImportClientsLoansHandler
     }
     if (!birthDate || Number.isNaN(birthDate.getTime())) {
       throw new BadRequestException(
-        `Fila ${rowNumber}: birthDate debe tener formato YYYY-MM-DD`,
+        `Fila ${rowNumber}: birthDate debe tener formato DD-MM-YYYY`,
       );
     }
     if (!this.isValidEmail(email)) {
@@ -363,7 +583,21 @@ export class ImportClientsLoansHandler
     };
   }
 
-  private parseBirthDate(value: string | number): Date | null {
+  private parseBirthDate(value: string | number | Date): Date | null {
+    if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) {
+        return null;
+      }
+
+      return new Date(
+        Date.UTC(
+          value.getUTCFullYear(),
+          value.getUTCMonth(),
+          value.getUTCDate(),
+        ),
+      );
+    }
+
     if (typeof value === 'number') {
       const utcDays = Math.floor(value - 25569);
       const utcValue = utcDays * 86400;
@@ -382,7 +616,13 @@ export class ImportClientsLoansHandler
       return null;
     }
 
-    const parsedDate = new Date(normalized);
+    const dmyMatch = normalized.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (!dmyMatch) {
+      return null;
+    }
+
+    const [, day, month, year] = dmyMatch;
+    const parsedDate = parseYmdToUtcDate(`${year}-${month}-${day}`);
     if (Number.isNaN(parsedDate.getTime())) {
       return null;
     }
@@ -390,7 +630,11 @@ export class ImportClientsLoansHandler
     return parsedDate;
   }
 
-  private toNumber(value: string | number): number {
+  private toNumber(value: string | number | Date): number {
+    if (value instanceof Date) {
+      return Number.NaN;
+    }
+
     if (typeof value === 'number') {
       return value;
     }
@@ -399,7 +643,15 @@ export class ImportClientsLoansHandler
     return Number(normalized);
   }
 
-  private normalizeString(value: string | number): string {
+  private normalizeString(value: string | number | Date): string {
+    if (value instanceof Date) {
+      return `${value.getUTCDate().toString().padStart(2, '0')}-${(
+        value.getUTCMonth() + 1
+      )
+        .toString()
+        .padStart(2, '0')}-${value.getUTCFullYear()}`;
+    }
+
     return String(value ?? '').trim();
   }
 
@@ -431,7 +683,10 @@ export class ImportClientsLoansHandler
     if (error?.response?.error) {
       return error.response.error;
     }
-    if (error?.response?.message && typeof error.response.message === 'string') {
+    if (
+      error?.response?.message &&
+      typeof error.response.message === 'string'
+    ) {
       return error.response.message;
     }
     if (error?.code) {

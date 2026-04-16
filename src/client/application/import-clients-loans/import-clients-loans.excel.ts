@@ -16,9 +16,13 @@ export const CLIENT_LOAN_IMPORT_COLUMNS = [
   'termMonths',
 ] as const;
 
-export type ClientLoanImportColumn = (typeof CLIENT_LOAN_IMPORT_COLUMNS)[number];
+export type ClientLoanImportColumn =
+  (typeof CLIENT_LOAN_IMPORT_COLUMNS)[number];
 
-export type ClientLoanImportRow = Record<ClientLoanImportColumn, string | number>;
+export type ClientLoanImportRow = Record<
+  ClientLoanImportColumn,
+  string | number | Date
+>;
 
 const HEADER_ALIASES: Record<ClientLoanImportColumn, string[]> = {
   email: ['email', 'correo', 'correoelectronico', 'e-mail'],
@@ -45,8 +49,8 @@ function normalizeHeader(value: string): string {
     .replace(/[\s_-]/g, '');
 }
 
-function buildSourceMap(row: Record<string, string | number>) {
-  const sourceMap = new Map<string, string | number>();
+function buildSourceMap(row: Record<string, string | number | Date>) {
+  const sourceMap = new Map<string, string | number | Date>();
 
   Object.entries(row).forEach(([key, value]) => {
     sourceMap.set(normalizeHeader(key), value);
@@ -65,7 +69,7 @@ export function buildClientsLoansTemplateBuffer(): Buffer {
       'Perez',
       '12345678',
       '3001234567',
-      '1990-05-01',
+      '01-05-1990',
       'Calle 10 # 20-30',
       'ACTIVO',
       'Policia Nacional',
@@ -81,7 +85,9 @@ export function buildClientsLoansTemplateBuffer(): Buffer {
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 }
 
-export function parseClientsLoansWorkbook(fileBuffer: Buffer): ClientLoanImportRow[] {
+export function parseClientsLoansWorkbook(
+  fileBuffer: Buffer,
+): ClientLoanImportRow[] {
   const workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: true });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
@@ -90,10 +96,14 @@ export function parseClientsLoansWorkbook(fileBuffer: Buffer): ClientLoanImportR
     return [];
   }
 
-  const rows = XLSX.utils.sheet_to_json<Record<string, string | number>>(sheet, {
-    defval: '',
-    raw: false,
-  });
+  const rows = XLSX.utils.sheet_to_json<Record<string, string | number | Date>>(
+    sheet,
+    {
+      defval: '',
+      raw: true,
+      dateNF: 'dd-mm-yyyy',
+    },
+  );
 
   return rows.map(row => {
     const normalized = {} as ClientLoanImportRow;

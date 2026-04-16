@@ -13,10 +13,15 @@ export function parseYmdToUtcDate(ymd: string): Date {
   return new Date(Date.UTC(y, m - 1, d));
 }
 
-export function formatYmdUtc(d: Date): string {
-  const y = d.getUTCFullYear();
-  const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const da = String(d.getUTCDate()).padStart(2, '0');
+export function formatYmdUtc(d: Date | string): string {
+  const date = typeof d === 'string' ? parseYmdToUtcDate(d) : d;
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    throw new TypeError('Invalid date value for formatYmdUtc');
+  }
+
+  const y = date.getUTCFullYear();
+  const mo = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const da = String(date.getUTCDate()).padStart(2, '0');
   return `${y}-${mo}-${da}`;
 }
 
