@@ -19,14 +19,11 @@ export class GetLoanDocumentsByLoanHandler
 
     return Promise.all(
       documents.map(async document => {
-        const key = this.storageService.extractObjectKeyFromUrl(document.url);
-        const signedUrl = key
-          ? await this.storageService.getPresignedUrl(key)
-          : document.url;
+        const url = await this.storageService.resolveDownloadUrl(document.url);
 
         return {
           ...document,
-          url: signedUrl,
+          url,
         };
       }),
     );

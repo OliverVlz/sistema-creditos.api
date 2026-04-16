@@ -35,14 +35,11 @@ export class GetLoanByIdHandler implements IQueryHandler<GetLoanByIdQuery> {
 
     const documents = await Promise.all(
       (loan.documents || []).map(async doc => {
-        const key = this.storageService.extractObjectKeyFromUrl(doc.url);
-        const signedUrl = key
-          ? await this.storageService.getPresignedUrl(key)
-          : doc.url;
+        const url = await this.storageService.resolveDownloadUrl(doc.url);
 
         return {
           id: doc.id,
-          url: signedUrl,
+          url,
           uploadedAt: doc.uploadedAt,
           documentType: doc.documentType
             ? {

@@ -33,17 +33,27 @@ export class StorageService implements OnModuleInit {
   private readonly endpoint: string;
   private readonly port: number;
   private readonly useSSL: boolean;
+  private readonly region: string;
   private readonly forcePathStyle: boolean;
   private readonly bucketPublicRead: boolean;
+  private readonly presignedUrlMode: 'auto' | 'always' | 'never';
 
   constructor(private readonly configService: ConfigService) {
-    this.endpoint = this.configService.get<string>(
+    const endpointInput = this.configService.get<string>(
       'MINIO_ENDPOINT',
       'localhost',
     );
-    this.port = this.configService.get<number>('MINIO_PORT', 9000);
+    const endpointConfig = this.normalizeEndpoint(endpointInput);
+    this.endpoint = endpointConfig.host;
+    this.port = this.configService.get<number>(
+      'MINIO_PORT',
+      endpointConfig.port || 9000,
+    );
     this.useSSL =
-      this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+      this.configService.get<string>('MINIO_USE_SSL')?.toLowerCase() === 'true'
+        ? true
+        : endpointConfig.useSSL;
+    this.region = this.configService.get<string>('MINIO_REGION', 'us-east-1');
     this.forcePathStyle =
       this.configService.get<string>('MINIO_FORCE_PATH_STYLE', 'true') ===
       'true';
@@ -58,11 +68,13 @@ export class StorageService implements OnModuleInit {
       'MINIO_PUBLIC_BUCKET',
       'public',
     );
+    this.presignedUrlMode = this.resolvePresignedUrlMode();
 
     const minioClientConfig: Minio.ClientOptions = {
       endPoint: this.endpoint,
       port: this.port,
       useSSL: this.useSSL,
+      region: this.region,
       accessKey: this.configService.get<string>(
         'MINIO_ACCESS_KEY',
         'minioadmin',
@@ -74,15 +86,70 @@ export class StorageService implements OnModuleInit {
     };
 
     if (this.forcePathStyle) {
-      (minioClientConfig as Minio.ClientOptions & { pathStyle: boolean }).pathStyle =
-        true;
+      (
+        minioClientConfig as Minio.ClientOptions & { pathStyle: boolean }
+      ).pathStyle = true;
     }
 
-    if ((this.useSSL && this.port === 443) || (!this.useSSL && this.port === 80)) {
-      delete (minioClientConfig as Minio.ClientOptions & { port?: number }).port;
+    if (
+      (this.useSSL && this.port === 443) ||
+      (!this.useSSL && this.port === 80)
+    ) {
+      delete (minioClientConfig as Minio.ClientOptions & { port?: number })
+        .port;
     }
 
     this.minioClient = new Minio.Client(minioClientConfig);
+    this.logger.log(
+      `MinIO cliente inicializado endpoint=${this.endpoint} ssl=${this.useSSL} port=${this.port} pathStyle=${this.forcePathStyle} region=${this.region} presignedMode=${this.presignedUrlMode}`,
+    );
+  }
+
+  private resolvePresignedUrlMode(): 'auto' | 'always' | 'never' {
+    const raw = this.configService
+      .get<string>('MINIO_USE_PRESIGNED_URLS', 'auto')
+      .trim()
+      .toLowerCase();
+
+    if (!raw || raw === 'auto') {
+      return 'auto';
+    }
+
+    if (raw === 'true' || raw === 'always') {
+      return 'always';
+    }
+
+    if (raw === 'false' || raw === 'never') {
+      return 'never';
+    }
+
+    return 'auto';
+  }
+
+  private normalizeEndpoint(endpointInput: string): {
+    host: string;
+    port?: number;
+    useSSL: boolean;
+  } {
+    const input = (endpointInput || '').trim();
+    if (!input) {
+      return { host: 'localhost', useSSL: false };
+    }
+
+    if (/^https?:\/\//i.test(input)) {
+      const parsed = new URL(input);
+      const parsedPort = parsed.port ? Number(parsed.port) : undefined;
+      return {
+        host: parsed.hostname,
+        port: Number.isFinite(parsedPort) ? parsedPort : undefined,
+        useSSL: parsed.protocol === 'https:',
+      };
+    }
+
+    return {
+      host: input.replace(/^\/+|\/+$/g, ''),
+      useSSL: false,
+    };
   }
 
   async onModuleInit() {
@@ -192,7 +259,10 @@ export class StorageService implements OnModuleInit {
     return Promise.all(uploadPromises);
   }
 
-  async deleteFile(key: string, bucketName: string = this.bucket): Promise<void> {
+  async deleteFile(
+    key: string,
+    bucketName: string = this.bucket,
+  ): Promise<void> {
     await this.minioClient.removeObject(bucketName, key);
   }
 
@@ -212,14 +282,59 @@ export class StorageService implements OnModuleInit {
       return `${publicBase}/${bucketName}/${key}`;
     }
     const protocol = this.useSSL ? 'https' : 'http';
-    return `${protocol}://${this.endpoint}:${this.port}/${bucketName}/${key}`;
+    const defaultPort =
+      (this.useSSL && this.port === 443) || (!this.useSSL && this.port === 80);
+    const portSegment = defaultPort ? '' : `:${this.port}`;
+    return `${protocol}://${this.endpoint}${portSegment}/${bucketName}/${key}`;
   }
 
   async getPresignedUrl(
     key: string,
     expirySeconds: number = 3600,
+    bucketName: string = this.bucket,
   ): Promise<string> {
-    return this.minioClient.presignedGetObject(this.bucket, key, expirySeconds);
+    return this.minioClient.presignedGetObject(bucketName, key, expirySeconds);
+  }
+
+  async resolveDownloadUrl(
+    urlOrKey: string,
+    expirySeconds: number = 3600,
+  ): Promise<string> {
+    if (!urlOrKey) {
+      return '';
+    }
+
+    const bucketName = this.extractBucketFromUrl(urlOrKey);
+    const key = this.extractObjectKeyFromUrl(urlOrKey);
+    if (!key) {
+      return urlOrKey;
+    }
+
+    if (this.shouldUsePresignedUrl(bucketName)) {
+      return this.getPresignedUrl(key, expirySeconds, bucketName);
+    }
+
+    return this.getPublicUrl(key, bucketName);
+  }
+
+  private shouldUsePresignedUrl(bucketName: string): boolean {
+    if (this.presignedUrlMode === 'never') {
+      return false;
+    }
+
+    if (this.presignedUrlMode === 'always') {
+      return true;
+    }
+
+    if (bucketName === this.publicBucket) {
+      return false;
+    }
+
+    if (bucketName === this.bucket && this.bucketPublicRead) {
+      return false;
+    }
+
+    return true;
   }
 
   extractObjectKeyFromUrl(urlOrKey: string): string {

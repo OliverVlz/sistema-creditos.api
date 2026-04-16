@@ -14,14 +14,11 @@ export class GetLoanDocumentByIdHandler
 
   async execute(query: GetLoanDocumentByIdQuery): Promise<any> {
     const document = await this.loanDocumentRepository.findOne(query.id);
-    const key = this.storageService.extractObjectKeyFromUrl(document.url);
-    const signedUrl = key
-      ? await this.storageService.getPresignedUrl(key)
-      : document.url;
+    const url = await this.storageService.resolveDownloadUrl(document.url);
 
     return {
       ...document,
-      url: signedUrl,
+      url,
     };
   }
 }

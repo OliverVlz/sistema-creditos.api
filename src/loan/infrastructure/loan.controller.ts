@@ -169,6 +169,7 @@ export class LoansController {
   }
 
   @Get('/preapproval-contract-template')
+  @Public()
   @ApiOperation({
     summary: 'Download preapproval contract template',
   })
@@ -275,7 +276,13 @@ export class LoansController {
       properties: {
         status: {
           type: 'string',
-          enum: ['pendiente', 'preaprobado', 'aprobado', 'rechazado', 'desembolsado'],
+          enum: [
+            'pendiente',
+            'preaprobado',
+            'aprobado',
+            'rechazado',
+            'desembolsado',
+          ],
         },
         rejectionReason: {
           type: 'string',
