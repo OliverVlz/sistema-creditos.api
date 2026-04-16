@@ -42,9 +42,10 @@ type ParsedRow = {
   address: string;
   employmentStatus: EmploymentStatus;
   organizationName: string;
-  loanTypeName: string;
-  amountRequested: number;
-  termMonths: number;
+  loanTypeName?: string;
+  amountRequested?: number;
+  termMonths?: number;
+  hasLoanRequest: boolean;
 };
 
 type ValidatedImportRow = {
@@ -53,7 +54,7 @@ type ValidatedImportRow = {
   documentNumber: string;
   row: ParsedRow;
   organization: Pick<Organization, 'id' | 'name'>;
-  loanType: Pick<
+  loanType?: Pick<
     LoanType,
     | 'id'
     | 'name'
@@ -153,30 +154,48 @@ export class ImportClientsLoansHandler
           [formatYmdUtc(validRow.row.birthDate), client.id],
         );
 
-        const calculation = this.calculateLoan(
-          validRow.row.amountRequested,
-          validRow.row.termMonths,
-          Number(validRow.loanType.interestRate),
-        );
+        let loanId: string | undefined;
+        let loanNumber: string | undefined;
 
-        const currentLoanNumber = `LOAN-${nextLoanNumber.toString().padStart(6, '0')}`;
-        nextLoanNumber += 1;
+        if (validRow.row.hasLoanRequest) {
+          if (
+            !validRow.loanType ||
+            validRow.row.amountRequested === undefined ||
+            validRow.row.termMonths === undefined
+          ) {
+            throw new BadRequestException(
+              `Fila ${validRow.rowNumber}: datos de solicitud incompletos para crear préstamo`,
+            );
+          }
 
-        const loan = await loanRepository.save(
-          loanRepository.create({
-            loanNumber: currentLoanNumber,
-            client: { id: client.id },
-            loanType: { id: validRow.loanType.id },
-            organization: { id: validRow.organization.id },
-            amountRequested: validRow.row.amountRequested,
-            termMonths: validRow.row.termMonths,
-            appliedInterestRate: Number(validRow.loanType.interestRate),
-            monthlyPayment: calculation.monthlyPayment,
-            totalInterest: calculation.totalInterest,
-            totalPayable: calculation.totalPayable,
-            status: LoanStatus.PENDIENTE,
-          }),
-        );
+          const calculation = this.calculateLoan(
+            validRow.row.amountRequested,
+            validRow.row.termMonths,
+            Number(validRow.loanType.interestRate),
+          );
+
+          const currentLoanNumber = `LOAN-${nextLoanNumber.toString().padStart(6, '0')}`;
+          nextLoanNumber += 1;
+
+          const loan = await loanRepository.save(
+            loanRepository.create({
+              loanNumber: currentLoanNumber,
+              client: { id: client.id },
+              loanType: { id: validRow.loanType.id },
+              organization: { id: validRow.organization.id },
+              amountRequested: validRow.row.amountRequested,
+              termMonths: validRow.row.termMonths,
+              appliedInterestRate: Number(validRow.loanType.interestRate),
+              monthlyPayment: calculation.monthlyPayment,
+              totalInterest: calculation.totalInterest,
+              totalPayable: calculation.totalPayable,
+              status: LoanStatus.PENDIENTE,
+            }),
+          );
+
+          loanId = loan.id;
+          loanNumber = loan.loanNumber;
+        }
 
         results.push({
           rowNumber: validRow.rowNumber,
@@ -184,8 +203,11 @@ export class ImportClientsLoansHandler
           email: validRow.email,
           documentNumber: validRow.documentNumber,
           clientId: client.id,
-          loanId: loan.id,
-          loanNumber: loan.loanNumber,
+          loanId,
+          loanNumber,
+          errorMessage: validRow.row.hasLoanRequest
+            ? undefined
+            : 'Cliente creado sin solicitud (campos de préstamo opcionales vacíos).',
         });
       }
 
@@ -300,64 +322,96 @@ export class ImportClientsLoansHandler
         continue;
       }
 
-      let loanType = loanTypeCache.get(parsedRow.loanTypeName);
-      if (loanType === undefined) {
-        const foundLoanType = await loanTypeRepo.findOne({
-          where: { name: parsedRow.loanTypeName },
-          select: [
-            'id',
-            'name',
-            'interestRate',
-            'minAmount',
-            'maxAmount',
-            'minTerm',
-            'maxTerm',
-          ],
-        });
-        loanType = foundLoanType ?? null;
-        loanTypeCache.set(parsedRow.loanTypeName, loanType);
-      }
+      let loanType:
+        | Pick<
+            LoanType,
+            | 'id'
+            | 'name'
+            | 'interestRate'
+            | 'minAmount'
+            | 'maxAmount'
+            | 'minTerm'
+            | 'maxTerm'
+          >
+        | null
+        | undefined;
 
-      if (!loanType) {
-        resultsByRow.set(rowNumber, {
-          rowNumber,
-          status: 'ERROR',
-          email: parsedRow.email,
-          documentNumber: parsedRow.documentNumber,
-          errorCode: 'LOAN_TYPE_NOT_FOUND',
-          errorMessage: `El tipo de préstamo "${parsedRow.loanTypeName}" no existe`,
-        });
-        continue;
-      }
+      if (parsedRow.hasLoanRequest && parsedRow.loanTypeName) {
+        loanType = loanTypeCache.get(parsedRow.loanTypeName);
+        if (loanType === undefined) {
+          const foundLoanType = await loanTypeRepo.findOne({
+            where: { name: parsedRow.loanTypeName },
+            select: [
+              'id',
+              'name',
+              'interestRate',
+              'minAmount',
+              'maxAmount',
+              'minTerm',
+              'maxTerm',
+            ],
+          });
+          loanType = foundLoanType ?? null;
+          loanTypeCache.set(parsedRow.loanTypeName, loanType);
+        }
 
-      if (
-        parsedRow.amountRequested < Number(loanType.minAmount) ||
-        parsedRow.amountRequested > Number(loanType.maxAmount)
-      ) {
-        resultsByRow.set(rowNumber, {
-          rowNumber,
-          status: 'ERROR',
-          email: parsedRow.email,
-          documentNumber: parsedRow.documentNumber,
-          errorCode: 'AMOUNT_OUT_OF_RANGE',
-          errorMessage: `Monto solicitado fuera de rango para "${parsedRow.loanTypeName}"`,
-        });
-        continue;
-      }
+        if (!loanType) {
+          resultsByRow.set(rowNumber, {
+            rowNumber,
+            status: 'ERROR',
+            email: parsedRow.email,
+            documentNumber: parsedRow.documentNumber,
+            errorCode: 'LOAN_TYPE_NOT_FOUND',
+            errorMessage: `El tipo de préstamo "${parsedRow.loanTypeName}" no existe`,
+          });
+          continue;
+        }
 
-      if (
-        parsedRow.termMonths < loanType.minTerm ||
-        parsedRow.termMonths > loanType.maxTerm
-      ) {
-        resultsByRow.set(rowNumber, {
-          rowNumber,
-          status: 'ERROR',
-          email: parsedRow.email,
-          documentNumber: parsedRow.documentNumber,
-          errorCode: 'TERM_OUT_OF_RANGE',
-          errorMessage: `Plazo fuera de rango para "${parsedRow.loanTypeName}"`,
-        });
-        continue;
+        if (
+          parsedRow.amountRequested === undefined ||
+          parsedRow.termMonths === undefined
+        ) {
+          resultsByRow.set(rowNumber, {
+            rowNumber,
+            status: 'ERROR',
+            email: parsedRow.email,
+            documentNumber: parsedRow.documentNumber,
+            errorCode: 'INCOMPLETE_LOAN_FIELDS',
+            errorMessage:
+              'Si vas a cargar solicitud, debes diligenciar tipoPrestamo, montoSolicitado y plazoMeses.',
+          });
+          continue;
+        }
+
+        if (
+          parsedRow.amountRequested < Number(loanType.minAmount) ||
+          parsedRow.amountRequested > Number(loanType.maxAmount)
+        ) {
+          resultsByRow.set(rowNumber, {
+            rowNumber,
+            status: 'ERROR',
+            email: parsedRow.email,
+            documentNumber: parsedRow.documentNumber,
+            errorCode: 'AMOUNT_OUT_OF_RANGE',
+            errorMessage: `Monto solicitado fuera de rango para "${parsedRow.loanTypeName}"`,
+          });
+          continue;
+        }
+
+        if (
+          parsedRow.termMonths < loanType.minTerm ||
+          parsedRow.termMonths > loanType.maxTerm
+        ) {
+          resultsByRow.set(rowNumber, {
+            rowNumber,
+            status: 'ERROR',
+            email: parsedRow.email,
+            documentNumber: parsedRow.documentNumber,
+            errorCode: 'TERM_OUT_OF_RANGE',
+            errorMessage: `Plazo fuera de rango para "${parsedRow.loanTypeName}"`,
+          });
+          continue;
+        }
       }
 
       const emailExists = await userRepo.exists({
@@ -398,7 +452,7 @@ export class ImportClientsLoansHandler
         documentNumber: parsedRow.documentNumber,
         row: parsedRow,
         organization,
-        loanType,
+        loanType: loanType ?? undefined,
       });
     }
 
@@ -511,8 +565,8 @@ export class ImportClientsLoansHandler
     ).toUpperCase();
     const organizationName = this.normalizeString(row.organizationName);
     const loanTypeName = this.normalizeString(row.loanTypeName);
-    const amountRequested = this.toNumber(row.amountRequested);
-    const termMonths = this.toNumber(row.termMonths);
+    const amountRequestedRaw = this.normalizeString(row.amountRequested);
+    const termMonthsRaw = this.normalizeString(row.termMonths);
     const birthDate = this.parseBirthDate(row.birthDate);
 
     if (!email)
@@ -537,20 +591,39 @@ export class ImportClientsLoansHandler
         `Fila ${rowNumber}: organizationName es requerido`,
       );
     }
-    if (!loanTypeName) {
+    const hasLoanTypeName = !!loanTypeName;
+    const hasAmountRequested = !!amountRequestedRaw;
+    const hasTermMonths = !!termMonthsRaw;
+    const providedLoanFields = [
+      hasLoanTypeName,
+      hasAmountRequested,
+      hasTermMonths,
+    ].filter(Boolean).length;
+
+    if (providedLoanFields > 0 && providedLoanFields < 3) {
       throw new BadRequestException(
-        `Fila ${rowNumber}: loanTypeName es requerido`,
+        `Fila ${rowNumber}: si deseas crear solicitud, debes diligenciar tipoPrestamo, montoSolicitado y plazoMeses`,
       );
     }
-    if (!Number.isFinite(amountRequested) || amountRequested <= 0) {
-      throw new BadRequestException(
-        `Fila ${rowNumber}: amountRequested debe ser un número mayor a 0`,
-      );
-    }
-    if (!Number.isInteger(termMonths) || termMonths <= 0) {
-      throw new BadRequestException(
-        `Fila ${rowNumber}: termMonths debe ser un entero mayor a 0`,
-      );
+
+    const hasLoanRequest = providedLoanFields === 3;
+    let amountRequested: number | undefined;
+    let termMonths: number | undefined;
+
+    if (hasLoanRequest) {
+      amountRequested = this.toNumber(row.amountRequested);
+      termMonths = this.toNumber(row.termMonths);
+
+      if (!Number.isFinite(amountRequested) || amountRequested <= 0) {
+        throw new BadRequestException(
+          `Fila ${rowNumber}: amountRequested debe ser un número mayor a 0`,
+        );
+      }
+      if (!Number.isInteger(termMonths) || termMonths <= 0) {
+        throw new BadRequestException(
+          `Fila ${rowNumber}: termMonths debe ser un entero mayor a 0`,
+        );
+      }
     }
     if (!birthDate || Number.isNaN(birthDate.getTime())) {
       throw new BadRequestException(
@@ -584,9 +657,10 @@ export class ImportClientsLoansHandler
       address,
       employmentStatus,
       organizationName,
-      loanTypeName,
+      loanTypeName: hasLoanRequest ? loanTypeName : undefined,
       amountRequested,
       termMonths,
+      hasLoanRequest,
     };
   }
 

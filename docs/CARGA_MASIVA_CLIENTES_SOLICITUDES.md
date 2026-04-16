@@ -21,7 +21,7 @@
   - Ejemplo:
     - `https://s3-minio.72.61.79.221.nip.io/public/branding/Plantilla-subida-masiva.xlsx`
 
-## Columnas requeridas en Excel
+## Columnas en Excel
 
 Se aceptan encabezados en inglés y también aliases en español.
 
@@ -35,9 +35,14 @@ Se aceptan encabezados en inglés y también aliases en español.
 - `address`
 - `employmentStatus` (`ACTIVO` o `JUBILADO`)
 - `organizationName`
+
+Columnas opcionales para crear solicitud en la misma fila:
+
 - `loanTypeName`
 - `amountRequested`
 - `termMonths`
+
+Regla: si deseas crear solicitud, debes diligenciar las 3 (`loanTypeName`, `amountRequested`, `termMonths`). Si las 3 van vacías, se crea solo el cliente.
 
 Aliases en español soportados:
 
@@ -57,7 +62,8 @@ Aliases en español soportados:
 
 ## Reglas de negocio aplicadas
 
-- Cada fila crea un cliente nuevo y una solicitud nueva.
+- Cada fila crea un cliente nuevo.
+- Si la fila incluye `loanTypeName`, `amountRequested` y `termMonths`, también crea una solicitud nueva.
 - Si una fila falla, no bloquea el resto del archivo.
 - Cada fila se procesa en transacción independiente.
 - La organización se resuelve por `organizationName`.
