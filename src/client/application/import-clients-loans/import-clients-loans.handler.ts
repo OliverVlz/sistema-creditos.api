@@ -17,7 +17,7 @@ import {
   ClientLoanImportRow,
   parseClientsLoansWorkbook,
 } from './import-clients-loans.excel';
-import { parseYmdToUtcDate } from 'src/shared/utils/date-only';
+import { formatYmdUtc, parseYmdToUtcDate } from 'src/shared/utils/date-only';
 
 type ImportRowResult = {
   rowNumber: number;
@@ -144,6 +144,12 @@ export class ImportClientsLoansHandler
             birthDate: validRow.row.birthDate,
             employmentStatus: validRow.row.employmentStatus,
           }),
+        );
+
+        // Persistir fecha de nacimiento como DATE puro para evitar desfase por zona horaria.
+        await manager.query(
+          `UPDATE clients SET birth_date = $1::date WHERE id = $2`,
+          [formatYmdUtc(validRow.row.birthDate), client.id],
         );
 
         const calculation = this.calculateLoan(
@@ -589,13 +595,15 @@ export class ImportClientsLoansHandler
         return null;
       }
 
-      return new Date(
-        Date.UTC(
-          value.getUTCFullYear(),
-          value.getUTCMonth(),
-          value.getUTCDate(),
-        ),
-      );
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const day = String(value.getDate()).padStart(2, '0');
+      const parsedDate = parseYmdToUtcDate(`${year}-${month}-${day}`);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return null;
+      }
+
+      return parsedDate;
     }
 
     if (typeof value === 'number') {
@@ -645,11 +653,11 @@ export class ImportClientsLoansHandler
 
   private normalizeString(value: string | number | Date): string {
     if (value instanceof Date) {
-      return `${value.getUTCDate().toString().padStart(2, '0')}-${(
-        value.getUTCMonth() + 1
+      return `${value.getDate().toString().padStart(2, '0')}-${(
+        value.getMonth() + 1
       )
         .toString()
-        .padStart(2, '0')}-${value.getUTCFullYear()}`;
+        .padStart(2, '0')}-${value.getFullYear()}`;
     }
 
     return String(value ?? '').trim();
