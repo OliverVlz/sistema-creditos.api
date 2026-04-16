@@ -8,7 +8,7 @@ import {
   JoinColumn,
   OneToOne,
 } from 'typeorm';
-import { UserRole } from 'src/shared/enums';
+import { SourceType, UserRole } from 'src/shared/enums';
 import { Client } from 'src/client/infrastructure/entity/client.entity';
 
 @Entity('users')
@@ -36,6 +36,14 @@ export class User {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.CLIENTE })
   role: UserRole;
+
+  @Column({
+    name: 'source_type',
+    type: 'enum',
+    enum: SourceType,
+    default: SourceType.MANUAL,
+  })
+  sourceType: SourceType;
 
   @OneToOne(() => Client, client => client.user)
   client?: Client;

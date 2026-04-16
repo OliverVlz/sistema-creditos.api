@@ -6,7 +6,7 @@ import {
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DataSource } from 'typeorm';
 import { HashService } from 'src/shared/hash';
-import { EmploymentStatus, UserRole } from 'src/shared/enums';
+import { EmploymentStatus, SourceType, UserRole } from 'src/shared/enums';
 import { User } from 'src/identity/infrastructure/entity/user.entity';
 import { Client } from '../../infrastructure/entity/client.entity';
 import { Organization } from 'src/organization/infrastructure/entity/organization.entity';
@@ -133,6 +133,7 @@ export class ImportClientsLoansHandler
             documentNumber: validRow.row.documentNumber,
             phoneNumber: validRow.row.phoneNumber || null,
             role: UserRole.CLIENTE,
+            sourceType: SourceType.MASSIVE_IMPORT,
           }),
         );
 

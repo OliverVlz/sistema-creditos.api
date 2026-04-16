@@ -33,4 +33,12 @@ export class GetClientsDto extends PaginationDto {
   @IsOptional()
   @IsEnum(EmploymentStatus)
   employmentStatus?: EmploymentStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by source: true = carga masiva, false = manual',
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true')
+  uploadedByExcel?: boolean;
 }

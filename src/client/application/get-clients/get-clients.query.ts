@@ -7,6 +7,7 @@ export class GetClientsQuery {
   readonly organizationId?: string;
   readonly employmentStatus?: EmploymentStatus;
   readonly isActive?: boolean;
+  readonly uploadedByExcel?: boolean;
 
   constructor(params: GetClientsQuery) {
     Object.assign(this, params);

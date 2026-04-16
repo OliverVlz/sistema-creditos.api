@@ -33,7 +33,10 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { BulkImportClientsLoansDto } from './dto/bulk-import-clients-loans.dto';
 
 import { CreateClientCommand } from '../application/create-client/create-client.command';
-import { ImportClientsLoansCommand } from '../application/import-clients-loans/import-clients-loans.command';
+import {
+  ImportedClientsLoansFile,
+  ImportClientsLoansCommand,
+} from '../application/import-clients-loans/import-clients-loans.command';
 import { buildClientsLoansTemplateBuffer } from '../application/import-clients-loans/import-clients-loans.excel';
 
 import { UpdateClientProfileCommand } from '../application/update-client-profile/update-client-profile.command';
@@ -79,7 +82,9 @@ export class ClientsController {
   @ApiOperation({
     summary: 'Descargar plantilla de carga masiva de clientes y solicitudes',
   })
-  async downloadClientsLoansTemplate(@Res({ passthrough: true }) res: Response) {
+  async downloadClientsLoansTemplate(
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const apiConfig = this.configService.get<ApiConfig>('api');
     const templateUrl = apiConfig?.massiveImportTemplateUrl;
 
@@ -125,7 +130,7 @@ export class ClientsController {
     summary: 'Importar clientes nuevos y sus solicitudes desde Excel',
   })
   async importClientsLoans(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: ImportedClientsLoansFile,
     @Body() body: BulkImportClientsLoansDto,
   ) {
     return this.commandBus.execute(
@@ -142,7 +147,7 @@ export class ClientsController {
   @ApiOperation({
     summary: 'Listar clientes para dashboard - Solo ADMIN/ADVISOR',
     description:
-      'Devuelve lista optimizada de clientes con información esencial para tabla de dashboard. Permite filtrar por organizationId, términos de búsqueda, estado activo y estado de empleo.',
+      'Devuelve lista optimizada de clientes con información esencial para tabla de dashboard. Permite filtrar por organizationId, términos de búsqueda, estado activo, estado de empleo y si fue cargado por Excel (uploadedByExcel).',
   })
   async getUsersWithClientInfo(@Query() query: GetClientsDto) {
     return this.queryBus.execute(new GetClientsQuery(query));

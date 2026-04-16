@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetClientsQuery } from './get-clients.query';
 import { ClientRepository } from 'src/client/infrastructure/repositories/client.repository';
+import { SourceType } from 'src/shared/enums';
 
 @QueryHandler(GetClientsQuery)
 export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
@@ -14,6 +15,7 @@ export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
       organizationId: query.organizationId,
       employmentStatus: query.employmentStatus,
       isActive: query.isActive,
+      uploadedByExcel: query.uploadedByExcel,
     });
 
     const transformedData = result.data.map(client => ({
@@ -25,6 +27,8 @@ export class GetClientsHandler implements IQueryHandler<GetClientsQuery> {
       documentNumber: client.user.documentNumber,
       email: client.user.email,
       phoneNumber: client.user.phoneNumber,
+      sourceType: client.user.sourceType,
+      uploadedByExcel: client.user.sourceType === SourceType.MASSIVE_IMPORT,
       organization: {
         name: client.organization?.name || 'Sin organización',
       },

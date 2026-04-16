@@ -7,7 +7,7 @@ import { Organization } from 'src/organization/infrastructure/entity/organizatio
 import { DomainError } from 'src/shared/domain';
 import { formatYmdUtc, parseYmdToUtcDate } from 'src/shared/utils/date-only';
 import { PaginationUtils } from 'src/shared/utils/pagination.utils';
-import { EmploymentStatus, UserRole } from 'src/shared/enums';
+import { EmploymentStatus, SourceType, UserRole } from 'src/shared/enums';
 import { User as UserDomainModel } from 'src/identity/domain/user.model';
 
 type CreateClientData = {
@@ -70,6 +70,7 @@ type ClientSearchData = {
   employmentStatus?: EmploymentStatus;
   organizationId?: string;
   isActive?: boolean;
+  uploadedByExcel?: boolean;
 };
 
 type ClientSelect = { [key in keyof Client]?: boolean };
@@ -325,6 +326,7 @@ export class ClientRepository {
         'user.documentNumber',
         'user.phoneNumber',
         'user.isActive',
+        'user.sourceType',
       ])
       .addSelect(['organization.id', 'organization.name'])
       .leftJoin('client.user', 'user')
@@ -353,6 +355,14 @@ export class ClientRepository {
     if (searchData.isActive !== undefined) {
       queryBuilder.andWhere('user.isActive = :isActive', {
         isActive: searchData.isActive,
+      });
+    }
+
+    if (searchData.uploadedByExcel !== undefined) {
+      queryBuilder.andWhere('user.sourceType = :sourceType', {
+        sourceType: searchData.uploadedByExcel
+          ? SourceType.MASSIVE_IMPORT
+          : SourceType.MANUAL,
       });
     }
 
