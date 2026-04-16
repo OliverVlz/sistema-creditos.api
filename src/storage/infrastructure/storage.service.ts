@@ -33,6 +33,7 @@ export class StorageService implements OnModuleInit {
   private readonly endpoint: string;
   private readonly port: number;
   private readonly useSSL: boolean;
+  private readonly forcePathStyle: boolean;
   private readonly bucketPublicRead: boolean;
 
   constructor(private readonly configService: ConfigService) {
@@ -43,6 +44,9 @@ export class StorageService implements OnModuleInit {
     this.port = this.configService.get<number>('MINIO_PORT', 9000);
     this.useSSL =
       this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+    this.forcePathStyle =
+      this.configService.get<string>('MINIO_FORCE_PATH_STYLE', 'true') ===
+      'true';
     this.bucketPublicRead =
       this.configService.get<string>('MINIO_BUCKET_PUBLIC_READ', 'false') ===
       'true';
@@ -55,7 +59,7 @@ export class StorageService implements OnModuleInit {
       'public',
     );
 
-    this.minioClient = new Minio.Client({
+    const minioClientConfig: Minio.ClientOptions = {
       endPoint: this.endpoint,
       port: this.port,
       useSSL: this.useSSL,
@@ -67,7 +71,18 @@ export class StorageService implements OnModuleInit {
         'MINIO_SECRET_KEY',
         'minioadmin',
       ),
-    });
+    };
+
+    if (this.forcePathStyle) {
+      (minioClientConfig as Minio.ClientOptions & { pathStyle: boolean }).pathStyle =
+        true;
+    }
+
+    if ((this.useSSL && this.port === 443) || (!this.useSSL && this.port === 80)) {
+      delete (minioClientConfig as Minio.ClientOptions & { port?: number }).port;
+    }
+
+    this.minioClient = new Minio.Client(minioClientConfig);
   }
 
   async onModuleInit() {
