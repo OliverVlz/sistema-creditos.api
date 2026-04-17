@@ -7,9 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
+  Res,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { Response } from 'express';
+import { LoanDocumentRepository } from './repositories/loan-document.repository';
 
 import { CreateLoanDocumentDto } from './dto/create-loan-document.dto';
 import { CreateLoanDocumentsBatchDto } from './dto/create-loan-documents-batch.dto';
@@ -25,6 +29,7 @@ import { GetLoanDocumentByIdQuery } from '../application/get-loan-document-by-id
 import { GetLoanDocumentsByLoanQuery } from '../application/get-loan-documents-by-loan/get-loan-documents-by-loan.query';
 
 import { AdminGuard } from 'src/shared/guards';
+import { StorageService } from 'src/storage/infrastructure/storage.service';
 
 @ApiTags('Loan Documents')
 @Controller('loan-documents')
@@ -34,6 +39,8 @@ export class LoanDocumentController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly loanDocumentRepository: LoanDocumentRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   @Post('/')
@@ -60,6 +67,39 @@ export class LoanDocumentController {
   @ApiOperation({ summary: 'Obtener documento por ID' })
   async findOne(@Param('id') id: string) {
     return this.queryBus.execute(new GetLoanDocumentByIdQuery(id));
+  }
+
+  @Get('/:id/download')
+  @ApiOperation({ summary: 'Descargar documento por ID' })
+  async download(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const document = await this.loanDocumentRepository.findOne(id);
+
+    try {
+      const file = await this.storageService.getObjectForDownload(document.url);
+      res.setHeader('Content-Type', file.contentType || 'application/pdf');
+      if (typeof file.contentLength === 'number') {
+        res.setHeader('Content-Length', `${file.contentLength}`);
+      }
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${encodeURIComponent(file.fileName)}"`,
+      );
+
+      file.stream.on('error', () => {
+        if (!res.headersSent) {
+          res.status(500).send('Error al leer el archivo');
+        } else {
+          res.end();
+        }
+      });
+
+      file.stream.pipe(res);
+    } catch {
+      throw new InternalServerErrorException('No se pudo descargar el archivo');
+    }
   }
 
   @Patch('/batch')

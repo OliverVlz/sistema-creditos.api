@@ -24,6 +24,13 @@ interface StorageInputFile {
   buffer: Buffer;
 }
 
+export interface StorageDownloadObject {
+  stream: NodeJS.ReadableStream;
+  contentType?: string;
+  contentLength?: number;
+  fileName: string;
+}
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
@@ -165,13 +172,12 @@ export class StorageService implements OnModuleInit {
   ): Promise<void> {
     try {
       const exists = await this.minioClient.bucketExists(bucketName);
-      if (exists) {
+      if (!exists) {
+        await this.minioClient.makeBucket(bucketName);
+        this.logger.log(`Bucket "${bucketName}" creado exitosamente`);
+      } else {
         this.logger.log(`Bucket "${bucketName}" ya existe`);
-        return;
       }
-
-      await this.minioClient.makeBucket(bucketName);
-      this.logger.log(`Bucket "${bucketName}" creado exitosamente`);
 
       if (setPublicRead) {
         const policy = {
@@ -294,6 +300,21 @@ export class StorageService implements OnModuleInit {
     bucketName: string = this.bucket,
   ): Promise<string> {
     return this.minioClient.presignedGetObject(bucketName, key, expirySeconds);
+  }
+
+  async getObjectForDownload(urlOrKey: string): Promise<StorageDownloadObject> {
+    const bucketName = this.extractBucketFromUrl(urlOrKey);
+    const key = this.extractObjectKeyFromUrl(urlOrKey);
+    const stat = await this.minioClient.statObject(bucketName, key);
+    const stream = await this.minioClient.getObject(bucketName, key);
+    const fileName = key.split('/').filter(Boolean).pop() || 'documento';
+
+    return {
+      stream,
+      contentType: stat.metaData?.['content-type'],
+      contentLength: stat.size,
+      fileName,
+    };
   }
 
   async resolveDownloadUrl(
