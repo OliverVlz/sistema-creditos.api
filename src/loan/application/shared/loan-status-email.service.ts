@@ -17,7 +17,7 @@ type LoanStatusEmailPayload = {
 @Injectable()
 export class LoanStatusEmailService {
   private readonly companyContactEmail =
-    'inversionesmurillomartinez@outlook.es';
+    'atencion.cliente@inversionesmurillomartinez.com';
   private readonly apiConfig: ApiConfig;
 
   constructor(
