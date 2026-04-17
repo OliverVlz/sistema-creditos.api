@@ -28,13 +28,13 @@ import { DeleteLoanDocumentCommand } from '../application/delete-loan-document/d
 import { GetLoanDocumentByIdQuery } from '../application/get-loan-document-by-id/get-loan-document-by-id.query';
 import { GetLoanDocumentsByLoanQuery } from '../application/get-loan-documents-by-loan/get-loan-documents-by-loan.query';
 
-import { AdminGuard } from 'src/shared/guards';
+import { AdminGuard, JwtAuthGuard } from 'src/shared/guards';
 import { StorageService } from 'src/storage/infrastructure/storage.service';
 
 @ApiTags('Loan Documents')
 @Controller('loan-documents')
 @ApiBearerAuth()
-@UseGuards(AdminGuard)
+@UseGuards(JwtAuthGuard)
 export class LoanDocumentController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -44,12 +44,14 @@ export class LoanDocumentController {
   ) {}
 
   @Post('/')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Crear un nuevo documento de préstamo' })
   async create(@Body() body: CreateLoanDocumentDto) {
     return this.commandBus.execute(new CreateLoanDocumentCommand({ ...body }));
   }
 
   @Post('/batch')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Crear múltiples documentos para un préstamo' })
   async createBatch(@Body() body: CreateLoanDocumentsBatchDto) {
     return this.commandBus.execute(
@@ -103,6 +105,7 @@ export class LoanDocumentController {
   }
 
   @Patch('/batch')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Actualizar múltiples documentos' })
   async updateBatch(@Body() body: UpdateLoanDocumentsBatchDto) {
     return this.commandBus.execute(
@@ -111,6 +114,7 @@ export class LoanDocumentController {
   }
 
   @Patch('/:id')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Reemplazar documento (actualizar URL)' })
   async update(@Param('id') id: string, @Body() body: UpdateLoanDocumentDto) {
     return this.commandBus.execute(
@@ -119,6 +123,7 @@ export class LoanDocumentController {
   }
 
   @Delete('/:id')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Eliminar documento' })
   async remove(@Param('id') id: string) {
     return this.commandBus.execute(new DeleteLoanDocumentCommand(id));
