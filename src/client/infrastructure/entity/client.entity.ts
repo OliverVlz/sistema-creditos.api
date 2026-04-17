@@ -23,14 +23,15 @@ export class Client {
     name: 'employment_status',
     type: 'enum',
     enum: EmploymentStatus,
+    nullable: true,
   })
-  employmentStatus: EmploymentStatus;
+  employmentStatus?: EmploymentStatus;
 
-  @Column({ name: 'address' })
-  address: string;
+  @Column({ name: 'address', nullable: true })
+  address?: string;
 
-  @Column({ name: 'birth_date', type: 'date' })
-  birthDate: Date;
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  birthDate?: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -43,9 +44,9 @@ export class Client {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Organization)
+  @ManyToOne(() => Organization, { nullable: true })
   @JoinColumn({ name: 'organization_id' })
-  organization: Organization;
+  organization?: Organization;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'updated_by' })

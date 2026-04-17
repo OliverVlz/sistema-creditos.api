@@ -77,6 +77,21 @@ export function buildClientsLoansTemplateBuffer(): Buffer {
       2500000,
       24,
     ],
+    [
+      'cliente1@correo.com',
+      'Pass1234',
+      'Juan',
+      'Perez',
+      '12345678',
+      '3001234567',
+      '',
+      'Calle 10 # 20-30',
+      '',
+      '',
+      'Libre Inversion',
+      1800000,
+      18,
+    ],
   ];
 
   const workbook = XLSX.utils.book_new();

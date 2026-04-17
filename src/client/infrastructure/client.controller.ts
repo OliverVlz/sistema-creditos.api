@@ -115,7 +115,7 @@ export class ClientsController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Archivo Excel (.xlsx) con clientes y solicitudes',
+          description: 'Archivo de carga masiva (.xlsx o .csv)',
         },
         chunkSize: {
           type: 'number',

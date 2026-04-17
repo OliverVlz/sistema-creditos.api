@@ -93,9 +93,9 @@ export class Loan {
   @JoinColumn({ name: 'loan_type_id' })
   loanType: LoanType;
 
-  @ManyToOne(() => Organization)
+  @ManyToOne(() => Organization, { nullable: true })
   @JoinColumn({ name: 'organization_id' })
-  organization: Organization;
+  organization?: Organization;
 
   @OneToMany(() => LoanDocument, document => document.loan)
   documents: LoanDocument[];

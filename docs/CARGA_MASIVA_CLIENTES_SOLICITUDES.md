@@ -10,7 +10,7 @@
 - `POST /clients/import/clients-loans`
   - Content-Type: `multipart/form-data`
   - Campos:
-    - `file` (requerido): archivo `.xlsx`
+    - `file` (requerido): archivo `.xlsx` o `.csv`
     - `chunkSize` (opcional): entero entre `1` y `200`, default `20`
   - Requiere rol `ADMIN` o `ASESOR`.
 
@@ -24,6 +24,7 @@
 ## Columnas en Excel
 
 Se aceptan encabezados en inglés y también aliases en español.
+El importador soporta tanto Excel (`.xlsx`) como CSV (`.csv`).
 
 - `email`
 - `password`
@@ -31,10 +32,10 @@ Se aceptan encabezados en inglés y también aliases en español.
 - `lastName`
 - `documentNumber`
 - `phoneNumber`
-- `birthDate` (`DD-MM-YYYY`)
-- `address`
-- `employmentStatus` (`ACTIVO` o `JUBILADO`)
-- `organizationName`
+- `birthDate` (`DD-MM-YYYY` o `DD/MM/YYYY`)
+- `address` (opcional)
+- `employmentStatus` (`ACTIVO` o `JUBILADO`, opcional)
+- `organizationName` (opcional)
 
 Columnas opcionales para crear solicitud en la misma fila:
 
@@ -43,6 +44,10 @@ Columnas opcionales para crear solicitud en la misma fila:
 - `termMonths`
 
 Regla: si deseas crear solicitud, debes diligenciar las 3 (`loanTypeName`, `amountRequested`, `termMonths`). Si las 3 van vacías, se crea solo el cliente.
+Regla de tipo de préstamo: por ahora solo se permite `Libranza`.
+Regla para múltiples solicitudes: puedes repetir `email` + `documentNumber` en varias filas y cada fila generará una solicitud nueva para el mismo cliente.
+Si `birthDate`, `address`, `employmentStatus` u `organizationName` van vacías, se guardan como `null`.
+Regla de organización: si envías `organizationName`, debe coincidir exactamente con el catálogo seeded (incluyendo tildes): `Policía Nacional`, `Ejército Nacional`, `Armada Nacional`, `Fuerza Aeroespacial`.
 
 Aliases en español soportados:
 
@@ -62,8 +67,11 @@ Aliases en español soportados:
 
 ## Reglas de negocio aplicadas
 
-- Cada fila crea un cliente nuevo.
+- Si el cliente no existe, se crea.
+- Si el cliente ya existe (mismo email/documento), no se vuelve a crear y la fila se procesa como solicitud adicional.
 - Si la fila incluye `loanTypeName`, `amountRequested` y `termMonths`, también crea una solicitud nueva.
+- Se permiten múltiples filas para el mismo cliente dentro del mismo archivo.
+- No se permiten inconsistencias de identidad (`email` con dos documentos distintos o `documento` con dos correos distintos).
 - Si una fila falla, no bloquea el resto del archivo.
 - Cada fila se procesa en transacción independiente.
 - La organización se resuelve por `organizationName`.
