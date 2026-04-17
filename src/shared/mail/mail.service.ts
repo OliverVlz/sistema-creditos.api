@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import * as FormData from 'form-data';
 import { Transporter, SendMailOptions } from 'nodemailer';
@@ -21,6 +21,7 @@ enum MailServiceMethod {
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
   private readonly transporter: Transporter;
   private readonly mailgunConfig: MailModuleOptions['mailgunConfig'];
   private readonly resendConfig: MailModuleOptions['resendConfig'];
@@ -84,7 +85,7 @@ export class MailService {
     if (config.every(Boolean)) {
       return false;
     } else {
-      console.warn('Email not sent, mail env variables missing');
+      this.logger.warn('Email not sent, mail env variables missing');
       return true;
     }
   }
@@ -183,9 +184,9 @@ export class MailService {
           );
         }
       } catch (error) {
-        console.warn(
+        this.logger.warn(
           `No se pudo preparar adjunto "${fileName}" para Resend. Se enviará correo sin este adjunto.`,
-          error,
+          error instanceof Error ? error.stack : String(error),
         );
         continue;
       }
@@ -359,11 +360,23 @@ export class MailService {
       error.errno === this.handledErrors.errno ||
       this.handledErrors.codes.includes(error.code)
     ) {
-      console.error(
+      this.logger.error(
         'Connection to email server was refused or timed out. Email not sent.',
       );
     } else {
-      console.error('MailService Error');
+      const status = error?.response?.status;
+      const body = error?.response?.data;
+      const detail =
+        body !== undefined
+          ? typeof body === 'string'
+            ? body
+            : JSON.stringify(body)
+          : error?.message || String(error);
+      this.logger.error(
+        status !== undefined
+          ? `MailService Error HTTP ${status}: ${detail}`
+          : `MailService Error: ${detail}`,
+      );
       throw error;
     }
   }
