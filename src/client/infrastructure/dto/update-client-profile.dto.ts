@@ -23,7 +23,7 @@ export class UpdateClientProfileDto {
 
   @ApiProperty({
     description: 'Dirección del cliente',
-    example: 'Av. Principal 123, Apto 5B',
+    example: 'Calle 25 #12 - 27 of 403',
     required: false,
   })
   @IsOptional()

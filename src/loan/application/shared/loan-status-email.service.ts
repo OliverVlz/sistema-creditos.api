@@ -38,7 +38,7 @@ export class LoanStatusEmailService {
       steps: [
         'Descarga y revisa el PDF adjunto.',
         'Firma el contrato físicamente.',
-        'Envía el documento firmado por transportadora a Calle 25 N 12-27 110110 Bogotá, Colombia.',
+        'Envía el documento firmado por transportadora a Calle 25 #12 - 27 of 403.',
         'El costo del envío es asumido por el cliente y no se acepta contraentrega.',
       ],
       finalMessage:
@@ -51,7 +51,7 @@ export class LoanStatusEmailService {
       'Pasos para continuar:',
       '1) Descarga y revisa el PDF adjunto.',
       '2) Firma el contrato físicamente.',
-      '3) Envía el documento por transportadora a Calle 25 N 12-27 110110 Bogotá, Colombia.',
+      '3) Envía el documento por transportadora a Calle 25 #12 - 27 of 403.',
       'El costo del envío es asumido por el cliente y no se acepta contraentrega.',
       `Si tienes dudas escríbenos a ${this.companyContactEmail}.`,
     ]
@@ -145,7 +145,7 @@ export class LoanStatusEmailService {
       steps: [
         'Revisa el PDF adjunto.',
         'Firma el contrato físicamente.',
-        'Envía el documento firmado por transportadora a Calle 25 N 12-27 110110 Bogotá, Colombia.',
+        'Envía el documento firmado por transportadora a Calle 25 #12 - 27 of 403.',
       ],
       finalMessage:
         'Si ya realizaste el envío, nuestro equipo validará la recepción para continuar con el proceso.',

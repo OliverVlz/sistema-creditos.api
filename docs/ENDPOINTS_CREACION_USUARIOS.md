@@ -18,7 +18,7 @@ POST /users/sign-up
   "firstName": "Juan",
   "lastName": "Pérez",
   "documentNumber": "12345678",
-  "address": "Calle Principal 123",
+  "address": "Calle 25 #12 - 27 of 403",
   "birthDate": "1990-01-15",
   "phone": "+573001234567",
   "employmentStatus": "EMPLOYED",
@@ -34,7 +34,7 @@ POST /users/sign-up
   "lastName": "Pérez",
   "client": {
     "id": "client-uuid",
-    "address": "Calle Principal 123",
+    "address": "Calle 25 #12 - 27 of 403",
     "birthDate": "1990-01-15",
     "phoneNumber": "+573001234567",
     "employmentStatus": "EMPLOYED",
@@ -73,7 +73,7 @@ Authorization: Bearer <token-admin-o-advisor>
   "firstName": "María",
   "lastName": "González",
   "documentNumber": "87654321",
-  "address": "Avenida Central 456",
+  "address": "Calle 25 #12 - 27 of 403",
   "birthDate": "1985-05-20",
   "phone": "+573009876543",
   "employmentStatus": "SELF_EMPLOYED",
@@ -89,7 +89,7 @@ Authorization: Bearer <token-admin-o-advisor>
   "lastName": "González",
   "client": {
     "id": "client-uuid",
-    "address": "Avenida Central 456",
+    "address": "Calle 25 #12 - 27 of 403",
     "birthDate": "1985-05-20",
     "phoneNumber": "+573009876543",
     "employmentStatus": "SELF_EMPLOYED",
@@ -272,7 +272,7 @@ curl -X POST http://localhost:3000/users/sign-up \
     "firstName": "Test",
     "lastName": "User",
     "documentNumber": "12345",
-    "address": "Calle 1",
+    "address": "Calle 25 #12 - 27 of 403",
     "birthDate": "1990-01-01",
     "employmentStatus": "EMPLOYED",
     "organizationId": "org-uuid"
@@ -291,7 +291,7 @@ curl -X POST http://localhost:3000/clients/register \
     "firstName": "Cliente",
     "lastName": "Nuevo",
     "documentNumber": "54321",
-    "address": "Calle 2",
+    "address": "Calle 25 #12 - 27 of 403",
     "birthDate": "1985-05-20",
     "employmentStatus": "SELF_EMPLOYED",
     "organizationId": "org-uuid"

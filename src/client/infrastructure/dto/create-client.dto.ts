@@ -43,7 +43,7 @@ export class CreateClientDto {
   // Propiedades del Client
   @ApiProperty({
     description: 'Dirección del cliente',
-    example: 'Calle Falsa 123',
+    example: 'Calle 25 #12 - 27 of 403',
   })
   @IsString()
   @IsNotEmpty()
